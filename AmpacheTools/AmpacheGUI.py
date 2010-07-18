@@ -1307,7 +1307,7 @@ class AmpacheGUI:
 		"""About this application."""
 		about = gtk.AboutDialog()
 		about.set_name("Viridian")
-		about.set_version("1.0")
+		about.set_version("1.0-alpha")
 		#about.set_copyright("(c) Dave Eddy")
 		about.set_comments("Viridian is a front-end for an Ampache Server (see http://ampache.org)")
 		about.set_website("http://www.viridianplayer.com")
