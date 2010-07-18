@@ -1,0 +1,79 @@
+##############################
+# AmpacheGUI
+##############################
+
+#### Objects ####
+self.audio_engine 
+self.ampache_conn
+
+### Image Pix Bufs ###
+self.images_pixbuf_pause 
+self.images_pixbuf_gold_star 
+self.images_pixbuf_gray_star
+
+### Main Window ###
+self.window
+
+### Images ###
+self.play_pause_image
+self.album_art_image
+
+### Labels ###
+self.current_artist_label
+
+### Lists ###
+self.rating_stars_list
+
+### List Stores ###
+self.artist_list_store
+self.album_list_store 
+self.song_list_store
+
+### Album Column (to get sort order) ###
+self.albums_column 
+
+### Status Bar ####
+self.statusbar = gtk.Statusbar()
+
+
+### Booleans ###
+self.display_notifications = self.__variable_get('display_notifications')
+self.automatically_update = self.__variable_get('automatically_update')
+self.song_is_playing = False
+self.is_up_to_date = True # assume it is up to date untill it callsback
+self.popup_if_catalog_updated = True
+
+### Text Entries ###
+self.ampache_text_entry = gtk.Entry()
+self.username_text_entry = gtk.Entry()
+self.password_text_entry = gtk.Entry()
+
+self.artist_name = artist_name
+self.album_id = None # this is the albums refresh
+self.album_name = album_name
+self.song_title = model[row][1]
+self.button_clear_cache_locked = True
+self.is_up_to_date = True
+self.button_clear_cache_locked = False
+if self.button_pre_cache_locked == True:
+self.button_pre_cache_locked = True
+self.pre_cache_continue = True # this will be set to false if this function should stop
+if self.pre_cache_continue == False:
+self.button_pre_cache_locked = False
+if self.pre_cache_continue == False:
+self.button_pre_cache_locked = False
+self.button_pre_cache_locked = False
+self.button_pre_cache_locked = False
+if self.button_album_art_locked == True:
+self.button_album_art_locked = True
+self.button_album_art_locked = False
+self.button_album_art_locked = False
+self.song_is_playing = False
+self.current_song_info = None
+self.current_song_info = self.ampache_conn.get_single_song_dict(song_id)
+self.song_is_playing = True
+if self.automatically_update == True:
+self.is_up_to_date = True
+self.is_up_to_date = True
+self.is_up_to_date = False
+self.pre_cache_continue = False

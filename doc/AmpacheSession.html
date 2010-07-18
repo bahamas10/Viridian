@@ -1,0 +1,99 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module AmpacheSession</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>AmpacheSession</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/mnt/home/deddy/ampache/work/AmpacheSession.py">/mnt/home/deddy/ampache/work/AmpacheSession.py</a></font></td></tr></table>
+    <p><tt>#&nbsp;-*-&nbsp;coding:&nbsp;utf-8&nbsp;-*-</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="datetime.html">datetime</a><br>
+<a href="hashlib.html">hashlib</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="re.html">re</a><br>
+<a href="pysqlite2.dbapi2.html">pysqlite2.dbapi2</a><br>
+<a href="time.html">time</a><br>
+</td><td width="25%" valign=top><a href="urllib.html">urllib</a><br>
+<a href="urllib2.html">urllib2</a><br>
+<a href="_xmlplus.html">_xmlplus</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="AmpacheSession.html#AmpacheSession">AmpacheSession</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="AmpacheSession">class <strong>AmpacheSession</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>The&nbsp;<a href="#AmpacheSession">AmpacheSession</a>&nbsp;Class.&nbsp;&nbsp;This&nbsp;is&nbsp;used&nbsp;to&nbsp;communicate&nbsp;to&nbsp;Ampache&nbsp;via&nbsp;the&nbsp;API.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="AmpacheSession-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize&nbsp;an&nbsp;<a href="#AmpacheSession">AmpacheSession</a>&nbsp;object&nbsp;and&nbsp;create/load&nbsp;the&nbsp;database&nbsp;in&nbsp;~/.ampache/.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-authenticate"><strong>authenticate</strong></a>(self, check_catalog<font color="#909090">=False</font>)</dt><dd><tt>Attempt&nbsp;to&nbsp;authenticate&nbsp;to&nbsp;Ampache.&nbsp;&nbsp;Returns&nbsp;True&nbsp;if&nbsp;successful&nbsp;and&nbsp;False&nbsp;if&nbsp;not.<br>
+This&nbsp;will&nbsp;retry&nbsp;self.<strong>auth_max_retry</strong>&nbsp;times.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-clear_album_art"><strong>clear_album_art</strong></a>(self)</dt><dd><tt>Clear&nbsp;local&nbsp;album&nbsp;art.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-clear_cached_catalog"><strong>clear_cached_catalog</strong></a>(self)</dt><dd><tt>Clear&nbsp;the&nbsp;cached&nbsp;catalog&nbsp;completely.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_album_art"><strong>get_album_art</strong></a>(self, album_id)</dt><dd><tt>Takes&nbsp;an&nbsp;album_id&nbsp;and&nbsp;returns&nbsp;the&nbsp;url&nbsp;to&nbsp;the&nbsp;artwork&nbsp;(with&nbsp;the&nbsp;current&nbsp;authentication).</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_album_dict"><strong>get_album_dict</strong></a>(self, artist_id)</dt><dd><tt>Returns&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;all&nbsp;the&nbsp;albums&nbsp;from&nbsp;an&nbsp;artist&nbsp;from&nbsp;the&nbsp;database<br>
+This&nbsp;will&nbsp;check&nbsp;to&nbsp;see&nbsp;if&nbsp;the&nbsp;info&nbsp;exists&nbsp;locally&nbsp;before&nbsp;querying&nbsp;Ampache.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_album_id"><strong>get_album_id</strong></a>(self, song_id)</dt><dd><tt>Takes&nbsp;a&nbsp;song_id&nbsp;and&nbsp;returns&nbsp;the&nbsp;album_id</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_album_ids"><strong>get_album_ids</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;list&nbsp;of&nbsp;all&nbsp;album&nbsp;ID's.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_album_name"><strong>get_album_name</strong></a>(self, album_id)</dt><dd><tt>Takes&nbsp;an&nbsp;album_id&nbsp;and&nbsp;returns&nbsp;the&nbsp;album_name</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_artist_dict"><strong>get_artist_dict</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;all&nbsp;the&nbsp;artists&nbsp;populated&nbsp;from&nbsp;the&nbsp;database.<br>
+This&nbsp;will&nbsp;check&nbsp;to&nbsp;see&nbsp;if&nbsp;the&nbsp;info&nbsp;exists&nbsp;locally&nbsp;before&nbsp;querying&nbsp;Ampache.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_artist_id"><strong>get_artist_id</strong></a>(self, album_id)</dt><dd><tt>Takes&nbsp;an&nbsp;album_id&nbsp;and&nbsp;returns&nbsp;the&nbsp;artist_id</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_artist_ids"><strong>get_artist_ids</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;list&nbsp;of&nbsp;all&nbsp;artist&nbsp;ID's.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_artist_name"><strong>get_artist_name</strong></a>(self, artist_id)</dt><dd><tt>Takes&nbsp;an&nbsp;album_id&nbsp;and&nbsp;returns&nbsp;the&nbsp;album_name</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_single_song_dict"><strong>get_single_song_dict</strong></a>(self, song_id)</dt><dd><tt>Returns&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;one&nbsp;song&nbsp;based&nbsp;on&nbsp;its&nbsp;song_id</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_song_dict"><strong>get_song_dict</strong></a>(self, album_id)</dt><dd><tt>Returns&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;all&nbsp;the&nbsp;songs&nbsp;from&nbsp;an&nbsp;album&nbsp;from&nbsp;the&nbsp;database<br>
+This&nbsp;will&nbsp;check&nbsp;to&nbsp;see&nbsp;if&nbsp;the&nbsp;info&nbsp;exists&nbsp;locally&nbsp;before&nbsp;querying&nbsp;Ampache.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_song_url"><strong>get_song_url</strong></a>(self, song_id)</dt><dd><tt>Takes&nbsp;a&nbsp;song_id&nbsp;and&nbsp;returns&nbsp;the&nbsp;url&nbsp;to&nbsp;the&nbsp;song&nbsp;(with&nbsp;the&nbsp;current&nbsp;authentication).</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-has_credentials"><strong>has_credentials</strong></a>(self)</dt><dd><tt>Checks&nbsp;to&nbsp;see&nbsp;if&nbsp;the&nbsp;<a href="#AmpacheSession">AmpacheSession</a>&nbsp;object&nbsp;has&nbsp;credentials&nbsp;set.<br>
+If&nbsp;not,&nbsp;this&nbsp;function&nbsp;will&nbsp;attempt&nbsp;to&nbsp;pull&nbsp;the&nbsp;credentials&nbsp;from&nbsp;the&nbsp;database.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-is_first_time"><strong>is_first_time</strong></a>(self)</dt><dd><tt>Returns&nbsp;True&nbsp;if&nbsp;this&nbsp;is&nbsp;the&nbsp;first&nbsp;time&nbsp;this&nbsp;program&nbsp;is&nbsp;ran&nbsp;(if&nbsp;~/.ampache&nbsp;didn't&nbsp;exist).</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-populate_albums_dict"><strong>populate_albums_dict</strong></a>(self, artist_id)</dt><dd><tt>This&nbsp;populates&nbsp;the&nbsp;albums&nbsp;dictionary,&nbsp;skipping&nbsp;already&nbsp;cached&nbsp;items.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-populate_songs_dict"><strong>populate_songs_dict</strong></a>(self, album_id)</dt><dd><tt>This&nbsp;populates&nbsp;the&nbsp;songs&nbsp;dictionary,&nbsp;skipping&nbsp;already&nbsp;cached&nbsp;items.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-set_ampache_gui_hook"><strong>set_ampache_gui_hook</strong></a>(self, ampache_gui)</dt><dd><tt>Save&nbsp;the&nbsp;AmpacheGUI&nbsp;in&nbsp;the&nbsp;<a href="#AmpacheSession">AmpacheSession</a>&nbsp;to&nbsp;allow&nbsp;this&nbsp;object&nbsp;to&nbsp;communicate&nbsp;to&nbsp;the&nbsp;GUI.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-set_credentials"><strong>set_credentials</strong></a>(self, url, username, password)</dt><dd><tt>Save&nbsp;the&nbsp;ampache&nbsp;url,&nbsp;username,&nbsp;and&nbsp;password</tt></dd></dl>
+
+</td></tr></table></td></tr></table>
+</body></html>

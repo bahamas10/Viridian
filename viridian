@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+### BEGIN LICENSE
+# Copyright (C) 2010 Dave Eddy <dave@daveeddy.com>
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 3, as published
+# by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranties of
+# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
+# PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program.  If not, see <http://www.gnu.org/licenses/>.
+### END LICENSE
+
+__program__    = "Viridian"
+__author__     = "David Eddy"
+__credits__    = ["Michael Zeller", "Skye Sawyer"]
+__license__    = "GPL"
+__version__    = "1.0"
+__maintainer__ = "David Eddy"
+__email__      = "dave@daveeddy.com"
+__status__     = "Alpha"
+
+import AmpacheTools
+
+import gobject
+import dbus, dbus.service, dbus.glib
+
+class AmpacheService(dbus.service.Object):
+	def __init__(self, app):
+		self.app = app
+		bus_name = dbus.service.BusName('com.daveeddy.Viridian', bus = dbus.SessionBus())
+		dbus.service.Object.__init__(self, bus_name, '/com/daveeddy/Viridian')
+
+	@dbus.service.method(dbus_interface='com.daveeddy.Viridian')
+	def show_window(self):
+		self.app.window.present()
+
+if __name__ == "__main__":
+	try: # try to see if an instance is already running, and if so don't make a second instance
+		if dbus.SessionBus().request_name("com.daveeddy.Viridian") != dbus.bus.REQUEST_NAME_REPLY_PRIMARY_OWNER:
+			print "application already running"
+			method = dbus.SessionBus().get_object("com.daveeddy.Viridian", "/com/daveeddy/Viridian").get_dbus_method("show_window")
+			method()
+		else:
+			raise Exception('Not Running')
+	except: # some distros don't support this, so just open a second instance i guess....
+		# create a session
+		ampache_conn = AmpacheTools.AmpacheSession()
+		audio_engine = AmpacheTools.AudioEngine(ampache_conn)
+		# create the gui and attach it to the session
+		gui = AmpacheTools.AmpacheGUI(ampache_conn, audio_engine)
+		service = AmpacheService(gui)
+		# allow the audioengine and ampachesession to callback to the GUI (for messages like End Of Song)
+		audio_engine.set_ampache_gui_hook(gui)
+		ampache_conn.set_ampache_gui_hook(gui)
+		# display the gui
+		gui.main()
+
