@@ -1,0 +1,3 @@
+To use: you can run ./viridian to run it from the current directory,
+or you can install it using:
+~# python setup.py install
