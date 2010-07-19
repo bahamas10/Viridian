@@ -165,6 +165,7 @@ class AmpacheSession:
 			if (last_time < new_time) and last_time != -1:
 				self.is_catalog_up_to_date = False
 			else:
+				self.save_new_time()
 				self.is_catalog_up_to_date = True
 			self.db_conn.commit()
 			c.close()
@@ -246,7 +247,18 @@ class AmpacheSession:
 		"""Returns a dictionary of all the artists populated from the database.
 		This will check to see if the info exists locally before querying Ampache."""
 		if self.__table_is_empty('artists'):
-			self.__populate_artists_dict()
+			c = self.db_conn.cursor()
+			c.execute("""DELETE FROM artists""")
+			self.db_conn.commit()
+			c.close()
+			if self.artists_num <= 5000: # no offset needed
+				print "Less than 5000 artists"
+				self.__populate_artists_dict()
+			else:
+				print "More than 5000 artists"
+				for i in range(0, self.artists_num, 5000):
+					print "Offset = ", i
+					self.__populate_artists_dict(i)
 		try:
 			c = self.db_conn.cursor()
 			c.execute("""SELECT artist_id, name, custom_name FROM artists order by name""")
@@ -492,11 +504,17 @@ class AmpacheSession:
 	def __unknown_error(self):
 		print "An unknown error has occured -- could be related to Ampache itself!"
 	
-	def __populate_artists_dict(self):
+	def __populate_artists_dict(self, offset=None):
 		"""Populates self.artist.dict with all artists and artists id's"""
-		values = {'action' : 'artists',
-			  'auth'   : self.auth,
-		}
+		if offset == None:
+			values = {'action' : 'artists',
+				  'auth'   : self.auth,
+			}
+		else:
+			values = {'action' : 'artists',
+				  'auth'   : self.auth,
+				  'offset' : offset,
+			}
 		data = urllib.urlencode(values)
 		try: 
 			response = urllib2.urlopen(self.xml_rpc, data)
@@ -509,13 +527,11 @@ class AmpacheSession:
 			nodes = root.getElementsByTagName('artist')
 		except: # something failed, try to reauth and do it again
 			if self.authenticate():
-				return self.__populate_artists_dict()
+				return self.__populate_artists_dict(offset)
 			else: # couldn't authenticate
 				return False
 		try: # add the artists to the database
 			c = self.db_conn.cursor()
-			c.execute("""DELETE FROM artists""")
-			self.db_conn.commit()
 			for child in nodes:
 				artist_name = child.getElementsByTagName('name')[0].childNodes[0].data
 				artist_id   = int(child.getAttribute('id'))
