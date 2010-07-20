@@ -25,41 +25,34 @@ import datetime
 import time
 import re
 import shutil
-try:
-	import sqlite3
-except:
-	print "[Warn] sqlite3 not found -- loading sqlite2"
-	from pysqlite2 import dbapi2 as sqlite3
 
 ### Constants ###
 AUTH_MAX_RETRY = 3 # how many times to try and reauth before failure
 
 class AmpacheSession:
 	"""The AmpacheSession Class.  This is used to communicate to Ampache via the API."""
-	def __init__(self):
-		"""Initialize an AmpacheSession object and create/load the database in ~/.ampache/."""
+	def __init__(self, db_session):
+		"""Initialize an AmpacheSession object and create/load the database in ~/.viridian/."""
+		#################################
+		# Set Variables
+		#################################
 		home = os.path.expanduser("~")
-		self.ampache_dir = home + os.sep + '.ampache'
-		sqlite_db = self.ampache_dir + os.sep + 'db.sqlite'
-		if not os.path.exists(self.ampache_dir):
-			self.first_time_running = True
-			os.mkdir(self.ampache_dir)
-			os.chmod(self.ampache_dir, 0700) # set strict permissions
-		else:
-			self.first_time_running = False
+		self.ampache_dir = home + os.sep + '.viridian'
+		self.db_session = db_session
+		
+		self.first_time_running = self.db_session.is_first_time()
+		self.is_catalog_up_to_date = None
+
 		# get the art folder
 		self.art_folder = self.ampache_dir + os.sep + 'album_art'
 		if not os.path.exists(self.art_folder):
 			os.mkdir(self.art_folder)
 		
-		self.is_catalog_up_to_date = None
-		
+
 		# start the database
-		self.db_conn = sqlite3.connect(sqlite_db)
-		os.chmod(sqlite_db, 0700)
-		c = self.db_conn.cursor()
+		c = self.db_session.cursor()
 		self.__create_initial_tables(c) # check to see if tables exists
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 
 		self.auth_current_retry = 0
@@ -80,9 +73,9 @@ class AmpacheSession:
 		self.xml_rpc = self.url + "/server/xml.server.php"
 		# save to database
 		try:
-			c = self.db_conn.cursor()
+			c = self.db_session.cursor()
 			self.__set_credentials_in_db(c)
-			self.db_conn.commit()
+			self.db_session.commit()
 			c.close()
 		except:
 			return False
@@ -96,11 +89,12 @@ class AmpacheSession:
 				return False
 			return True
 		try: # now check DB
-			c = self.db_conn.cursor()
+			c = self.db_session.cursor()
 			if self.__get_credentials_from_db(c): # variables pulled from DB
-				self.db_conn.commit()
+				self.db_session.commit()
 				c.close()
 			else: # variables not found, 
+				self.db_session.commit()
 				c.close()
 				return False
 		except: # no db???? shouldn't happen
@@ -160,14 +154,14 @@ class AmpacheSession:
 			clean  = int(time.mktime(time.strptime( clean[:-6], "%Y-%m-%dT%H:%M:%S" )))
 			new_time  = max([update, add, clean])
 			self.new_last_update_time = new_time
-			c = self.db_conn.cursor()
+			c = self.db_session.cursor()
 			last_time = self.__get_last_catalog_update_time(c)
 			if (last_time < new_time) and last_time != -1:
 				self.is_catalog_up_to_date = False
 			else:
 				self.save_new_time()
 				self.is_catalog_up_to_date = True
-			self.db_conn.commit()
+			self.db_session.commit()
 			c.close()
 		except:
 			print "Couldn't get time catalog was updated -- assuming catalog is dirty"
@@ -246,10 +240,10 @@ class AmpacheSession:
 	def get_artist_dict(self):
 		"""Returns a dictionary of all the artists populated from the database.
 		This will check to see if the info exists locally before querying Ampache."""
-		if self.__table_is_empty('artists'):
-			c = self.db_conn.cursor()
+		if self.db_session.table_is_empty('artists'):
+			c = self.db_session.cursor()
 			c.execute("""DELETE FROM artists""")
-			self.db_conn.commit()
+			self.db_session.commit()
 			c.close()
 			if self.artists_num <= 5000: # no offset needed
 				print "Less than 5000 artists"
@@ -260,7 +254,7 @@ class AmpacheSession:
 					print "Offset = ", i
 					self.__populate_artists_dict(i)
 		try:
-			c = self.db_conn.cursor()
+			c = self.db_session.cursor()
 			c.execute("""SELECT artist_id, name, custom_name FROM artists order by name""")
 			artist_dict = {}
 			for row in c:
@@ -272,17 +266,17 @@ class AmpacheSession:
 							}
 		except:
 			return None
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		return artist_dict
 		
 	def get_album_dict(self, artist_id):
 		"""Returns a dictionary of all the albums from an artist from the database
 		This will check to see if the info exists locally before querying Ampache."""
-		if self.__table_is_empty('albums', artist_id):
+		if self.db_session.table_is_empty('albums', artist_id):
 			self.__populate_albums_dict(artist_id)
 		try:
-			c = self.db_conn.cursor()
+			c = self.db_session.cursor()
 			c.execute("""SELECT album_id, name, year, stars FROM albums
 				WHERE artist_id = ? order by year""", [artist_id])
 			album_dict = {}
@@ -297,17 +291,17 @@ class AmpacheSession:
 							}
 		except:
 			return None
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		return album_dict
 		
 	def get_song_dict(self, album_id):
 		"""Returns a dictionary of all the songs from an album from the database
 		This will check to see if the info exists locally before querying Ampache."""
-		if self.__table_is_empty('songs', album_id):
+		if self.db_session.table_is_empty('songs', album_id):
 			self.__populate_songs_dict(album_id)
 		try:
-			c = self.db_conn.cursor()
+			c = self.db_session.cursor()
 			c.execute("""SELECT song_id, title, track, time, size, artist_name, album_name FROM songs
 				WHERE album_id = ? order by track""", [album_id])
 			song_dict = {}
@@ -328,14 +322,14 @@ class AmpacheSession:
 						}
 		except:
 			return None
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		return song_dict
 		
 	def get_single_song_dict(self, song_id):
 		"""Returns a dictionary of one song based on its song_id"""
 		try:
-			c = self.db_conn.cursor()
+			c = self.db_session.cursor()
 			c.execute("""SELECT album_id, title, track, time, size, artist_name FROM songs
 				WHERE song_id = ?""", [song_id])
 			for row in c:
@@ -360,7 +354,7 @@ class AmpacheSession:
 			song_dict['album_stars'] = data[2]
 		except:
 			return None
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		return song_dict
 		
@@ -369,12 +363,12 @@ class AmpacheSession:
 	#######################################
 	def populate_albums_dict(self, artist_id):
 		"""This populates the albums dictionary, skipping already cached items."""
-		if self.__table_is_empty('albums', artist_id):
+		if self.db_session.table_is_empty('albums', artist_id):
 			self.__populate_albums_dict(artist_id)
 	
 	def populate_songs_dict(self, album_id):
 		"""This populates the songs dictionary, skipping already cached items."""
-		if self.__table_is_empty('songs', album_id):
+		if self.db_session.table_is_empty('songs', album_id):
 			self.__populate_songs_dict(album_id)
 		
 	#######################################
@@ -382,68 +376,68 @@ class AmpacheSession:
 	#######################################
 	def get_album_id(self, song_id):
 		"""Takes a song_id and returns the album_id"""
-		c = self.db_conn.cursor()
+		c = self.db_session.cursor()
 		c.execute("""SELECT album_id FROM songs WHERE song_id = ?""", [song_id])
 		result = c.fetchone()[0]
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		return result
 		
 	def get_album_name(self, album_id):
 		"""Takes an album_id and returns the album_name"""
-		c = self.db_conn.cursor()
+		c = self.db_session.cursor()
 		c.execute("""SELECT album_name FROM albums WHERE album_id = ?""", [album_id])
 		result = c.fetchone()[0]
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		return result
 	
 	def get_album_year(self, album_id):
 		"""Takes an album_id and returns the album_year"""
-		c = self.db_conn.cursor()
+		c = self.db_session.cursor()
 		c.execute("""SELECT year FROM albums WHERE album_id = ?""", [album_id])
 		result = c.fetchone()[0]
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		return result
 	
 	def get_artist_id(self, album_id):
 		"""Takes an album_id and returns the artist_id"""
-		c = self.db_conn.cursor()
+		c = self.db_session.cursor()
 		c.execute("""SELECT artist_id FROM albums WHERE album_id = ?""", [album_id])
 		result = c.fetchone()[0]
-		self.db_conn.commit()
-		c.close()
+		self.db_session.commit()
+		c.close
 		return result
 		
 	def get_artist_name(self, artist_id):
 		"""Takes an album_id and returns the album_name"""
-		c = self.db_conn.cursor()
+		c = self.db_session.cursor()
 		c.execute("""SELECT name FROM artists WHERE artist_id = ?""", [artist_id])
 		result = c.fetchone()[0]
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		return result
 	
 	def get_artist_ids(self):
 		"""Returns a list of all artist ID's."""
-		c = self.db_conn.cursor()
+		c = self.db_session.cursor()
 		c.execute("""SELECT artist_id FROM artists""")
 		list = []
 		for row in c:
 			list.append(row[0])
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		return list
 		
 	def get_album_ids(self):
 		"""Returns a list of all album ID's."""
-		c = self.db_conn.cursor()
+		c = self.db_session.cursor()
 		c.execute("""SELECT album_id FROM albums""")
 		list = []
 		for row in c:
 			list.append(row[0])
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		return list
 
@@ -452,9 +446,9 @@ class AmpacheSession:
 	#######################################
 	def clear_cached_catalog(self):
 		"""Clear the cached catalog completely."""
-		c = self.db_conn.cursor()
+		c = self.db_session.cursor()
 		return_val = self.__clear_cached_catalog(c)
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		self.save_new_time()
 		return return_val
@@ -486,14 +480,14 @@ class AmpacheSession:
 	
 	def save_new_time(self):
 		"""Saves the last check time."""
-		c = self.db_conn.cursor()
+		c = self.db_session.cursor()
 		try:
 			result = self.__set_last_catalog_update_time(c, self.new_last_update_time)
 			self.is_catalog_up_to_date = True
 		except:
 			result = False
 			pass
-		self.db_conn.commit()
+		self.db_session.commit()
 		c.close()
 		return result
 	
@@ -531,14 +525,14 @@ class AmpacheSession:
 			else: # couldn't authenticate
 				return False
 		try: # add the artists to the database
-			c = self.db_conn.cursor()
+			c = self.db_session.cursor()
 			for child in nodes:
 				artist_name = child.getElementsByTagName('name')[0].childNodes[0].data
 				artist_id   = int(child.getAttribute('id'))
 				custom_artist_name = re.sub('^the |^a ', '', artist_name.lower())
 				c.execute("""INSERT INTO artists (artist_id, name, custom_name)
 						VALUES (?, ?, ?)""", [artist_id, artist_name, custom_artist_name])
-			self.db_conn.commit()
+			self.db_session.commit()
 			c.close()
 		except: # something failed
 			return False
@@ -567,9 +561,9 @@ class AmpacheSession:
 			else: # couldn't authenticate
 				return False
 		try:
-			c = self.db_conn.cursor()
+			c = self.db_session.cursor()
 			c.execute("""DELETE FROM albums WHERE artist_id = ?""", [artist_id])
-			self.db_conn.commit()
+			self.db_session.commit()
 			for child in nodes:
 				album_id    = int(child.getAttribute('id'))
 				album_name  = child.getElementsByTagName('name')[0].childNodes[0].data
@@ -580,7 +574,7 @@ class AmpacheSession:
 				album_year = int(album_year)
 				c.execute("""INSERT INTO albums (artist_id, album_id, name, year, stars)
 						VALUES (?,?,?,?,?)""", [artist_id, album_id, album_name, album_year, album_stars])
-			self.db_conn.commit()
+			self.db_session.commit()
 			c.close()
 		except: #something failed
 			return False
@@ -610,9 +604,9 @@ class AmpacheSession:
 				return False
 		### Now put the data in the database
 		try:
-			c = self.db_conn.cursor()
+			c = self.db_session.cursor()
 			c.execute("""DELETE FROM songs WHERE album_id = ?""", [album_id])
-			self.db_conn.commit()
+			self.db_session.commit()
 			for child in nodes:
 				song_id     = int(child.getAttribute('id'))
 				song_title  = child.getElementsByTagName('title')[0].childNodes[0].data
@@ -625,7 +619,7 @@ class AmpacheSession:
 						track, time, size, artist_name, album_name)
 						VALUES (?,?,?,?,?,?,?,?)
 						""", [album_id, song_id, song_title, song_track, song_time, song_size, artist_name, album_name])
-			self.db_conn.commit()
+			self.db_session.commit()
 			c.close()
 			# append to self.song.dict
 		except:
@@ -739,22 +733,3 @@ class AmpacheSession:
 			return False
 		return True
 		
-	def __table_is_empty(self, table_name, query_id=None):
-		"""Check to see if the table is empty."""
-		try:
-			c = self.db_conn.cursor()
-			if query_id == None: # checking the artists table
-				c.execute("""SELECT * FROM %s""" % table_name)
-			else: # check the songs or album table
-				if table_name == "albums": # albums
-					c.execute("""SELECT * FROM %s WHERE artist_id = ?""" % table_name, [query_id])
-				elif table_name == "songs":
-					c.execute("""SELECT * FROM %s WHERE album_id = ?""" % table_name, [query_id])
-			result = c.fetchone()
-			if result != None:
-				return False # not empty
-			self.db_conn.commit()
-			c.close()
-		except:
-			return True
-		return True

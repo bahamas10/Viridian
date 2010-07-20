@@ -49,7 +49,7 @@ class AmpacheGUI:
 		"""Method to call gtk.main() and display the GUI."""
 		gobject.idle_add(self.main_gui_callback)
 		### Status tray icon ####
-		self.tray_icon_to_display = self.__variable_get('tray_icon_to_display')
+		self.tray_icon_to_display = self.db_session.variable_get('tray_icon_to_display')
 		if self.tray_icon_to_display == None: # default to standard
 			self.tray_icon_to_display = "standard"
 			
@@ -72,7 +72,7 @@ class AmpacheGUI:
 				self.window.hide_on_delete()
 				self.create_dialog_alert("info", """Viridian is still running in the status bar.  If you do not want Viridian to continue running when the window is closed you can disable this in the preferences window.""", True)
 				self.first_time_closing = False
-				self.__variable_set('first_time_closing', 'False')
+				self.db_session.variable_set('first_time_closing', 'False')
 			else: 
 				self.window.hide_on_delete()
 		return True
@@ -81,7 +81,7 @@ class AmpacheGUI:
 		self.stop_pre_cache()
 		gtk.main_quit()
 
-	def __init__(self, ampache_conn, audio_engine):
+	def __init__(self, ampache_conn, audio_engine, db_session):
 		"""Constructor for the AmpacheGUI Class.
 		Takes an AmpacheSession object and an AudioEngine Object."""
 		#################################
@@ -89,6 +89,7 @@ class AmpacheGUI:
 		#################################
 		self.audio_engine = audio_engine
 		self.ampache_conn = ampache_conn
+		self.db_session   = db_session
 		
 
 		##################################
@@ -437,7 +438,7 @@ class AmpacheGUI:
 		self.ampache_conn.has_credentials() 
 		
 		# check repeat songs if the user wants it
-		repeat_songs = self.__variable_get('repeat_songs')
+		repeat_songs = self.db_session.variable_get('repeat_songs')
 		if repeat_songs:
 			repeat_songs_checkbutton.set_active(True)
 			self.audio_engine.set_repeat_songs(True)
@@ -447,20 +448,20 @@ class AmpacheGUI:
 		"""Function that gets called after GUI has loaded.
 		This loads all user variables into memory."""
 		### Display Notifications ###
-		self.display_notifications = self.__variable_get('display_notifications')
+		self.display_notifications = self.db_session.variable_get('display_notifications')
 		if self.display_notifications == None:
 			self.display_notifications = True
 		### Automatically Update Cache ###
-		self.automatically_update = self.__variable_get('automatically_update')
+		self.automatically_update = self.db_session.variable_get('automatically_update')
 		if self.automatically_update == None:
 			self.automatically_update = False
 		### Is first time closing application (alert user it is in status bar) ###
-		self.first_time_closing = self.__variable_get('first_time_closing')
+		self.first_time_closing = self.db_session.variable_get('first_time_closing')
 		if self.first_time_closing == None:
 			self.first_time_closing = True
 			
 		### Status tray variables ###
-		self.quit_when_window_closed = self.__variable_get('quit_when_window_closed')
+		self.quit_when_window_closed = self.db_session.variable_get('quit_when_window_closed')
 		if self.quit_when_window_closed == None:
 			self.quit_when_window_closed = False
 			
@@ -868,22 +869,22 @@ class AmpacheGUI:
 	def toggle_repeat_songs(self, widget, data=None):
 		"""Toggle repeat songs."""
 		self.audio_engine.set_repeat_songs(widget.get_active())
-		self.__variable_set('repeat_songs', widget.get_active())
+		self.db_session.variable_set('repeat_songs', widget.get_active())
 		
 	def toggle_display_notifications(self, widget, data=None):
 		"""Toggle displaying notify OSD notifications."""
 		self.display_notifications = widget.get_active()
-		self.__variable_set('display_notifications', widget.get_active())
+		self.db_session.variable_set('display_notifications', widget.get_active())
 		
 	def toggle_automatically_update(self, widget, data=None):
 		"""Toggle automatically updating the local cache."""
 		self.automatically_update = widget.get_active()
-		self.__variable_set('automatically_update', widget.get_active())
+		self.db_session.variable_set('automatically_update', widget.get_active())
 		
 	def toggle_quit_when_window_closed(self, widget, data=None):
 		"""Toggle to decide if the program quits or keeps running when the main window is closed."""
 		self.quit_when_window_closed = widget.get_active()
-		self.__variable_set('quit_when_window_closed', self.quit_when_window_closed)
+		self.db_session.variable_set('quit_when_window_closed', self.quit_when_window_closed)
 		
 	#######################################
 	# Radio Buttons
@@ -892,23 +893,23 @@ class AmpacheGUI:
 		if widget.get_active():
 			if name == "disabled":
 				self.quit_when_window_closed = True
-				self.__variable_set('quit_when_window_closed', self.quit_when_window_closed)
+				self.db_session.variable_set('quit_when_window_closed', self.quit_when_window_closed)
 				self.tray_icon_to_display = 'disabled'
-				self.__variable_set('tray_icon_to_display', self.tray_icon_to_display)
+				self.db_session.variable_set('tray_icon_to_display', self.tray_icon_to_display)
 				cb.set_active(True)
 				cb.set_sensitive(False)
 			elif name == "unified":
 				self.quit_when_window_closed = False
-				self.__variable_set('quit_when_window_closed', self.quit_when_window_closed)
+				self.db_session.variable_set('quit_when_window_closed', self.quit_when_window_closed)
 				self.tray_icon_to_display = 'unified'
-				self.__variable_set('tray_icon_to_display', self.tray_icon_to_display)
+				self.db_session.variable_set('tray_icon_to_display', self.tray_icon_to_display)
 				cb.set_sensitive(True)
 				cb.set_active(False)
 			elif name == "standard":
 				self.quit_when_window_closed = False
-				self.__variable_set('quit_when_window_closed', self.quit_when_window_closed)
+				self.db_session.variable_set('quit_when_window_closed', self.quit_when_window_closed)
 				self.tray_icon_to_display = 'standard'
-				self.__variable_set('tray_icon_to_display', self.tray_icon_to_display)
+				self.db_session.variable_set('tray_icon_to_display', self.tray_icon_to_display)
 				cb.set_sensitive(True)
 				cb.set_active(False)
 
@@ -1418,7 +1419,7 @@ class AmpacheGUI:
 		if hasattr(self, 'tray_icon'):
 			self.tray_icon.set_tooltip(message)
 			return True
-		return false
+		return False
 	
 	def stop_pre_cache(self):
 		"""Stop the precache."""
@@ -1589,50 +1590,4 @@ class AmpacheGUI:
 			return str(round(bytes / 1024, 1)) + ' KB'
 		elif bytes < 1024:
 			return str(bytes) + ' bytes'
-    
-	def __variable_set(self, var_name, var_value):
-		"""Save a variable in the database."""
-		try:
-			var_value = self.__convert_specials_to_strings(var_value)
-			c = self.ampache_conn.db_conn.cursor()
-			c.execute("""DELETE FROM variable WHERE name = ?""", [var_name])
-			c.execute("""INSERT INTO variable (name, value) VALUES (?, ?)""", [var_name, var_value])
-			self.ampache_conn.db_conn.commit()
-			c.close()
-		except:
-			return False
-		return True
-	
-	def __variable_get(self, var_name):
-		"""Retrieve a variable from the database."""
-		try:
-			c = self.ampache_conn.db_conn.cursor()
-			c.execute("""SELECT value FROM variable WHERE name = ?""", [var_name])
-			result = self.__convert_strings_to_specials(c.fetchone()[0])
-			
-			self.ampache_conn.db_conn.commit()
-			c.close()
-		except:
-			return None
-		return result
-	
-	def __convert_specials_to_strings(self, var_value):
-		"""Helper function to convert special variables (like None, True, False) to strings."""
-		if var_value == None:
-			var_value = "None"
-		elif var_value == False:
-			var_value = "False"
-		elif var_value == True:
-			var_value = "True"
-		return var_value
-		
-	def __convert_strings_to_specials(self, var_value):
-		"""Helper function to convert strings like None, True, and False to their special object counter-parts."""
-		if var_value == "None":
-			var_value = None
-		if var_value == "False":
-			var_value = False
-		if var_value == "True":
-			var_value = True
-			
-		return var_value
+
