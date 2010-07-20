@@ -65,10 +65,10 @@ class DatabaseSession:
 				elif table_name == "songs":
 					c.execute("""SELECT 1 FROM %s WHERE album_id = ? LIMIT 1""" % table_name, [query_id])
 			result = c.fetchone()
-			if result != None:
-				return False # not empty
 			self.db_conn.commit()
 			c.close()
+			if result != None:
+				return False # not empty
 		except:
 			return True
 		return True

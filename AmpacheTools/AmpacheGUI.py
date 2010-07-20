@@ -423,7 +423,7 @@ class AmpacheGUI:
 		# Status Bar
 		#################################
 		self.statusbar = gtk.Statusbar()
-		self.statusbar.set_has_resize_grip(False)
+		self.statusbar.set_has_resize_grip(True)
 		self.update_statusbar("Ready")
 
 		
@@ -434,8 +434,6 @@ class AmpacheGUI:
 		self.window.add(main_box)
 		self.window.show_all()
 		"""End Show All"""
-		# populate username and password fields
-		self.ampache_conn.has_credentials() 
 		
 		# check repeat songs if the user wants it
 		repeat_songs = self.db_session.variable_get('repeat_songs')
@@ -509,7 +507,6 @@ class AmpacheGUI:
 		
 		account_box.pack_start(hbox, False, False, 5)
 
-		
 		### Ampache URL ###
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
@@ -669,8 +666,7 @@ class AmpacheGUI:
 		
 		cb = gtk.CheckButton("Quit Viridian when window is closed")
 		cb.connect("toggled", self.toggle_quit_when_window_closed)
-		if self.quit_when_window_closed == True:
-			cb.set_active(True)
+		cb.set_active(self.quit_when_window_closed)
 		
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
@@ -716,7 +712,7 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("      "), False, False, 0)
 		
-		label = gtk.Label("Note: changes to the type of icon will take effect the next time this proram is opened.")
+		label = gtk.Label("Note: changes to the type of icon will take effect the next time this program is opened.")
 		label.set_line_wrap(True)
 		
 		hbox.pack_start(label, False, False, 4)
@@ -804,7 +800,6 @@ class AmpacheGUI:
 		show_window.connect('activate', self.status_icon_activate)
 		menu.append(show_window)
 		
-
 		### Display Song Info is song is playing ###
 		if self.audio_engine.get_state() == "playing":
 			menu.append(gtk.SeparatorMenuItem())
