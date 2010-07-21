@@ -347,11 +347,32 @@ class AmpacheSession:
 						'song_id'     : song_id,
 						'artist_name' : artist_name,
 						}
-			c.execute("""SELECT name, artist_id, stars FROM albums WHERE album_id = ?""", [song_dict['album_id']])
+			c.execute("""SELECT name, album_id, stars FROM albums 
+				WHERE album_id = ?""", [song_dict['album_id']])
 			data = c.fetchone()
 			song_dict['album_name']  = data[0]
 			song_dict['artist_id']   = data[1]
 			song_dict['album_stars'] = data[2]
+		except:
+			return None
+		self.db_session.commit()
+		c.close()
+		return song_dict
+		
+	def get_playlist_song_dict(self, song_id):
+		"""Returns a dictionary of one song with slightly less information (faster query)."""
+		try:
+			c = self.db_session.cursor()
+			c.execute("""SELECT title, artist_name, album_name FROM songs
+				WHERE song_id = ?""", [song_id])
+			for row in c:
+				song_title  = row[0]
+				artist_name = row[1]
+				album_name  = row[2]
+				song_dict = {   'song_title'  : song_title,
+						'artist_name' : artist_name,
+						'album_name'  : album_name,
+						}
 		except:
 			return None
 		self.db_session.commit()

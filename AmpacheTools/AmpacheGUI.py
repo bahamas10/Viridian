@@ -182,8 +182,22 @@ class AmpacheGUI:
 		viewm = gtk.MenuItem("_View")
 		viewm.set_submenu(view_menu)
 
+		newi = gtk.CheckMenuItem("Show Playlist")
+		show_playlist = self.db_session.variable_get('show_playlist')
+		if show_playlist == None:
+			show_playlist = False
+		newi.set_active(show_playlist)
+		newi.connect("activate", self.toggle_playlist_view)
+		view_menu.append(newi)
+		
+		sep = gtk.SeparatorMenuItem()
+		view_menu.append(sep)
+
 		newi = gtk.CheckMenuItem("View Statusbar")
-		newi.set_active(True)
+		view_statusbar = self.db_session.variable_get('view_statusbar')
+		if view_statusbar == None:
+			view_statusbar = True
+		newi.set_active(view_statusbar)
 		newi.connect("activate", self.toggle_statusbar_view)
 		view_menu.append(newi)
 
@@ -308,6 +322,44 @@ class AmpacheGUI:
 		#################################
 		# Middle Section
 		#################################
+		hpaned = gtk.HPaned()
+		hpaned.set_position(270)
+		
+		#################################
+		# Playlist
+		#################################
+		self.playlist_window = gtk.VBox()
+					
+		# str, title - artist - album, song_id
+		self.playlist_list_store = gtk.ListStore(str, str, int)
+
+		tree_view = gtk.TreeView(self.playlist_list_store)
+		tree_view.connect("row-activated", self.playlist_on_activated)
+		tree_view.set_rules_hint(True)
+		
+		new_column = self.__create_column("    ", 0)
+		new_column.set_reorderable(False)
+		new_column.set_resizable(False)
+		new_column.set_clickable(False)
+		new_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+		new_column.set_fixed_width(20)
+		tree_view.append_column(new_column)
+		
+		new_column = self.__create_column("Current Playlist", 1)
+		new_column.set_reorderable(False)
+		new_column.set_resizable(False)
+		new_column.set_clickable(False)
+		new_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+		tree_view.append_column(new_column)
+		
+		self.playlist_window.pack_start(tree_view)
+		
+		hpaned.pack1(self.playlist_window)
+		
+		####################################
+		# Artists/Albums/Songs
+		####################################
+		
 		middle_vpaned = gtk.VPaned()
 		middle_vpaned.set_position(170)
 		
@@ -414,7 +466,9 @@ class AmpacheGUI:
 		middle_vpaned.pack1(middle_top)
 		middle_vpaned.pack2(songs_scrolled_window)
 		
-		main_box.pack_start(middle_vpaned, True, True, 0)
+		hpaned.pack2(middle_vpaned)
+		
+		main_box.pack_start(hpaned, True, True, 0)
 	
 		"""End Middle"""	
 
@@ -433,6 +487,10 @@ class AmpacheGUI:
 		"""Show All"""
 		self.window.add(main_box)
 		self.window.show_all()
+		if show_playlist == False:
+			self.playlist_window.hide()
+		if view_statusbar == False:
+			self.statusbar.hide()
 		"""End Show All"""
 		
 		# check repeat songs if the user wants it
@@ -860,6 +918,15 @@ class AmpacheGUI:
 			self.statusbar.show()
 		else:
 			self.statusbar.hide()
+		self.db_session.variable_set('view_statusbar', widget.active)
+			
+	def toggle_playlist_view(self, widget, data=None):
+		"""Toggle the playlist."""
+		if widget.active:
+			self.playlist_window.show()
+		else:
+			self.playlist_window.hide()
+		self.db_session.variable_set('show_playlist', widget.active)
 			
 	def toggle_repeat_songs(self, widget, data=None):
 		"""Toggle repeat songs."""
@@ -1050,18 +1117,16 @@ class AmpacheGUI:
 			list.append(song[6])
 			
 		print "Sending this list of songs to player", list
-		
 		self.audio_engine.play_from_list_of_songs(list)
-		# set the image to pause
-		self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
+
 		
 
 	def songs_on_activated(self, widget, row, col):
 		"""The function that runs when the user double-clicks a song."""
 		model = widget.get_model()
 		
-		self.song_title = model[row][1]
-		self.song_id    = model[row][6]
+		song_title = model[row][1]
+		song_id    = model[row][6]
 
 		list = []
 		for song in model:
@@ -1070,12 +1135,12 @@ class AmpacheGUI:
 		song_num = row[0]
 		
 		print "Sending this list of songs to player", list
-		
-
 		self.audio_engine.play_from_list_of_songs(list, song_num)
-
-		# set the image to pause
-		self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
+		
+	def playlist_on_activated(self, widget, row, col):
+		"""The function that runs when the user double-clicks a song in the playlist."""
+		song_num = row[0]
+		self.audio_engine.change_song(song_num)
 
 
 	#######################################
@@ -1185,6 +1250,9 @@ class AmpacheGUI:
 		if answer != "ok":
 			return False
 		self.button_pre_cache_locked = True
+		gobject.idle_add(self.__button_pre_cache_info_clicked)
+		
+	def __button_pre_cache_info_clicked(self, widget=None, data=None):
 		self.pre_cache_continue = True # this will be set to false if this function should stop
 		try:
 			start_time = int(time.time())
@@ -1225,7 +1293,6 @@ class AmpacheGUI:
 			self.button_pre_cache_locked = False
 			return False
 		self.button_pre_cache_locked = False
-		return True
 		
 	def button_album_art_clicked(self, widget, data=None):
 		"""Re-download the album art if the user clicks it."""
@@ -1331,11 +1398,17 @@ class AmpacheGUI:
 	#######################################
 	def audioengine_song_changed(self, song_id):
 		"""The function that gets called when the AudioEngine changes songs."""
+		gobject.idle_add(self.__audioengine_song_changed, song_id)
+		
+	def __audioengine_song_changed(self, song_id):
+		"""The function that gets called when the AudioEngine changes songs."""
 		if song_id == None: # nothing playing
 			self.current_song_info = None
 			self.play_pause_image.set_from_pixbuf(self.images_pixbuf_play)
 			self.set_tray_tooltip('Viridian')
-			return True
+			self.playlist_list_store.clear()
+			return False
+		self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
 		self.current_song_info = self.ampache_conn.get_single_song_dict(song_id)
 		print self.current_song_info # DEBUG
 		song_title  = self.current_song_info['song_title']
@@ -1379,6 +1452,22 @@ class AmpacheGUI:
 			else:
 				self.rating_stars_list[i].set_from_pixbuf(self.images_pixbuf_gray_star)
 			i += 1
+		self.update_playlist_window(song_id)
+			
+	def update_playlist_window(self, song_id):
+		gobject.idle_add(self.__update_playlist_window, song_id)		
+			
+	def __update_playlist_window(self, song_id):
+		cur_playlist = self.audio_engine.get_playlist()
+		self.playlist_list_store.clear()
+		for temp_song_id in cur_playlist:
+			cur_song = self.ampache_conn.get_playlist_song_dict(temp_song_id)
+			cur_string = cur_song['song_title'] + ' - ' + cur_song['artist_name'] + ' - ' + cur_song['album_name']
+			now_playing = "  "
+			if song_id == temp_song_id:
+				now_playing = ">"
+			self.playlist_list_store.append([now_playing, cur_string, temp_song_id])
+			
 			
 	#######################################
 	# Ampache Session Callback

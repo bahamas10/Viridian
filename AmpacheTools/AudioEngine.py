@@ -127,6 +127,21 @@ class AudioEngine:
 			return False
 		return True
 	
+	def change_song(self, song_num):
+		self.play_from_list_of_songs(self.songs_list, song_num)
+	
+	def remove_from_playlist(self, song_id):
+		try:
+			self.songs_list.remove(song_id)
+		except:
+			return False
+		return True
+	
+	def insert_into_playlist(self, song_id, song_num=None):
+		if song_num == None:
+			self.songs_list.append(song_id)
+		else:
+			self.songs_list.insert(song_num, song_id)
 	
 	def prev_track(self):
 		"""Tells the player to go back a song in the playlist.
