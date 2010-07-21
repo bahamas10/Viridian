@@ -1293,6 +1293,7 @@ class AmpacheGUI:
 			self.button_pre_cache_locked = False
 			return False
 		self.button_pre_cache_locked = False
+		return False
 		
 	def button_album_art_clicked(self, widget, data=None):
 		"""Re-download the album art if the user clicks it."""
