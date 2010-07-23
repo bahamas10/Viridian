@@ -27,8 +27,11 @@ class AudioEngine:
 		# Variables
 		##################################
 		self.ampache_conn = ampache_conn
-		# set the engine to default to no repeat
-		self.repeat_songs = False
+		self.repeat_songs = False # default
+		
+		self.songs_list = []
+		self.song_num = -1
+		
 		# create a playbin (plays media form an uri)
 		self.player = gst.element_factory_make("playbin", "player")
 		bus = self.player.get_bus()
@@ -104,6 +107,15 @@ class AudioEngine:
 	def get_current_song(self):
 		"""Returns the current playing songs position in the list."""
 		return self.song_num
+	
+	def get_current_song_id(self):
+		"""Returns the current playing song_id or None."""
+		try:
+			if self.song_num == -1:
+				return None
+			return self.songs_list[self.song_num]
+		except:
+			return None
 		
 	def set_repeat_songs(self, value): # must be True or False
 		"""Set songs to repeat.  Takes True or False."""
@@ -112,6 +124,12 @@ class AudioEngine:
 		except:
 			return False
 		return True
+	
+	def clear_playlist(self, data=None):
+		self.stop()
+		self.songs_list = []
+		self.song_num = -1
+		self.ampache_gui.audioengine_song_changed(None)
 	
 	def stop(self): 
 		"""Tells the player to stop."""

@@ -79,7 +79,10 @@ class AmpacheGUI:
 
 	def destroy(self, widget=None, data=None):
 		self.stop_pre_cache()
+		size = self.window.get_size()
 		gtk.main_quit()
+		self.db_session.variable_set('window_size_width',  size[0])
+		self.db_session.variable_set('window_size_height', size[1])
 
 	def __init__(self, ampache_conn, audio_engine, db_session):
 		"""Constructor for the AmpacheGUI Class.
@@ -90,7 +93,6 @@ class AmpacheGUI:
 		self.audio_engine = audio_engine
 		self.ampache_conn = ampache_conn
 		self.db_session   = db_session
-		
 
 		##################################
 		# Load Images
@@ -110,7 +112,13 @@ class AmpacheGUI:
 		self.window.connect("delete_event", self.delete_event)
 		self.window.connect("destroy", self.destroy)
 		self.window.set_title("Viridian")
-		self.window.resize(900,600)
+		width = int(self.db_session.variable_get('window_size_width'))
+		if width == None:
+			width = 900
+		height = int(self.db_session.variable_get('window_size_height'))
+		if height == None:
+			height = 600
+		self.window.resize(width, height)
 
 		main_box = gtk.VBox()
 		
@@ -329,7 +337,11 @@ class AmpacheGUI:
 		# Playlist
 		#################################
 		self.playlist_window = gtk.VBox()
-					
+		
+		playlist_scrolled_window = gtk.ScrolledWindow()
+		playlist_scrolled_window.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+		playlist_scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+			
 		# str, title - artist - album, song_id
 		self.playlist_list_store = gtk.ListStore(str, str, int)
 
@@ -353,7 +365,18 @@ class AmpacheGUI:
 		new_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
 		tree_view.append_column(new_column)
 		
-		self.playlist_window.pack_start(tree_view)
+		playlist_scrolled_window.add(tree_view)
+		
+		self.playlist_window.pack_start(playlist_scrolled_window)
+		
+		hbox = gtk.HBox()
+		
+		button = gtk.Button("Clear Playlist")
+		button.connect('clicked', self.audio_engine.clear_playlist)
+		
+		hbox.pack_start(button, False, False, 2)
+		
+		self.playlist_window.pack_start(hbox, False, False, 2)
 		
 		hpaned.pack1(self.playlist_window)
 		
@@ -409,6 +432,7 @@ class AmpacheGUI:
 
 		tree_view.connect("cursor-changed", self.albums_cursor_changed)
 		tree_view.connect("row-activated",  self.albums_on_activated)
+		tree_view.connect("button_press_event", self.albums_on_right_click)
 		tree_view.set_search_column(0)
 		
 		albums_scrolled_window.add(tree_view)
@@ -437,6 +461,7 @@ class AmpacheGUI:
 
 		tree_view = gtk.TreeView(self.song_list_store)
 		tree_view.connect("row-activated", self.songs_on_activated)
+		tree_view.connect("button_press_event", self.songs_on_right_click)
 		tree_view.set_rules_hint(True)
 		tree_view.set_search_column(1)
 		
@@ -1090,7 +1115,6 @@ class AmpacheGUI:
 			if album_year == 0:
 				album_string = album_name
 			model.append([album_string, album_id, album_year, album_stars])
-			print "Found album %s -- year = %s -- rating = %d"  % (album_name, album_year, album_stars)
 		self.update_statusbar(self.artist_name)
 		
 
@@ -1188,6 +1212,39 @@ class AmpacheGUI:
 				m.append(i)
 				m.show_all()
 				m.popup(None, None, None, event.button, event.time, None)
+				
+	def albums_on_right_click(self, treeview, event, data=None):
+		if event.button == 3:
+			x = int(event.x)
+			y = int(event.y)
+			pthinfo = treeview.get_path_at_pos(x, y)
+			if pthinfo != None:
+				path, col, cellx, celly = pthinfo
+				# create popup
+				album_id = treeview.get_model()[path][1]
+				m = gtk.Menu()
+				i = gtk.MenuItem("Add Album to Playlist")
+				i.connect('activate', self.add_album_to_playlist)
+				m.append(i)
+				m.show_all()
+				m.popup(None, None, None, event.button, event.time, None)
+	
+	def songs_on_right_click(self, treeview, event, data=None):
+		if event.button == 3:
+			x = int(event.x)
+			y = int(event.y)
+			pthinfo = treeview.get_path_at_pos(x, y)
+			if pthinfo != None:
+				path, col, cellx, celly = pthinfo
+				# create popup
+				song_id = treeview.get_model()[path][6]
+				m = gtk.Menu()
+				i = gtk.MenuItem("Add Song to Playlist")
+				i.connect('activate', self.add_song_to_playlist, song_id)
+				m.append(i)
+				m.show_all()
+				m.popup(None, None, None, event.button, event.time, None)
+				
 	
 			
 
@@ -1500,7 +1557,7 @@ class AmpacheGUI:
 			else:
 				self.rating_stars_list[i].set_from_pixbuf(self.images_pixbuf_gray_star)
 			i += 1
-		self.update_playlist_window(song_id)
+		self.update_playlist_window()
 	
 			
 			
@@ -1550,12 +1607,21 @@ class AmpacheGUI:
 			return True
 		return False
 			
+	def add_album_to_playlist(self, widget):
+		for song in self.song_list_store:
+			self.audio_engine.insert_into_playlist(song[6])
+		self.update_playlist_window()
+		return True
+			
+		
+	def add_song_to_playlist(self, widget, song_id):
+		self.audio_engine.insert_into_playlist(song_id)
+		self.update_playlist_window()
+		return True
+			
+			
 	def remove_from_playlist(self, widget, song_id, treeview):
 		"""Remove a song from the current playlist."""
-		if widget is treeview:
-			print "awesome"
-		if song_id == None:
-			song_id = data
 		if self.audio_engine.remove_from_playlist(song_id):
 			selection = treeview.get_selection()
 			result = selection.get_selected()
@@ -1572,20 +1638,23 @@ class AmpacheGUI:
 		while gtk.events_pending():
 			gtk.main_iteration()
 			
-	def update_playlist_window(self, song_id):
+	def update_playlist_window(self):
 		"""Updates the playlist window with the current playing songs."""
-		gobject.idle_add(self.__update_playlist_window, song_id)		
+		gobject.idle_add(self.__update_playlist_window)		
 			
-	def __update_playlist_window(self, song_id):
+	def __update_playlist_window(self):
 		cur_playlist = self.audio_engine.get_playlist()
+		cur_song_num = self.audio_engine.get_current_song()
 		self.playlist_list_store.clear()
+		i = 0
 		for temp_song_id in cur_playlist:
 			cur_song = self.ampache_conn.get_playlist_song_dict(temp_song_id)
 			cur_string = cur_song['song_title'] + ' - ' + cur_song['artist_name'] + ' - ' + cur_song['album_name']
 			now_playing = "  "
-			if song_id == temp_song_id:
+			if i == cur_song_num:
 				now_playing = ">"
 			self.playlist_list_store.append([now_playing, cur_string, temp_song_id])
+			i += 1
 			
 		
 		
@@ -1741,7 +1810,6 @@ class AmpacheGUI:
 			song_size = self.__human_readable_filesize(float(song_size))
 			
 			model.append([song_track, song_title, artist_name, album_name, song_time, song_size, song_id])
-			print "Found song %s track %d time %s size %s" % (song_title, song_track, song_time, song_size)
 		return True
 
 	def __create_single_column_tree_view(self, column_name, model, sort_column=None):
