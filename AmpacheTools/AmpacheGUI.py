@@ -112,12 +112,14 @@ class AmpacheGUI:
 		self.window.connect("delete_event", self.delete_event)
 		self.window.connect("destroy", self.destroy)
 		self.window.set_title("Viridian")
-		width = int(self.db_session.variable_get('window_size_width'))
+		width = self.db_session.variable_get('window_size_width')
 		if width == None:
 			width = 900
-		height = int(self.db_session.variable_get('window_size_height'))
+		height = self.db_session.variable_get('window_size_height')
 		if height == None:
 			height = 600
+		height = int(height)
+		width  = int(width)
 		self.window.resize(width, height)
 
 		main_box = gtk.VBox()
