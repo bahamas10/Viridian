@@ -69,12 +69,12 @@ class AmpacheGUI:
 			self.destroy()
 		else:
 			if self.first_time_closing:
-				self.window.hide_on_delete()
+				self.main_gui_toggle_hidden()
 				self.create_dialog_alert("info", """Viridian is still running in the status bar.  If you do not want Viridian to continue running when the window is closed you can disable this in the preferences window.""", True)
 				self.first_time_closing = False
 				self.db_session.variable_set('first_time_closing', 'False')
 			else: 
-				self.window.hide_on_delete()
+				self.main_gui_toggle_hidden()
 		return True
 
 	def destroy(self, widget=None, data=None):
@@ -83,7 +83,7 @@ class AmpacheGUI:
 
 	def __init__(self, ampache_conn, audio_engine, db_session):
 		"""Constructor for the AmpacheGUI Class.
-		Takes an AmpacheSession object and an AudioEngine Object."""
+		Takes an AmpacheSession Object, an AudioEngine Object and a DatabaseSession Object."""
 		#################################
 		# Set Variables
 		#################################
@@ -133,7 +133,6 @@ class AmpacheGUI:
 		
 		sep = gtk.SeparatorMenuItem()
 		file_menu.append(sep)
-
 		
 		newi = gtk.MenuItem("Clear Album Art")
 		newi.connect("activate", self.button_clear_album_art_clicked)
@@ -297,6 +296,7 @@ class AmpacheGUI:
 		
 		event_box_album = gtk.EventBox()
 		event_box_album.connect("button_release_event", self.button_album_art_clicked)
+		#event_box_album.connect("button_release_event", self.button_album_art_clicked)
 		event_box_album.add(self.album_art_image)
 		
 		hbox = gtk.HBox()
@@ -335,6 +335,7 @@ class AmpacheGUI:
 
 		tree_view = gtk.TreeView(self.playlist_list_store)
 		tree_view.connect("row-activated", self.playlist_on_activated)
+		tree_view.connect("button_press_event", self.playlist_on_right_click)
 		tree_view.set_rules_hint(True)
 		
 		new_column = self.__create_column("    ", 0)
@@ -483,9 +484,9 @@ class AmpacheGUI:
 		
 		main_box.pack_start(self.statusbar, False, False, 0)
 		"""End status bar"""
-
-		"""Show All"""
 		self.window.add(main_box)
+		"""Show All"""
+		
 		self.window.show_all()
 		if show_playlist == False:
 			self.playlist_window.hide()
@@ -515,7 +516,6 @@ class AmpacheGUI:
 		self.first_time_closing = self.db_session.variable_get('first_time_closing')
 		if self.first_time_closing == None:
 			self.first_time_closing = True
-			
 		### Status tray variables ###
 		self.quit_when_window_closed = self.db_session.variable_get('quit_when_window_closed')
 		if self.quit_when_window_closed == None:
@@ -529,19 +529,45 @@ class AmpacheGUI:
 			self.update_statusbar("Set Ampache information by going to Edit -> Preferences") 
 			if self.ampache_conn.is_first_time():
 				self.create_dialog_alert("info", """This looks like the first time you are running Viridian.  To get started, go to Edit -> Preferences and set your account information.""", True)
-
+				
+	def main_gui_toggle_hidden(self):
+		if self.window.is_active():
+			self.window.hide_on_delete()
+		else:	
+			show_playlist = self.db_session.variable_get('show_playlist')
+			if show_playlist == None:
+				show_playlist = False
+			view_statusbar = self.db_session.variable_get('view_statusbar')
+			if view_statusbar == None:
+				view_statusbar = True
+				
+			self.window.grab_focus()
+			self.window.show_all()
+			if show_playlist == False:
+				self.playlist_window.hide()
+			if view_statusbar == False:
+				self.statusbar.hide()
+			self.window.present()
 			
+
 	def show_settings(self, widget, data=None):
 		"""The settings pane"""
 		#################################
 		# Settings Window
 		#################################
-		preferences_window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-		preferences_window.set_transient_for(self.window)
-		preferences_window.set_title("Viridian Settings")
-		preferences_window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
-		preferences_window.resize(450, 300)
-		
+		if hasattr(self, 'preferences_window'):
+			if self.preferences_window != None:
+				self.preferences_window.present()
+				return True
+				
+		self.preferences_window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.preferences_window.set_transient_for(self.window)
+		self.preferences_window.set_title("Viridian Settings")
+		self.preferences_window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
+		self.preferences_window.resize(450, 300)
+		self.preferences_window.set_resizable(False)
+		self.preferences_window.connect("delete_event", self.destroy_settings)
+		self.preferences_window.connect("destroy", self.destroy_settings)
 		
 		main_vbox = gtk.VBox(False, 8)
 		main_vbox.set_border_width(10)
@@ -618,7 +644,7 @@ class AmpacheGUI:
 		account_box.pack_start(hbox, False, False, 2)
 		
 		save = gtk.Button(stock=gtk.STOCK_SAVE)
-		save.connect("clicked", self.button_save_preferences_clicked, preferences_window)
+		save.connect("clicked", self.button_save_preferences_clicked, self.preferences_window)
 		
 		hbox = gtk.HBox()
 		
@@ -827,27 +853,29 @@ class AmpacheGUI:
 		bottom_bar = gtk.HBox()
 		
 		close = gtk.Button(stock=gtk.STOCK_CLOSE)
-		close.connect("clicked", self.button_cancel_preferences_clicked, preferences_window)
+		close.connect("clicked", self.button_cancel_preferences_clicked, self.preferences_window)
 		
 		bottom_bar.pack_end(close, False, False, 2)
 		"""End Bottom Bar"""
-
 
 		main_vbox.pack_start(notebook)
 		main_vbox.pack_start(bottom_bar, False, False, 2)
 
 		"""End bottom row"""
-		preferences_window.add(main_vbox)
-		preferences_window.show_all()
+		self.preferences_window.add(main_vbox)
+		self.preferences_window.show_all()
+		
+	def destroy_settings(self, widget=None, data=None):
+		self.preferences_window.destroy()
+		self.preferences_window = None
+		
 
 	#######################################
 	# Status Icon 
 	#######################################
 	def status_icon_activate(self, icon=None):
 		"""Bring the window back up when the user clicks the sys tray icon."""
-		self.window.grab_focus()
-		self.window.show_all()
-		self.window.present()
+		self.main_gui_toggle_hidden()
 				
 
 	def status_icon_popup_menu(self, icon, button, activate_time):
@@ -989,7 +1017,7 @@ class AmpacheGUI:
 		ampache  = self.ampache_conn.url
 		username = self.ampache_conn.username
 		password = self.ampache_conn.password
-		print "--- Attempitng to login to Ampache ---"
+		print "--- Attempting to login to Ampache ---"
 		print "Ampache  = %s" % ampache
 		print "Username = %s" % username
 		print "Password = " + len(password)*"*"
@@ -1141,7 +1169,27 @@ class AmpacheGUI:
 		"""The function that runs when the user double-clicks a song in the playlist."""
 		song_num = row[0]
 		self.audio_engine.change_song(song_num)
-
+		
+	#######################################
+	# Selection Methods (right-click)
+	#######################################
+	def playlist_on_right_click(self, treeview, event, data=None):
+		if event.button == 3:
+			x = int(event.x)
+			y = int(event.y)
+			pthinfo = treeview.get_path_at_pos(x, y)
+			if pthinfo != None:
+				path, col, cellx, celly = pthinfo
+				# create popup
+				song_id = treeview.get_model()[path][2]
+				m = gtk.Menu()
+				i = gtk.MenuItem("Remove From Playlist")
+				i.connect('activate', self.remove_from_playlist, song_id, treeview)
+				m.append(i)
+				m.show_all()
+				m.popup(None, None, None, event.button, event.time, None)
+	
+			
 
 	#######################################
 	# Button Clicked Methods
@@ -1169,7 +1217,7 @@ class AmpacheGUI:
 		if self.ampache_conn.set_credentials(url, username, password): # credentials saved
 			self.update_statusbar("Saved Credentials")
 			print "Credentials Saved"
-			window.destroy()
+			self.destroy_settings(window)
 			self.login_and_get_artists()
 		else:
 			self.update_statusbar("Couldn't save credentials!")
@@ -1180,7 +1228,7 @@ class AmpacheGUI:
 	def button_cancel_preferences_clicked(self, widget, data=None):
 		"""Destroy the preferences window."""
 		window = data
-		window.destroy()
+		self.destroy_settings(window)
 
 	def button_reauthenticate_clicked(self, widget=None, data=None):
 		"""Reauthenticate button clicked."""
@@ -1190,13 +1238,15 @@ class AmpacheGUI:
 		"""The play/pause has been clicked."""
 		state = self.audio_engine.get_state()
 		if state == "stopped" or state == None:
-			return
+			return True
 		elif state == "playing":
 			self.audio_engine.pause()
 			self.play_pause_image.set_from_pixbuf(self.images_pixbuf_play)
+			self.set_tray_icon(None)
 		else:
 			if self.audio_engine.play():
 				self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
+				self.set_tray_icon(self.album_art_image.get_pixbuf())
 
 		
 	def button_prev_clicked(self, widget, data=None):
@@ -1295,37 +1345,32 @@ class AmpacheGUI:
 		self.button_pre_cache_locked = False
 		return False
 		
-	def button_album_art_clicked(self, widget, data=None):
-		"""Re-download the album art if the user clicks it."""
-		try: # check to see if this function is running
-			if self.button_album_art_locked == True:
-				print "Already Running"
-				return False
-		except:
-			pass
-		self.button_album_art_locked = True
-		print "Re-Fetching album art... ",
-		self.update_statusbar("Re-Fetching album art...")
-		try:
-			album_id   = self.current_song_info['album_id']
-			art_folder = self.ampache_conn.art_folder
-			art_file   = art_folder + os.sep + str(album_id)
-			album_art  = self.ampache_conn.get_album_art(album_id)
-			response   = urllib2.urlopen(album_art)
-			f = open(art_file, 'w')
-			f.write(response.read())
-			f.close()
-			image_pixbuf = self.__create_image_pixbuf(art_file, ALBUM_ART_SIZE)
-			self.album_art_image.set_from_pixbuf(image_pixbuf)
-			print "Done!"
-		except: 
-			self.update_statusbar("Re-Fetching album art... Failed!")
-			print "Failed!"
-			self.button_album_art_locked = False
-			return False
-		self.update_statusbar("Re-Fetching album art... Success!")
-		self.button_album_art_locked = False
-		return True
+	def button_album_art_clicked(self, widget, event=None, data=None):
+		"""Handle event box events for the album art."""
+		if event.button == 3:
+			self.__button_album_art_right_clicked(widget, event, data)
+			# right click
+		else: 
+			self.__button_album_art_left_clicked(widget, event, data)
+			# left click
+			
+	def __button_album_art_left_clicked(self, widget, event, data):
+		"""Left click on album art."""
+		self.__re_fetch_album_art()
+		
+	def __button_album_art_right_clicked(self, widget, event, data):
+		"""Right click on album art."""
+		# create popup
+		m = gtk.Menu()
+		i = gtk.MenuItem("Open Image")
+		i.connect('activate', lambda x: os.popen("gnome-open '%s' &" % (self.current_album_art_file)))
+		m.append(i)
+		i = gtk.MenuItem("Refresh Album Art")
+		i.connect('activate', self.__re_fetch_album_art)
+		m.append(i)
+		m.show_all()
+		m.popup(None, None, None, event.button, event.time, None)
+		return False 
 	
 	#######################################
 	# Dialogs
@@ -1407,6 +1452,7 @@ class AmpacheGUI:
 			self.current_song_info = None
 			self.play_pause_image.set_from_pixbuf(self.images_pixbuf_play)
 			self.set_tray_tooltip('Viridian')
+			self.set_tray_icon(None)
 			self.playlist_list_store.clear()
 			return False
 		self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
@@ -1420,30 +1466,31 @@ class AmpacheGUI:
 		self.current_album_label.set_text(  album_name  )
 		### Update the statusbar and tray icon ###
 		self.set_tray_tooltip(song_title + ' - ' + artist_name)
-		self.update_statusbar(song_title + " - " + artist_name)
+		self.update_statusbar(song_title + ' - ' + artist_name)
 		
 		### Get the album Art ###
 		album_id   = self.current_song_info['album_id']
 		art_folder = self.ampache_conn.art_folder
-		art_file   = art_folder + os.sep + str(album_id)
-		if os.path.isfile(art_file):
+		self.current_album_art_file = art_folder + os.sep + str(album_id)
+		if os.path.isfile(self.current_album_art_file):
 			print "Album art exists locally"
 		else:
 			print "Fetching album art... ",
 			album_art = self.ampache_conn.get_album_art(album_id)
 			response = urllib2.urlopen(album_art)
-			f = open(art_file, 'w')
+			f = open(self.current_album_art_file, 'w')
 			f.write(response.read())
 			f.close()
 			print "Done!"
 		# now create a pixel buffer for the image and set it in the GUI
-		image_pixbuf = self.__create_image_pixbuf(art_file, ALBUM_ART_SIZE)
+		image_pixbuf = self.__create_image_pixbuf(self.current_album_art_file, ALBUM_ART_SIZE)
 		self.album_art_image.set_from_pixbuf(image_pixbuf)
+		self.set_tray_icon(image_pixbuf)
 		
 		self.update_statusbar(song_title + " - " + artist_name) # refresh
 		
 		### Send notifications OSD ###
-		self.notification("Now Playing", song_title + ' - ' + artist_name, art_file)
+		self.notification("Now Playing", song_title + ' - ' + artist_name, self.current_album_art_file)
 		# rating stars
 		stars = self.current_song_info['album_stars']
 		i = 0
@@ -1454,20 +1501,7 @@ class AmpacheGUI:
 				self.rating_stars_list[i].set_from_pixbuf(self.images_pixbuf_gray_star)
 			i += 1
 		self.update_playlist_window(song_id)
-			
-	def update_playlist_window(self, song_id):
-		gobject.idle_add(self.__update_playlist_window, song_id)		
-			
-	def __update_playlist_window(self, song_id):
-		cur_playlist = self.audio_engine.get_playlist()
-		self.playlist_list_store.clear()
-		for temp_song_id in cur_playlist:
-			cur_song = self.ampache_conn.get_playlist_song_dict(temp_song_id)
-			cur_string = cur_song['song_title'] + ' - ' + cur_song['artist_name'] + ' - ' + cur_song['album_name']
-			now_playing = "  "
-			if song_id == temp_song_id:
-				now_playing = ">"
-			self.playlist_list_store.append([now_playing, cur_string, temp_song_id])
+	
 			
 			
 	#######################################
@@ -1506,6 +1540,29 @@ class AmpacheGUI:
 			return True
 		return False
 	
+	def set_tray_icon(self, pixbuf):
+		"""Set the tray icon to a pixbuf."""
+		if hasattr(self, 'tray_icon'):
+			if pixbuf == None:
+				self.tray_icon.set_from_stock(gtk.STOCK_ABOUT)
+			else:
+				self.tray_icon.set_from_pixbuf(pixbuf)
+			return True
+		return False
+			
+	def remove_from_playlist(self, widget, song_id, treeview):
+		"""Remove a song from the current playlist."""
+		if widget is treeview:
+			print "awesome"
+		if song_id == None:
+			song_id = data
+		if self.audio_engine.remove_from_playlist(song_id):
+			selection = treeview.get_selection()
+			result = selection.get_selected()
+			if result: #result could be None
+				model, iter = result
+				model.remove(iter)
+
 	def stop_pre_cache(self):
 		"""Stop the precache."""
 		self.pre_cache_continue = False
@@ -1514,6 +1571,23 @@ class AmpacheGUI:
 		"""Refresh the GUI by calling gtk.main_iteration(). """
 		while gtk.events_pending():
 			gtk.main_iteration()
+			
+	def update_playlist_window(self, song_id):
+		"""Updates the playlist window with the current playing songs."""
+		gobject.idle_add(self.__update_playlist_window, song_id)		
+			
+	def __update_playlist_window(self, song_id):
+		cur_playlist = self.audio_engine.get_playlist()
+		self.playlist_list_store.clear()
+		for temp_song_id in cur_playlist:
+			cur_song = self.ampache_conn.get_playlist_song_dict(temp_song_id)
+			cur_string = cur_song['song_title'] + ' - ' + cur_song['artist_name'] + ' - ' + cur_song['album_name']
+			now_playing = "  "
+			if song_id == temp_song_id:
+				now_playing = ">"
+			self.playlist_list_store.append([now_playing, cur_string, temp_song_id])
+			
+		
 		
 	#######################################
 	# Private Methods
@@ -1607,6 +1681,37 @@ class AmpacheGUI:
 		self.song_list_store.clear()
 		self.album_list_store.clear()
 		self.artist_list_store.clear()
+		
+	def __re_fetch_album_art(self, data=None):
+		try: # check to see if this function is running
+			if self.button_album_art_locked == True:
+				print "Already Running"
+				return False
+		except:
+			pass
+		self.button_album_art_locked = True
+		print "Re-Fetching album art... ",
+		self.update_statusbar("Re-Fetching album art...")
+		try:
+			album_id   = self.current_song_info['album_id']
+			art_folder = self.ampache_conn.art_folder
+			art_file   = art_folder + os.sep + str(album_id)
+			album_art  = self.ampache_conn.get_album_art(album_id)
+			response   = urllib2.urlopen(album_art)
+			f = open(art_file, 'w')
+			f.write(response.read())
+			f.close()
+			image_pixbuf = self.__create_image_pixbuf(art_file, ALBUM_ART_SIZE)
+			self.album_art_image.set_from_pixbuf(image_pixbuf)
+			print "Done!"
+		except: 
+			self.update_statusbar("Re-Fetching album art... Failed!")
+			print "Failed!"
+			self.button_album_art_locked = False
+			return False
+		self.update_statusbar("Re-Fetching album art... Success!")
+		self.button_album_art_locked = False
+		return True
 
 	def __add_songs_to_list_store(self, album_id):
 		"""Takes an album_id, and adds all of that albums songs to the GUI."""

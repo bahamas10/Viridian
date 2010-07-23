@@ -25,9 +25,12 @@ import datetime
 import time
 import re
 import shutil
+import socket
 
 ### Constants ###
 AUTH_MAX_RETRY = 3 # how many times to try and reauth before failure
+DEFAULT_TIMEOUT = 5
+socket.setdefaulttimeout(DEFAULT_TIMEOUT)
 
 class AmpacheSession:
 	"""The AmpacheSession Class.  This is used to communicate to Ampache via the API."""
@@ -125,7 +128,9 @@ class AmpacheSession:
 
 		# now send the authentication request to Ampache
 		try:
+			socket.setdefaulttimeout(3) # lower timeout
 			response = urllib2.urlopen(self.xml_rpc, data)
+			socket.setdefaulttimeout(DEFAULT_TIMEOUT) # reset timeout
 			dom = xml.dom.minidom.parseString(response.read())
 			self.auth        = dom.getElementsByTagName("auth")[0].childNodes[0].data
 			self.artists_num = int(dom.getElementsByTagName("artists")[0].childNodes[0].data)
@@ -472,6 +477,7 @@ class AmpacheSession:
 		self.db_session.commit()
 		c.close()
 		self.save_new_time()
+		#self.clear_saved_time()
 		return return_val
 	
 	def clear_album_art(self):
@@ -508,6 +514,20 @@ class AmpacheSession:
 		except:
 			result = False
 			pass
+		self.db_session.commit()
+		c.close()
+		return result
+	
+	def clear_saved_time(self):
+		"""Clears the last check time."""
+		c = self.db_session.cursor()
+		try:
+			c.execute("""DELETE FROM variable WHERE NAME = 'catalog_update'""")
+			result = True
+		except:
+			result = False
+			pass
+			
 		self.db_session.commit()
 		c.close()
 		return result

@@ -23,7 +23,9 @@ class AudioEngine:
 	"""The class that controls playing the media from Ampache."""
 	def __init__(self, ampache_conn):
 		"""To construct an AudioEngine object you need to pass it an AmpacheSession object."""
-		# save the ampache connection
+		##################################
+		# Variables
+		##################################
 		self.ampache_conn = ampache_conn
 		# set the engine to default to no repeat
 		self.repeat_songs = False
@@ -53,6 +55,7 @@ class AudioEngine:
 			self.player.set_state(gst.STATE_PLAYING)
 			self.ampache_gui.audioengine_song_changed(songs_list[song_num]) # hook into GUI
 		except: # out of songs
+			self.stop()
 			self.ampache_gui.audioengine_song_changed(None) # hook into GUI
 			print "No more songs"
 
@@ -69,6 +72,13 @@ class AudioEngine:
 			self.stop()
 			err, debug = message.parse_error()
 			print "Error: %s" % err, debug
+		#elif t == gst.MESSAGE_BUFFERING:
+			#print gst.query_new_position(gst.Format(gst.FORMAT_TIME))
+			#print gst.query_new_position(gst.Format(gst.FORMAT_BUFFERS))
+			#gst.Query.parse_duration(gst.FORMAT_TIME, gst.QUERY_DURATION)
+		#elif t == gst.MESSAGE_DURATION:
+			#print gst.QUERY_DURATION
+			
 
 	def get_state(self):
 		"""Returns a string that tells the current state of the player."""
@@ -132,6 +142,9 @@ class AudioEngine:
 	
 	def remove_from_playlist(self, song_id):
 		try:
+			song_num = self.songs_list.index(song_id)
+			if song_num <= self.song_num:
+				self.song_num -= 1
 			self.songs_list.remove(song_id)
 		except:
 			return False
