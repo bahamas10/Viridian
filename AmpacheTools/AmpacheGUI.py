@@ -21,6 +21,8 @@ import urllib2
 import time
 import thread
 import gobject
+import urllib
+import re
 
 try: # check for pynotify
 	import pynotify
@@ -103,6 +105,8 @@ class AmpacheGUI:
 		self.images_pixbuf_gray_star = self.__create_image_pixbuf(IMAGES_DIR + 'star_rating_gray.png', 16)
 		images_pixbuf_prev = self.__create_image_pixbuf(IMAGES_DIR + 'prev.png', 75)
 		images_pixbuf_next = self.__create_image_pixbuf(IMAGES_DIR + 'next.png', 75)
+		self.images_pixbuf_playing = self.__create_image_pixbuf(IMAGES_DIR + 'playing.png', 15)
+		self.images_pixbuf_empty   = self.__create_image_pixbuf(IMAGES_DIR + 'empty.png', 1)
 
 		##################################
 		# Main Window
@@ -197,6 +201,14 @@ class AmpacheGUI:
 			show_playlist = False
 		newi.set_active(show_playlist)
 		newi.connect("activate", self.toggle_playlist_view)
+		view_menu.append(newi)
+		
+		newi = gtk.CheckMenuItem("Show Downloads")
+		show_downloads = self.db_session.variable_get('show_downloads')
+		if show_downloads == None:
+			show_downloads = False
+		newi.set_active(show_downloads)
+		newi.connect("activate", self.toggle_downloads_view)
 		view_menu.append(newi)
 		
 		sep = gtk.SeparatorMenuItem()
@@ -336,8 +348,11 @@ class AmpacheGUI:
 		hpaned.set_position(270)
 		
 		#################################
-		# Playlist
+		# Playlist / Downloads Window
 		#################################
+		self.side_panel = gtk.VBox()
+		
+		###################### Playlist ########################
 		self.playlist_window = gtk.VBox()
 		
 		playlist_scrolled_window = gtk.ScrolledWindow()
@@ -345,14 +360,14 @@ class AmpacheGUI:
 		playlist_scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 			
 		# str, title - artist - album, song_id
-		self.playlist_list_store = gtk.ListStore(str, str, int)
+		self.playlist_list_store = gtk.ListStore(gtk.gdk.Pixbuf, str, int)
 
 		tree_view = gtk.TreeView(self.playlist_list_store)
 		tree_view.connect("row-activated", self.playlist_on_activated)
 		tree_view.connect("button_press_event", self.playlist_on_right_click)
 		tree_view.set_rules_hint(True)
 		
-		new_column = self.__create_column("    ", 0)
+		new_column = self.__create_column("    ", 0, None, True)
 		new_column.set_reorderable(False)
 		new_column.set_resizable(False)
 		new_column.set_clickable(False)
@@ -380,7 +395,56 @@ class AmpacheGUI:
 		
 		self.playlist_window.pack_start(hbox, False, False, 2)
 		
-		hpaned.pack1(self.playlist_window)
+		self.side_panel.pack_start(self.playlist_window)
+		
+		########################## Downloads ######################
+				
+		self.downloads_window = gtk.VBox()	
+		
+		downloads_panel_scrolled_window = gtk.ScrolledWindow()
+		downloads_panel_scrolled_window.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+		downloads_panel_scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		
+		downloads_window_list = gtk.VBox()
+		
+		self.downloads_list_store = gtk.ListStore(str, int, str)
+		tree_view = gtk.TreeView(self.downloads_list_store)
+		#tree_view.connect("row-activated", self.playlist_on_activated)
+		#tree_view.connect("button_press_event", self.playlist_on_right_click)
+		tree_view.set_rules_hint(True)
+		column = gtk.TreeViewColumn("File", gtk.CellRendererText(), text=0)
+		column.set_reorderable(False)
+		column.set_resizable(True)
+		column.set_clickable(False)
+		column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+		column.set_fixed_width(100)
+		
+		tree_view.append_column(column)
+		
+		rendererprogress = gtk.CellRendererProgress()
+		column = gtk.TreeViewColumn("Progress")
+		column.pack_start(rendererprogress, True)
+		column.add_attribute(rendererprogress, "value", 1)
+		column.set_reorderable(False)
+		column.set_resizable(True)
+		column.set_clickable(False)
+		column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+		
+		tree_view.append_column(column)
+			
+		self.downloads_list_store.append(["test", 10, "test"])
+		
+		downloads_window_list.pack_start(tree_view)
+		
+		downloads_panel_scrolled_window.add_with_viewport(downloads_window_list)
+		
+		self.downloads_window.pack_start(downloads_panel_scrolled_window)
+		
+		self.side_panel.pack_start(self.downloads_window)
+		
+		#############################
+		
+		hpaned.pack1(self.side_panel)
 		
 		####################################
 		# Artists/Albums/Songs
@@ -515,10 +579,14 @@ class AmpacheGUI:
 		"""Show All"""
 		
 		self.window.show_all()
-		if show_playlist == False:
-			self.playlist_window.hide()
 		if view_statusbar == False:
 			self.statusbar.hide()
+		if show_playlist == False:
+			self.playlist_window.hide()
+		if show_downloads == False:
+			self.downloads_window.hide()
+		if show_downloads == False and show_playlist == False:
+			self.side_panel.hide()
 		"""End Show All"""
 		
 		# check repeat songs if the user wants it
@@ -547,6 +615,10 @@ class AmpacheGUI:
 		self.quit_when_window_closed = self.db_session.variable_get('quit_when_window_closed')
 		if self.quit_when_window_closed == None:
 			self.quit_when_window_closed = False
+		### Downloads Directory ###
+		self.downloads_directory = self.db_session.variable_get('downloads_directory')
+		if self.downloads_directory == None:
+			self.downloads_directory = os.path.expanduser("~")
 			
 		### Check for credentials and login ###
 		if self.ampache_conn.has_credentials():
@@ -564,6 +636,10 @@ class AmpacheGUI:
 			show_playlist = self.db_session.variable_get('show_playlist')
 			if show_playlist == None:
 				show_playlist = False
+			show_downloads = self.db_session.variable_get('show_downloads')
+			if show_playlist == None:
+				show_playlist = False
+				
 			view_statusbar = self.db_session.variable_get('view_statusbar')
 			if view_statusbar == None:
 				view_statusbar = True
@@ -572,6 +648,10 @@ class AmpacheGUI:
 			self.window.show_all()
 			if show_playlist == False:
 				self.playlist_window.hide()
+			if show_downloads == False:
+				self.playlist_window.hide()
+			if show_playlist == False and show_downloads == False:
+				self.side_panel.hide()
 			if view_statusbar == False:
 				self.statusbar.hide()
 			self.window.present()
@@ -757,8 +837,49 @@ class AmpacheGUI:
 			hbox.pack_start(label, False, False, 0)
 		
 			catalog_box.pack_start(hbox, False, False, 2)
-			
 		"""End Catalog Settings"""
+				
+		"""Start Download Settings"""
+		#################################
+		# Download Settings
+		#################################
+		download_box = gtk.VBox(False, 0)
+		download_box.set_border_width(10)
+		
+		hbox = gtk.HBox()
+		
+		label = gtk.Label()
+		label.set_markup('<b>Local Downloads</b>')
+		
+		hbox.pack_start(label, False, False)
+		
+		download_box.pack_start(hbox, False, False, 5)
+		
+		hbox = gtk.HBox()
+		
+		label = gtk.Label("    Select where downloaded files should go.")
+				
+		hbox.pack_start(label, False, False, 4)
+		
+		download_box.pack_start(hbox, False, False, 2)
+		
+		hbox = gtk.HBox()
+		
+		hbox.pack_start(gtk.Label("      "), False, False, 1)
+		
+		self.downloads_text_entry = gtk.Entry()
+		self.downloads_text_entry.set_text(self.downloads_directory)
+
+		hbox.pack_start(self.downloads_text_entry)
+		
+		fcbutton = gtk.Button(stock=gtk.STOCK_OPEN)
+		fcbutton.connect('clicked', self.button_open_downloads_file_chooser_clicked)
+				
+		hbox.pack_start(fcbutton, False, False, 4)
+		
+		download_box.pack_start(hbox, False, False, 2)
+		"""End Download Settings"""
+				
 		"""Start Tray Icon Settings"""
 		#################################
 		# Tray Icon Settings
@@ -873,6 +994,7 @@ class AmpacheGUI:
 		notebook.append_page(account_box,  gtk.Label("Account"))
 		notebook.append_page(display_box,  gtk.Label("Display"))
 		notebook.append_page(catalog_box,  gtk.Label("Catalog"))
+		notebook.append_page(download_box, gtk.Label("Downloads"))
 		notebook.append_page(trayicon_box, gtk.Label("Tray Icon"))
 		notebook.append_page(system_box,   gtk.Label("System"))
 		
@@ -976,12 +1098,28 @@ class AmpacheGUI:
 		self.db_session.variable_set('view_statusbar', widget.active)
 			
 	def toggle_playlist_view(self, widget, data=None):
-		"""Toggle the playlist."""
+		"""Toggle the playlist window."""
 		if widget.active:
+			if self.downloads_window.flags() & gtk.VISIBLE == False:
+				self.side_panel.show()
 			self.playlist_window.show()
 		else:
+			if self.downloads_window.flags() & gtk.VISIBLE== False:
+				self.side_panel.hide()
 			self.playlist_window.hide()
 		self.db_session.variable_set('show_playlist', widget.active)
+		
+	def toggle_downloads_view(self, widget, data=None):
+		"""Toggle the Downloads window."""
+		if widget.active:
+			if self.playlist_window.flags() & gtk.VISIBLE == False:
+				self.side_panel.show()
+			self.downloads_window.show()
+		else:
+			if self.playlist_window.flags() & gtk.VISIBLE == False:
+				self.side_panel.hide()
+			self.downloads_window.hide()
+		self.db_session.variable_set('show_downloads', widget.active)	
 			
 	def toggle_repeat_songs(self, widget, data=None):
 		"""Toggle repeat songs."""
@@ -1149,7 +1287,6 @@ class AmpacheGUI:
 				if album_id != -1:
 					if self.__add_songs_to_list_store(album_id):
 						self.update_statusbar("Fetching Album id: " + str(album_id))
-						#thread.start_new_thread(self.__add_songs_to_list_store,(album_id,self))
 			self.update_statusbar(album_name + " - " + self.artist_name)
 		else: # single album
 			if self.__add_songs_to_list_store(album_id):
@@ -1212,6 +1349,9 @@ class AmpacheGUI:
 				i = gtk.MenuItem("Remove From Playlist")
 				i.connect('activate', self.remove_from_playlist, song_id, treeview)
 				m.append(i)
+				i = gtk.MenuItem("Download Song")
+				i.connect('activate', self.download_song_clicked, song_id)
+				m.append(i)
 				m.show_all()
 				m.popup(None, None, None, event.button, event.time, None)
 				
@@ -1243,6 +1383,9 @@ class AmpacheGUI:
 				m = gtk.Menu()
 				i = gtk.MenuItem("Add Song to Playlist")
 				i.connect('activate', self.add_song_to_playlist, song_id)
+				m.append(i)
+				i = gtk.MenuItem("Download Song")
+				i.connect('activate', self.download_song_clicked, song_id)
 				m.append(i)
 				m.show_all()
 				m.popup(None, None, None, event.button, event.time, None)
@@ -1288,6 +1431,21 @@ class AmpacheGUI:
 		"""Destroy the preferences window."""
 		window = data
 		self.destroy_settings(window)
+		
+	def button_open_downloads_file_chooser_clicked(self, widget, data=None):
+		"""Open file chooser for the downloads directory."""
+		dialog = gtk.FileChooserDialog("Choose Folder...",
+						None,
+						gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+						(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+						gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+		dialog.set_default_response(gtk.RESPONSE_OK)
+		response = dialog.run()
+		if response == gtk.RESPONSE_OK:
+			self.downloads_directory = dialog.get_current_folder()
+			self.downloads_text_entry.set_text(self.downloads_directory)
+			self.db_session.variable_set('downloads_directory', self.downloads_directory)
+		dialog.destroy()
 
 	def button_reauthenticate_clicked(self, widget=None, data=None):
 		"""Reauthenticate button clicked."""
@@ -1620,6 +1778,16 @@ class AmpacheGUI:
 		self.audio_engine.insert_into_playlist(song_id)
 		self.update_playlist_window()
 		return True
+	
+	def download_song_clicked(self, widget, song_id):
+		song_url = self.ampache_conn.get_song_url(song_id)
+		m = re.search('name=.*\.[a-zA-Z0-9]+', song_url)
+		song_string = m.group(0).replace('name=/','').replace('%20',' ').replace('%27', "'")
+		full_file = self.downloads_directory + os.sep + song_string
+		progress_bar = gtk.ProgressBar()
+		print progress_bar
+		self.downloads_list_store.append([song_string, 0, full_file])
+		self.download_song(song_url, full_file, progress_bar)
 			
 			
 	def remove_from_playlist(self, widget, song_id, treeview):
@@ -1652,13 +1820,36 @@ class AmpacheGUI:
 		for temp_song_id in cur_playlist:
 			cur_song = self.ampache_conn.get_playlist_song_dict(temp_song_id)
 			cur_string = cur_song['song_title'] + ' - ' + cur_song['artist_name'] + ' - ' + cur_song['album_name']
-			now_playing = "  "
+			now_playing = self.images_pixbuf_empty
 			if i == cur_song_num:
-				now_playing = ">"
+				now_playing = self.images_pixbuf_playing
 			self.playlist_list_store.append([now_playing, cur_string, temp_song_id])
 			i += 1
 			
-		
+	def download_song(self, url, dst, progress_bar=None):
+		print "get url '%s' to '%s'" % (url, dst)
+		if sys.stdout.isatty():
+			urllib.urlretrieve(url, dst,
+				lambda nb, bs, fs, url=url: self._reporthook(nb,bs,fs,url,progress_bar))
+			
+		else:
+			urllib.urlretrieve(url, dst)
+			
+	def _reporthook(self, numblocks, blocksize, filesize, url, progress_bar):
+		#print "reporthook(%s, %s, %s)" % (numblocks, blocksize, filesize)
+		base = os.path.basename(url).replace('%20',' ').replace('%27', "'")
+		#XXX Should handle possible filesize=-1.
+		try:
+			percent = min((numblocks*blocksize*100)/filesize, 100)
+		except:
+			percent = 100
+		if numblocks != 0:
+			self.update_statusbar("Downloading " + base + ": " + str(percent) + "%")
+			if progress_bar != None:
+				progress_bar.set_fraction(float(percent/100.0))
+
+	
+
 		
 	#######################################
 	# Private Methods
@@ -1822,10 +2013,16 @@ class AmpacheGUI:
 		tree_view.append_column(column)
 		return tree_view
 
-	def __create_column(self, column_name, column_id, sort_column=None):
+	def __create_column(self, column_name, column_id, sort_column=None, pixbuf=False):
 		"""Helper function for treeviews, this will return a column ready to be appended."""
-		renderer_text = gtk.CellRendererText()
-		column = gtk.TreeViewColumn(column_name, renderer_text, text=column_id)
+		if pixbuf:
+			renderer_text = gtk.CellRendererPixbuf()
+			column = gtk.TreeViewColumn(column_name)
+			column.pack_start(renderer_text, expand=False)
+			column.add_attribute(renderer_text, 'pixbuf', 0)
+		else:
+			renderer_text = gtk.CellRendererText()
+			column = gtk.TreeViewColumn(column_name, renderer_text, text=column_id)
 		if sort_column != None:
 			column.set_sort_column_id(sort_column)
 		else:
