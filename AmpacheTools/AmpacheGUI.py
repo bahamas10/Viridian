@@ -49,6 +49,7 @@ class AmpacheGUI:
 	"""The Ampache GUI Class"""
 	def main(self):
 		"""Method to call gtk.main() and display the GUI."""
+		gobject.threads_init()
 		gobject.idle_add(self.main_gui_callback)
 		### Status tray icon ####
 		self.tray_icon_to_display = self.db_session.variable_get('tray_icon_to_display')
@@ -80,7 +81,7 @@ class AmpacheGUI:
 		return True
 
 	def destroy(self, widget=None, data=None):
-		self.stop_pre_cache()
+		self.stop_all_threads()
 		size = self.window.get_size()
 		gtk.main_quit()
 		self.db_session.variable_set('window_size_width',  size[0])
@@ -432,8 +433,6 @@ class AmpacheGUI:
 		
 		tree_view.append_column(column)
 			
-		self.downloads_list_store.append(["test", 10, "test"])
-		
 		downloads_window_list.pack_start(tree_view)
 		
 		downloads_panel_scrolled_window.add_with_viewport(downloads_window_list)
@@ -1175,7 +1174,7 @@ class AmpacheGUI:
 	#######################################
 	def login_and_get_artists(self, data=None):
 		"""Authenticate and populate the artists."""
-		self.stop_pre_cache()
+		self.stop_all_threads()
 		self.__clear_all_list_stores()
 		self.update_statusbar("Authenticating...")
 		# get the user inforamiton
@@ -1413,7 +1412,7 @@ class AmpacheGUI:
 			pass
 		
 		# if the code makes it this far, the credentials have been changed
-		self.stop_pre_cache()
+		self.stop_all_threads()
 		self.ampache_conn.clear_album_art()
 		self.ampache_conn.clear_cached_catalog()
 		if self.ampache_conn.set_credentials(url, username, password): # credentials saved
@@ -1484,7 +1483,7 @@ class AmpacheGUI:
 			pass
 		self.button_clear_cache_locked = True
 		print "Clearing cached catalog -- will reauthenticate and pull artists"
-		self.stop_pre_cache()
+		self.stop_all_threads()
 		self.ampache_conn.clear_cached_catalog()
 		self.login_and_get_artists()
 		self.button_clear_cache_locked = False	
@@ -1518,47 +1517,49 @@ class AmpacheGUI:
 			return False
 		self.button_pre_cache_locked = True
 		gobject.idle_add(self.__button_pre_cache_info_clicked)
+		#thread.start_new_thread(self.__button_pre_cache_info_clicked, (None,))
 		
 	def __button_pre_cache_info_clicked(self, widget=None, data=None):
 		self.pre_cache_continue = True # this will be set to false if this function should stop
-		try:
-			start_time = int(time.time())
-			artists = self.ampache_conn.get_artist_ids()
-			i = 0
-			num_artists = len(artists)
-			for artist_id in artists:
-				i += 1
-				if self.pre_cache_continue == False:
-					self.button_pre_cache_locked = False
-					return False
-				self.ampache_conn.populate_albums_dict(artist_id)
-				self.update_statusbar("Pulling all albums from artists: %d/%d" % (i, num_artists) )
-			self.update_statusbar("Finished pulling albums")
-			
-			albums = self.ampache_conn.get_album_ids()
-			i = 0
-			num_albums = len(albums)
-			for album_id in albums:
-				i += 1
-				if self.pre_cache_continue == False:
-					self.button_pre_cache_locked = False
-					return False
-				self.ampache_conn.populate_songs_dict(album_id)
-				self.update_statusbar("Pulling all songs from albums: %d/%d" % (i, num_albums) )
-			end_time = int(time.time())
-			time_taken = end_time - start_time
-			# convert time in seconds to HH:MM:SS THIS WILL FAIL IF LENGTH > 24 HOURS
-			time_taken = time.strftime('%H:%M:%S', time.gmtime(time_taken))
-			if time_taken[:2] == "00": # strip out hours if below 60 minutes
-				time_taken = time_taken[3:]
-			
-			self.update_statusbar("Finished Pre Cache -- Time Taken: " + str(time_taken))
-			print "Finished Pre Cache -- Time Taken: " + str(time_taken)
-		except:
-			print "Error!"
-			self.update_statusbar("Error with pre-cache!")
-			self.button_pre_cache_locked = False
-			return False
+		#try:
+		start_time = int(time.time())
+		artists = self.ampache_conn.get_artist_ids()
+		i = 0
+		num_artists = len(artists)
+		for artist_id in artists:
+			i += 1
+			if self.pre_cache_continue == False:
+				self.button_pre_cache_locked = False
+				return False
+			self.ampache_conn.populate_albums_dict(artist_id)
+			self.update_statusbar("Pulling all albums from artists: %d/%d" % (i, num_artists) )
+			#gobject.idle_add(self.update_statusbar, 1, "Pulling all albums from artists: %d/%d" % (i, num_artists) )
+		self.update_statusbar("Finished pulling albums")
+		
+		albums = self.ampache_conn.get_album_ids()
+		i = 0
+		num_albums = len(albums)
+		for album_id in albums:
+			i += 1
+			if self.pre_cache_continue == False:
+				self.button_pre_cache_locked = False
+				return False
+			self.ampache_conn.populate_songs_dict(album_id)
+			self.update_statusbar("Pulling all songs from albums: %d/%d" % (i, num_albums) )
+		end_time = int(time.time())
+		time_taken = end_time - start_time
+		# convert time in seconds to HH:MM:SS THIS WILL FAIL IF LENGTH > 24 HOURS
+		time_taken = time.strftime('%H:%M:%S', time.gmtime(time_taken))
+		if time_taken[:2] == "00": # strip out hours if below 60 minutes
+			time_taken = time_taken[3:]
+		
+		self.update_statusbar("Finished Pre Cache -- Time Taken: " + str(time_taken))
+		print "Finished Pre Cache -- Time Taken: " + str(time_taken)
+		#except:
+		#	print "Error!"
+		#	self.update_statusbar("Error with pre-cache!")
+		#	self.button_pre_cache_locked = False
+		#	return False
 		self.button_pre_cache_locked = False
 		return False
 		
@@ -1779,16 +1780,6 @@ class AmpacheGUI:
 		self.update_playlist_window()
 		return True
 	
-	def download_song_clicked(self, widget, song_id):
-		song_url = self.ampache_conn.get_song_url(song_id)
-		m = re.search('name=.*\.[a-zA-Z0-9]+', song_url)
-		song_string = m.group(0).replace('name=/','').replace('%20',' ').replace('%27', "'")
-		full_file = self.downloads_directory + os.sep + song_string
-		progress_bar = gtk.ProgressBar()
-		print progress_bar
-		self.downloads_list_store.append([song_string, 0, full_file])
-		self.download_song(song_url, full_file, progress_bar)
-			
 			
 	def remove_from_playlist(self, widget, song_id, treeview):
 		"""Remove a song from the current playlist."""
@@ -1799,10 +1790,11 @@ class AmpacheGUI:
 				model, iter = result
 				model.remove(iter)
 
-	def stop_pre_cache(self):
-		"""Stop the precache."""
+	def stop_all_threads(self):
+		"""Stops all running threads."""
 		self.pre_cache_continue = False
-		
+		self.download_song_continue = False
+
 	def refresh_gui(self):
 		"""Refresh the GUI by calling gtk.main_iteration(). """
 		while gtk.events_pending():
@@ -1825,18 +1817,29 @@ class AmpacheGUI:
 				now_playing = self.images_pixbuf_playing
 			self.playlist_list_store.append([now_playing, cur_string, temp_song_id])
 			i += 1
+
+	def download_song_clicked(self, widget, song_id, progres_bar=None):
+		self.download_song_continue = True
+		song_url = self.ampache_conn.get_song_url(song_id)
+		m = re.search('name=.*\.[a-zA-Z0-9]+', song_url)
+		song_string = m.group(0).replace('name=/','').replace('%20',' ').replace('%27', "'")
+		full_file = self.downloads_directory + os.sep + song_string
+		self.downloads_list_store.append([song_string, 0, full_file])
+		iter1 = self.downloads_list_store.get_iter(len(self.downloads_list_store) - 1)
+		thread.start_new_thread(self.download_song, (song_url, full_file, iter1))
 			
-	def download_song(self, url, dst, progress_bar=None):
+			
+	def download_song(self, url, dst, iter1):
 		print "get url '%s' to '%s'" % (url, dst)
-		if sys.stdout.isatty():
-			urllib.urlretrieve(url, dst,
-				lambda nb, bs, fs, url=url: self._reporthook(nb,bs,fs,url,progress_bar))
+		urllib.urlretrieve(url, dst,
+				lambda nb, bs, fs, url=url: self._reporthook(nb,bs,fs,url,iter1))
+		#urllib.urlretrieve(url, dst, self._reporthook, iter1)
 			
-		else:
-			urllib.urlretrieve(url, dst)
-			
-	def _reporthook(self, numblocks, blocksize, filesize, url, progress_bar):
+	def _reporthook(self, numblocks, blocksize, filesize, url, iter1):
 		#print "reporthook(%s, %s, %s)" % (numblocks, blocksize, filesize)
+		if self.download_song_continue == False:
+			print "cancelled"
+			return False
 		base = os.path.basename(url).replace('%20',' ').replace('%27', "'")
 		#XXX Should handle possible filesize=-1.
 		try:
@@ -1844,13 +1847,10 @@ class AmpacheGUI:
 		except:
 			percent = 100
 		if numblocks != 0:
-			self.update_statusbar("Downloading " + base + ": " + str(percent) + "%")
-			if progress_bar != None:
-				progress_bar.set_fraction(float(percent/100.0))
+			#self.update_statusbar("Downloading " + base + ": " + str(percent) + "%")
+			gobject.idle_add(lambda : self.downloads_list_store.set(iter1, 1, percent))
 
 	
-
-		
 	#######################################
 	# Private Methods
 	#######################################
