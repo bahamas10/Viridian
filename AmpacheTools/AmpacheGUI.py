@@ -205,13 +205,13 @@ class AmpacheGUI:
 		newi.connect("activate", self.toggle_playlist_view)
 		view_menu.append(newi)
 		
-		newi = gtk.CheckMenuItem("Show Downloads")
+		self.show_downloads_checkbox = gtk.CheckMenuItem("Show Downloads")
 		show_downloads = self.db_session.variable_get('show_downloads')
 		if show_downloads == None:
 			show_downloads = False
-		newi.set_active(show_downloads)
-		newi.connect("activate", self.toggle_downloads_view)
-		view_menu.append(newi)
+		self.show_downloads_checkbox.set_active(show_downloads)
+		self.show_downloads_checkbox.connect("activate", self.toggle_downloads_view)
+		view_menu.append(self.show_downloads_checkbox)
 		
 		sep = gtk.SeparatorMenuItem()
 		view_menu.append(sep)
@@ -1638,7 +1638,7 @@ class AmpacheGUI:
 			md = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT, dialog_type, gtk.BUTTONS_CLOSE, message)
 		md.run()
 		md.destroy()
-		
+	
 	def create_dialog_ok_or_close(self, title, message):
 		"""Creates a generic dialog of the type specified with ok and cancel."""
 		md = gtk.Dialog(str(title), self.window, gtk.DIALOG_DESTROY_WITH_PARENT, (gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE, gtk.STOCK_OK, gtk.RESPONSE_OK))
@@ -1666,7 +1666,7 @@ class AmpacheGUI:
 		about.set_comments("Viridian is a front-end for an Ampache Server (see http://ampache.org)")
 		about.set_website("http://www.viridianplayer.com")
 		about.set_authors(["Author:", "Dave Eddy <dave@daveeddy.com>", "http://www.daveeddy.com", "", "AudioEngine by:", "Michael Zeller <link@conquerthesound.com>", "http://conquerthesound.com"])
-		#about.set_artists(["Skye Sawyer <skyelauren.s@gmail.com>", "http://www.skyeillustration.com"])
+		about.set_artists(["Skye Sawyer <skyelauren.s@gmail.com>", "http://www.skyeillustration.com", "", "Media Icons by:", "http://mysitemyway.com", "http://ampache.org"])
 		try:
 			about.set_logo(gtk.gdk.pixbuf_new_from_file(IMAGES_DIR + "logo.png"))
 		except:
@@ -1849,19 +1849,25 @@ class AmpacheGUI:
 			
 	def download_album_clicked(self, widget):
 		"""The user cliked download album."""
+		if self.show_downloads_checkbox.active == False:
+			self.side_panel.show()
+			self.downloads_window.show()
+			self.show_downloads_checkbox.set_active(True)
 		for song in self.song_list_store:
-			self.download_song_clicked(widget, song[6])
+			self.download_song_clicked(widget, song[6], False)
 
-
-	def download_song_clicked(self, widget, song_id):
+	def download_song_clicked(self, widget, song_id, show_panel=True):
 		"""The user clicked download song."""
+		if show_panel and self.show_downloads_checkbox.active == False:
+			self.side_panel.show()
+			self.downloads_window.show()
+			self.show_downloads_checkbox.set_active(True)
 		song_url = self.ampache_conn.get_song_url(song_id)
 		m = re.search('name=.*\.[a-zA-Z0-9]+', song_url)
 		song_string = m.group(0).replace('name=/','').replace('%20',' ').replace('%27', "'")
 		full_file = self.downloads_directory + os.sep + song_string
 		self.downloads_list_store.append([song_string, 0, full_file])
 		iter1 = self.downloads_list_store.get_iter(len(self.downloads_list_store) - 1)
-		self.update_statusbar("Go to View -> Show Downloads to see current downloads")
 		thread.start_new_thread(self.download_song, (song_url, full_file, iter1))
 		
 	def download_song(self, url, dst, iter1):
