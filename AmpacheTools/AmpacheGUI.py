@@ -44,6 +44,7 @@ ALBUM_ART_SIZE = 80
 SCRIPT_PATH    = os.path.dirname(sys.argv[0])
 SCRIPT_PATH    = os.path.abspath(os.path.dirname(__file__))
 IMAGES_DIR     = SCRIPT_PATH + os.sep + 'images' + os.sep
+THREAD_LOCK    = thread.allocate_lock()
 
 class AmpacheGUI:
 	"""The Ampache GUI Class"""
@@ -410,8 +411,8 @@ class AmpacheGUI:
 		
 		self.downloads_list_store = gtk.ListStore(str, int, str)
 		tree_view = gtk.TreeView(self.downloads_list_store)
-		#tree_view.connect("row-activated", self.playlist_on_activated)
-		#tree_view.connect("button_press_event", self.playlist_on_right_click)
+		tree_view.connect("row-activated", self.downloads_on_activated)
+		tree_view.connect("button_press_event", self.downloads_on_right_click)
 		tree_view.set_rules_hint(True)
 		column = gtk.TreeViewColumn("File", gtk.CellRendererText(), text=0)
 		column.set_reorderable(False)
@@ -1309,8 +1310,6 @@ class AmpacheGUI:
 		print "Sending this list of songs to player", list
 		self.audio_engine.play_from_list_of_songs(list)
 
-		
-
 	def songs_on_activated(self, widget, row, col):
 		"""The function that runs when the user double-clicks a song."""
 		model = widget.get_model()
@@ -1326,11 +1325,17 @@ class AmpacheGUI:
 		
 		print "Sending this list of songs to player", list
 		self.audio_engine.play_from_list_of_songs(list, song_num)
-		
+
 	def playlist_on_activated(self, widget, row, col):
 		"""The function that runs when the user double-clicks a song in the playlist."""
 		song_num = row[0]
 		self.audio_engine.change_song(song_num)
+	
+	def downloads_on_activated(self, widget, row, col):
+		"""The function that runs when the user double-clicks a song in the downloads window."""
+		model = widget.get_model()
+		full_path = model[row][2]
+		os.popen("gnome-open '%s' &" % (os.path.dirname(full_path)))
 		
 	#######################################
 	# Selection Methods (right-click)
@@ -1354,6 +1359,25 @@ class AmpacheGUI:
 				m.show_all()
 				m.popup(None, None, None, event.button, event.time, None)
 				
+	def downloads_on_right_click(self, treeview, event, data=None):
+		if event.button == 3:
+			x = int(event.x)
+			y = int(event.y)
+			pthinfo = treeview.get_path_at_pos(x, y)
+			if pthinfo != None:
+				path, col, cellx, celly = pthinfo
+				# create popup
+				full_path = treeview.get_model()[path][2]
+				m = gtk.Menu()
+				i = gtk.MenuItem("Open Song")
+				i.connect('activate', lambda _: os.popen("gnome-open '%s' &" % (full_path)))
+				m.append(i)
+				i = gtk.MenuItem("Open Containing Folder")
+				i.connect('activate', lambda _: os.popen("gnome-open '%s' &" % (os.path.dirname(full_path))))
+				m.append(i)
+				m.show_all()
+				m.popup(None, None, None, event.button, event.time, None)
+				
 	def albums_on_right_click(self, treeview, event, data=None):
 		if event.button == 3:
 			x = int(event.x)
@@ -1366,6 +1390,9 @@ class AmpacheGUI:
 				m = gtk.Menu()
 				i = gtk.MenuItem("Add Album to Playlist")
 				i.connect('activate', self.add_album_to_playlist)
+				m.append(i)
+				i = gtk.MenuItem("Download Album")
+				i.connect('activate', self.download_album_clicked)
 				m.append(i)
 				m.show_all()
 				m.popup(None, None, None, event.button, event.time, None)
@@ -1769,6 +1796,7 @@ class AmpacheGUI:
 		return False
 			
 	def add_album_to_playlist(self, widget):
+		"""Adds every song in the visible list store and adds it to the playlist."""
 		for song in self.song_list_store:
 			self.audio_engine.insert_into_playlist(song[6])
 		self.update_playlist_window()
@@ -1776,6 +1804,7 @@ class AmpacheGUI:
 			
 		
 	def add_song_to_playlist(self, widget, song_id):
+		"""Takes a song_id and adds it to the playlist."""
 		self.audio_engine.insert_into_playlist(song_id)
 		self.update_playlist_window()
 		return True
@@ -1817,29 +1846,35 @@ class AmpacheGUI:
 				now_playing = self.images_pixbuf_playing
 			self.playlist_list_store.append([now_playing, cur_string, temp_song_id])
 			i += 1
+			
+	def download_album_clicked(self, widget):
+		"""The user cliked download album."""
+		for song in self.song_list_store:
+			self.download_song_clicked(widget, song[6])
 
-	def download_song_clicked(self, widget, song_id, progres_bar=None):
-		self.download_song_continue = True
+
+	def download_song_clicked(self, widget, song_id):
+		"""The user clicked download song."""
 		song_url = self.ampache_conn.get_song_url(song_id)
 		m = re.search('name=.*\.[a-zA-Z0-9]+', song_url)
 		song_string = m.group(0).replace('name=/','').replace('%20',' ').replace('%27', "'")
 		full_file = self.downloads_directory + os.sep + song_string
 		self.downloads_list_store.append([song_string, 0, full_file])
 		iter1 = self.downloads_list_store.get_iter(len(self.downloads_list_store) - 1)
+		self.update_statusbar("Go to View -> Show Downloads to see current downloads")
 		thread.start_new_thread(self.download_song, (song_url, full_file, iter1))
-			
-			
+		
 	def download_song(self, url, dst, iter1):
+		THREAD_LOCK.acquire()
 		print "get url '%s' to '%s'" % (url, dst)
 		urllib.urlretrieve(url, dst,
 				lambda nb, bs, fs, url=url: self._reporthook(nb,bs,fs,url,iter1))
+		self.notification("Download Complete", os.path.basename(url).replace('%20',' ').replace('%27', "'"))
+		THREAD_LOCK.release()
 		#urllib.urlretrieve(url, dst, self._reporthook, iter1)
 			
 	def _reporthook(self, numblocks, blocksize, filesize, url, iter1):
 		#print "reporthook(%s, %s, %s)" % (numblocks, blocksize, filesize)
-		if self.download_song_continue == False:
-			print "cancelled"
-			return False
 		base = os.path.basename(url).replace('%20',' ').replace('%27', "'")
 		#XXX Should handle possible filesize=-1.
 		try:
