@@ -74,14 +74,24 @@ class AudioEngine:
 		elif t == gst.MESSAGE_ERROR: # error!
 			self.stop()
 			err, debug = message.parse_error()
-			print "Error: %s" % err, debug
+			print "Gstreamer Error: %s" % err, debug
+			self.ampache_gui.audioengine_error_callback("Gstreamer Error: %s" % err, debug)
 		#elif t == gst.MESSAGE_BUFFERING:
-			#print gst.query_new_position(gst.Format(gst.FORMAT_TIME))
-			#print gst.query_new_position(gst.Format(gst.FORMAT_BUFFERS))
-			#gst.Query.parse_duration(gst.FORMAT_TIME, gst.QUERY_DURATION)
+			#self.ampache_gui.audioengine_buffering_callback(message.structure['buffer-percent'])
 		#elif t == gst.MESSAGE_DURATION:
 			#print gst.QUERY_DURATION
 			
+	def query_position(self):
+		"""Returns position in nanoseconds"""
+		try:
+			position, format = self.player.query_position(gst.FORMAT_TIME)
+		except:
+			position = 0
+		#try:
+		#       duration, format = self.player.query_duration(gst.FORMAT_TIME)
+		#except:
+		#       duration = gst.CLOCK_TIME_NONE
+		return position
 
 	def get_state(self):
 		"""Returns a string that tells the current state of the player."""

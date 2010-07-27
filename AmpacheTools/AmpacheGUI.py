@@ -63,13 +63,12 @@ class AmpacheGUI:
 			self.tray_icon.connect('activate', self.status_icon_activate)
 			self.tray_icon.connect('popup-menu', self.status_icon_popup_menu)
 			self.tray_icon.set_tooltip('Viridian')
+		thread.start_new_thread(self.query_position, (None,))
 		gtk.main()
 
 	def delete_event(self, widget, event, data=None):
 		"""Keep the window alive when it is X'd out."""
-		if not hasattr(self, 'tray_icon'): # no tray icon set, must destroy
-			self.destroy()
-		elif self.quit_when_window_closed:
+		if not hasattr(self, 'tray_icon') or self.quit_when_window_closed: # no tray icon set, must destroy
 			self.destroy()
 		else:
 			if self.first_time_closing:
@@ -82,6 +81,11 @@ class AmpacheGUI:
 		return True
 
 	def destroy(self, widget=None, data=None):
+		"""The function when the program exits."""
+		if THREAD_LOCK.locked():
+			result = self.create_dialog_ok_or_close("Downloads in progress..", "There are unfinished downloads, are you sure you want to quit?")
+			if result != "ok":
+				return True
 		self.stop_all_threads()
 		size = self.window.get_size()
 		gtk.main_quit()
@@ -278,26 +282,52 @@ class AmpacheGUI:
 		event_box_next = gtk.EventBox()
 		event_box_next.connect("button_release_event", self.button_next_clicked)
 		event_box_next.add(next_image)
+
+		
+		top_bar_left_top.pack_start(event_box_prev, False, False, 0)
+		top_bar_left_top.pack_start(event_box_play, False, False, 0)
+		top_bar_left_top.pack_start(event_box_next, False, False, 0)
 		
 		### Repeat Songs
 		repeat_songs_checkbutton = gtk.CheckButton("Repeat")
 		repeat_songs_checkbutton.set_active(False)
 		repeat_songs_checkbutton.connect("toggled", self.toggle_repeat_songs)
 		
-		### Label for alerting user
-		
-		top_bar_left_top.pack_start(event_box_prev, False, False, 0)
-		top_bar_left_top.pack_start(event_box_play, False, False, 0)
-		top_bar_left_top.pack_start(event_box_next, False, False, 0)
-
+		self.notification_label = gtk.Label(" ")
 		
 		top_bar_left_bottom.pack_start(repeat_songs_checkbutton, False, False, 0)
+		top_bar_left_bottom.pack_start(self.notification_label, False, False, 10)
 		
 		top_bar_left.pack_start(top_bar_left_top, False, False, 0)
 		top_bar_left.pack_start(top_bar_left_bottom, False, False, 0)
 		
 		top_bar.pack_start(top_bar_left, False, False, 0)
 		"""End Top Control Bar"""
+		
+		#################################
+		# Scrubbing Bar
+		#################################
+		vbox = gtk.VBox()
+		
+		hbox = gtk.HBox()
+		
+		self.time_elapsed_label = gtk.Label("0:00")
+		hbox.pack_start(self.time_elapsed_label, False, False, 2)
+		
+		self.time_elapsed_slider = gtk.HScale()
+		self.time_elapsed_slider.set_inverted(False)
+		self.time_elapsed_slider.set_range(0, 1)
+		self.time_elapsed_slider.set_increments(1, 10)
+		self.time_elapsed_slider.set_draw_value(False)
+		hbox.pack_start(self.time_elapsed_slider, True, True, 2)
+		
+		self.time_total_label = gtk.Label("0:00")
+		hbox.pack_start(self.time_total_label, False, False, 2)
+		
+		
+		vbox.pack_start(hbox, False, False, 40)
+		
+		top_bar.pack_start(vbox)
 		
 		#################################
 		# Now Playing / Album Art
@@ -377,7 +407,9 @@ class AmpacheGUI:
 		new_column.set_fixed_width(20)
 		tree_view.append_column(new_column)
 		
-		new_column = self.__create_column("Current Playlist", 1)
+		renderer_text = gtk.CellRendererText()
+		new_column = gtk.TreeViewColumn("Current Playlist", renderer_text, markup=1)
+		#new_column = self.__create_column("Current Playlist", 1)
 		new_column.set_reorderable(False)
 		new_column.set_resizable(False)
 		new_column.set_clickable(False)
@@ -644,8 +676,9 @@ class AmpacheGUI:
 			if view_statusbar == None:
 				view_statusbar = True
 				
-			self.window.grab_focus()
 			self.window.show_all()
+			self.window.grab_focus()
+			self.window.present()
 			if show_playlist == False:
 				self.playlist_window.hide()
 			if show_downloads == False:
@@ -654,7 +687,7 @@ class AmpacheGUI:
 				self.side_panel.hide()
 			if view_statusbar == False:
 				self.statusbar.hide()
-			self.window.present()
+			
 			
 
 	def show_settings(self, widget, data=None):
@@ -1641,7 +1674,7 @@ class AmpacheGUI:
 	
 	def create_dialog_ok_or_close(self, title, message):
 		"""Creates a generic dialog of the type specified with ok and cancel."""
-		md = gtk.Dialog(str(title), self.window, gtk.DIALOG_DESTROY_WITH_PARENT, (gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE, gtk.STOCK_OK, gtk.RESPONSE_OK))
+		md = gtk.Dialog(str(title), self.window, gtk.DIALOG_DESTROY_WITH_PARENT, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
 		label = gtk.Label(message)
 		label.set_line_wrap(True)
 		md.get_child().pack_start(label)
@@ -1654,7 +1687,7 @@ class AmpacheGUI:
 		if resp == gtk.RESPONSE_OK:
 			return "ok"
 		else:
-			return "close"
+			return "cancel"
 		
 		
 	def create_about_dialog(self, widget, data=None):
@@ -1689,6 +1722,8 @@ class AmpacheGUI:
 	#######################################
 	def audioengine_song_changed(self, song_id):
 		"""The function that gets called when the AudioEngine changes songs."""
+		if song_id != None:
+			self.current_song_info = self.ampache_conn.get_single_song_dict(song_id)
 		gobject.idle_add(self.__audioengine_song_changed, song_id)
 		
 	def __audioengine_song_changed(self, song_id):
@@ -1701,14 +1736,19 @@ class AmpacheGUI:
 			self.playlist_list_store.clear()
 			return False
 		self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
-		self.current_song_info = self.ampache_conn.get_single_song_dict(song_id)
+
 		print self.current_song_info # DEBUG
+		
+		song_time   = self.current_song_info['song_time']
+		self.time_elapsed_slider.set_range(0, song_time)
+		self.time_total_label.set_text(self.__convert_seconds_to_human_readable(song_time))
+		
 		song_title  = self.current_song_info['song_title']
 		artist_name = self.current_song_info['artist_name']
 		album_name  = self.current_song_info['album_name']
-		self.current_song_label.set_text(   song_title  )
-		self.current_artist_label.set_text( artist_name )
-		self.current_album_label.set_text(  album_name  )
+		self.current_song_label.set_markup(   '<span size="13000"><b>'+song_title+'</b></span>'  )
+		self.current_artist_label.set_markup( '<span size="10000">'+artist_name+'</span>' )
+		self.current_album_label.set_markup(  '<span size="10000">'+album_name+'</span>'  )
 		### Update the statusbar and tray icon ###
 		self.set_tray_tooltip(song_title + ' - ' + artist_name)
 		self.update_statusbar(song_title + ' - ' + artist_name)
@@ -1746,8 +1786,16 @@ class AmpacheGUI:
 				self.rating_stars_list[i].set_from_pixbuf(self.images_pixbuf_gray_star)
 			i += 1
 		self.update_playlist_window()
-	
+		
+	def audioengine_buffering_callback(self, percent):
+		"""Show the percantage buffered of the current song."""
+		gobject.idle_add(lambda : self.notification_label.set_text("Buffering: " + str(percent) + "%"))
+		if percent == 100:
+			gobject.idle_add(lambda : self.notification_label.set_text(" "))
 			
+	def audioengine_buffering_callback(self, error_message):
+		"""Display the gstreamer error in the notification label."""
+		gobject.idle_add(lambda : self.notification_label.set_text(error_message))
 			
 	#######################################
 	# Ampache Session Callback
@@ -1841,9 +1889,11 @@ class AmpacheGUI:
 		for temp_song_id in cur_playlist:
 			cur_song = self.ampache_conn.get_playlist_song_dict(temp_song_id)
 			cur_string = cur_song['song_title'] + ' - ' + cur_song['artist_name'] + ' - ' + cur_song['album_name']
+			cur_string = cur_string.replace('&', '&amp;') #HACK
 			now_playing = self.images_pixbuf_empty
 			if i == cur_song_num:
 				now_playing = self.images_pixbuf_playing
+				cur_string = '<b>' + cur_string + '</b>'
 			self.playlist_list_store.append([now_playing, cur_string, temp_song_id])
 			i += 1
 			
@@ -1890,11 +1940,40 @@ class AmpacheGUI:
 		if numblocks != 0:
 			#self.update_statusbar("Downloading " + base + ": " + str(percent) + "%")
 			gobject.idle_add(lambda : self.downloads_list_store.set(iter1, 1, percent))
-
+			
+			
+	#######################################
+	# Threads
+	#######################################
+	def query_position(self, data=None):
+		"""Thread that updates the label and the seek/slider."""
+		while True:
+			new_time_nanoseconds = self.audio_engine.query_position()
+			new_time_seconds = new_time_nanoseconds / 1000 / 1000 / 1000
+			new_time_human_readable = self.__convert_seconds_to_human_readable(new_time_seconds)
+			gobject.idle_add(self.__update_slider, new_time_seconds)
+			gobject.idle_add(lambda : self.time_elapsed_label.set_text(new_time_human_readable))
+			time.sleep(.25)
+	
+	def __update_slider(self, new_time_seconds):
+		self.time_elapsed_slider.set_value(new_time_seconds)
 	
 	#######################################
 	# Private Methods
 	#######################################
+	def __convert_seconds_to_human_readable(self, number):
+		"""Converts seconds to a human readable string."""
+		if number == 0:
+			return "0:00"
+		# convert time in seconds to HH:MM:SS THIS WILL FAIL IF LENGTH > 24 HOURS
+		new_time = time.strftime('%H:%M:%S', time.gmtime(number))
+		if new_time[:3] == "00:": # strip out hours if below 60 minutes
+			new_time = new_time[3:]
+		if new_time[:3] == "00:": # strip out hours if below 60 minutes
+			new_time = new_time[1:]
+		return new_time
+
+	
 	#################
 	# Sort Functions
 	#################
