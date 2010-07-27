@@ -1581,45 +1581,45 @@ class AmpacheGUI:
 		
 	def __button_pre_cache_info_clicked(self, widget=None, data=None):
 		self.pre_cache_continue = True # this will be set to false if this function should stop
-		#try:
-		start_time = int(time.time())
-		artists = self.ampache_conn.get_artist_ids()
-		i = 0
-		num_artists = len(artists)
-		for artist_id in artists:
-			i += 1
-			if self.pre_cache_continue == False:
-				self.button_pre_cache_locked = False
-				return False
-			self.ampache_conn.populate_albums_dict(artist_id)
-			self.update_statusbar("Pulling all albums from artists: %d/%d" % (i, num_artists) )
-			#gobject.idle_add(self.update_statusbar, 1, "Pulling all albums from artists: %d/%d" % (i, num_artists) )
-		self.update_statusbar("Finished pulling albums")
-		
-		albums = self.ampache_conn.get_album_ids()
-		i = 0
-		num_albums = len(albums)
-		for album_id in albums:
-			i += 1
-			if self.pre_cache_continue == False:
-				self.button_pre_cache_locked = False
-				return False
-			self.ampache_conn.populate_songs_dict(album_id)
-			self.update_statusbar("Pulling all songs from albums: %d/%d" % (i, num_albums) )
-		end_time = int(time.time())
-		time_taken = end_time - start_time
-		# convert time in seconds to HH:MM:SS THIS WILL FAIL IF LENGTH > 24 HOURS
-		time_taken = time.strftime('%H:%M:%S', time.gmtime(time_taken))
-		if time_taken[:2] == "00": # strip out hours if below 60 minutes
-			time_taken = time_taken[3:]
-		
-		self.update_statusbar("Finished Pre Cache -- Time Taken: " + str(time_taken))
-		print "Finished Pre Cache -- Time Taken: " + str(time_taken)
-		#except:
-		#	print "Error!"
-		#	self.update_statusbar("Error with pre-cache!")
-		#	self.button_pre_cache_locked = False
-		#	return False
+		try:
+			start_time = int(time.time())
+			artists = self.ampache_conn.get_artist_ids()
+			i = 0
+			num_artists = len(artists)
+			for artist_id in artists:
+				i += 1
+				if self.pre_cache_continue == False:
+					self.button_pre_cache_locked = False
+					return False
+				self.ampache_conn.populate_albums_dict(artist_id)
+				self.update_statusbar("Pulling all albums from artists: %d/%d" % (i, num_artists) )
+				#gobject.idle_add(self.update_statusbar, 1, "Pulling all albums from artists: %d/%d" % (i, num_artists) )
+			self.update_statusbar("Finished pulling albums")
+			
+			albums = self.ampache_conn.get_album_ids()
+			i = 0
+			num_albums = len(albums)
+			for album_id in albums:
+				i += 1
+				if self.pre_cache_continue == False:
+					self.button_pre_cache_locked = False
+					return False
+				self.ampache_conn.populate_songs_dict(album_id)
+				self.update_statusbar("Pulling all songs from albums: %d/%d" % (i, num_albums) )
+			end_time = int(time.time())
+			time_taken = end_time - start_time
+			# convert time in seconds to HH:MM:SS THIS WILL FAIL IF LENGTH > 24 HOURS
+			time_taken = time.strftime('%H:%M:%S', time.gmtime(time_taken))
+			if time_taken[:2] == "00": # strip out hours if below 60 minutes
+				time_taken = time_taken[3:]
+			
+			self.update_statusbar("Finished Pre Cache -- Time Taken: " + str(time_taken))
+			print "Finished Pre Cache -- Time Taken: " + str(time_taken)
+		except:
+			print "Error!"
+			self.update_statusbar("Error with pre-cache!")
+			self.button_pre_cache_locked = False
+			return False
 		self.button_pre_cache_locked = False
 		return False
 		
