@@ -63,7 +63,8 @@ class AmpacheGUI:
 			self.tray_icon.connect('activate', self.status_icon_activate)
 			self.tray_icon.connect('popup-menu', self.status_icon_popup_menu)
 			self.tray_icon.set_tooltip('Viridian')
-		thread.start_new_thread(self.query_position, (None,))
+		#thread.start_new_thread(self.query_position, (None,))
+		gobject.timeout_add(300, self.query_position)
 		gtk.main()
 
 	def delete_event(self, widget, event, data=None):
@@ -319,13 +320,16 @@ class AmpacheGUI:
 		self.time_elapsed_slider.set_range(0, 1)
 		self.time_elapsed_slider.set_increments(1, 10)
 		self.time_elapsed_slider.set_draw_value(False)
+		self.time_elapsed_slider.connect('value-changed', self.on_time_elapsed_slider_change)
 		hbox.pack_start(self.time_elapsed_slider, True, True, 2)
 		
 		self.time_total_label = gtk.Label("0:00")
 		hbox.pack_start(self.time_total_label, False, False, 2)
 		
-		
 		vbox.pack_start(hbox, False, False, 40)
+		
+		self.time_seek_label = gtk.Label(" ")
+		vbox.pack_start(self.time_seek_label, False, False, 5)
 		
 		top_bar.pack_start(vbox)
 		
@@ -350,7 +354,6 @@ class AmpacheGUI:
 		
 		event_box_album = gtk.EventBox()
 		event_box_album.connect("button_release_event", self.button_album_art_clicked)
-		#event_box_album.connect("button_release_event", self.button_album_art_clicked)
 		event_box_album.add(self.album_art_image)
 		
 		hbox = gtk.HBox()
@@ -1449,6 +1452,14 @@ class AmpacheGUI:
 				m.show_all()
 				m.popup(None, None, None, event.button, event.time, None)
 				
+	#######################################
+	# Misc Selection Methods
+	#######################################
+	def on_time_elapsed_slider_change(self, slider):
+		seek_time_secs = slider.get_value()
+		gobject.idle_add(self.time_seek_label.set_text, self.__convert_seconds_to_human_readable(seek_time_secs))
+		self.audio_engine.seek(seek_time_secs)
+		return True
 	
 			
 
@@ -1793,7 +1804,7 @@ class AmpacheGUI:
 		if percent == 100:
 			gobject.idle_add(lambda : self.notification_label.set_text(" "))
 			
-	def audioengine_buffering_callback(self, error_message):
+	def audioengine_error_callback(self, error_message):
 		"""Display the gstreamer error in the notification label."""
 		gobject.idle_add(lambda : self.notification_label.set_text(error_message))
 			
@@ -1947,16 +1958,16 @@ class AmpacheGUI:
 	#######################################
 	def query_position(self, data=None):
 		"""Thread that updates the label and the seek/slider."""
-		while True:
-			new_time_nanoseconds = self.audio_engine.query_position()
+		new_time_nanoseconds = self.audio_engine.query_position()
+		if new_time_nanoseconds != -1:
 			new_time_seconds = new_time_nanoseconds / 1000 / 1000 / 1000
 			new_time_human_readable = self.__convert_seconds_to_human_readable(new_time_seconds)
-			gobject.idle_add(self.__update_slider, new_time_seconds)
-			gobject.idle_add(lambda : self.time_elapsed_label.set_text(new_time_human_readable))
-			time.sleep(.25)
-	
-	def __update_slider(self, new_time_seconds):
-		self.time_elapsed_slider.set_value(new_time_seconds)
+			self.time_elapsed_slider.handler_block_by_func(self.on_time_elapsed_slider_change)
+			self.time_elapsed_slider.set_value(new_time_seconds)
+			self.time_elapsed_slider.handler_unblock_by_func(self.on_time_elapsed_slider_change)
+			self.time_elapsed_label.set_text(new_time_human_readable)
+		return True
+
 	
 	#######################################
 	# Private Methods

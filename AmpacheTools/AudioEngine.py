@@ -75,7 +75,8 @@ class AudioEngine:
 			self.stop()
 			err, debug = message.parse_error()
 			print "Gstreamer Error: %s" % err, debug
-			self.ampache_gui.audioengine_error_callback("Gstreamer Error: %s" % err, debug)
+			result =  "Gstreamer Error: %s" % err, debug
+			self.ampache_gui.audioengine_error_callback(result)
 		#elif t == gst.MESSAGE_BUFFERING:
 			#self.ampache_gui.audioengine_buffering_callback(message.structure['buffer-percent'])
 		#elif t == gst.MESSAGE_DURATION:
@@ -86,7 +87,7 @@ class AudioEngine:
 		try:
 			position, format = self.player.query_position(gst.FORMAT_TIME)
 		except:
-			position = 0
+			position = -1
 		#try:
 		#       duration, format = self.player.query_duration(gst.FORMAT_TIME)
 		#except:
@@ -140,6 +141,10 @@ class AudioEngine:
 		self.songs_list = []
 		self.song_num = -1
 		self.ampache_gui.audioengine_song_changed(None)
+	
+	def seek(self, seek_time_secs):
+		self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_KEY_UNIT, seek_time_secs * gst.SECOND)
+		return True
 	
 	def stop(self): 
 		"""Tells the player to stop."""
