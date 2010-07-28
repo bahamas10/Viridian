@@ -8,9 +8,9 @@
         <track>0</track>
         <time>339</time>
         <mime>audio/mp4</mime>
-        <url><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9496&uid=5&name=/Sonata%20Arctica%20-%20Abandoned%2C%20Pleased%2C%20Brainwashed%2C%20Exploited.m4a]]></url>
+        <url><![CDATA[http://localhost/ampache/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9496&uid=5&name=/Sonata%20Arctica%20-%20Abandoned%2C%20Pleased%2C%20Brainwashed%2C%20Exploited.m4a]]></url>
         <size>5651419</size>
-        <art><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
+        <art><![CDATA[http://localhost/ampache/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
         <preciserating>0</preciserating>
         <rating>0</rating>
 </song>
@@ -22,9 +22,9 @@
         <track>0</track>
         <time>320</time>
         <mime>audio/mp4</mime>
-        <url><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9506&uid=5&name=/Sonata%20Arctica%20-%20Broken.m4a]]></url>
+        <url><![CDATA[http://localhost/ampache/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9506&uid=5&name=/Sonata%20Arctica%20-%20Broken.m4a]]></url>
         <size>5143970</size>
-        <art><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
+        <art><![CDATA[http://localhost/ampache/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
         <preciserating>0</preciserating>
         <rating>0</rating>
 </song>
@@ -36,9 +36,9 @@
         <track>0</track>
         <time>239</time>
         <mime>audio/mp4</mime>
-        <url><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9497&uid=5&name=/Sonata%20Arctica%20-%20Champagne%20Bath.m4a]]></url>
+        <url><![CDATA[http://localhost/ampache/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9497&uid=5&name=/Sonata%20Arctica%20-%20Champagne%20Bath.m4a]]></url>
         <size>3831342</size>
-        <art><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
+        <art><![CDATA[http://localhost/ampache/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
         <preciserating>0</preciserating>
         <rating>0</rating>
 </song>
@@ -50,9 +50,9 @@
         <track>0</track>
         <time>262</time>
         <mime>audio/mp4</mime>
-        <url><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9502&uid=5&name=/Sonata%20Arctica%20-%20Draw%20Me.m4a]]></url>
+        <url><![CDATA[http://localhost/ampache/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9502&uid=5&name=/Sonata%20Arctica%20-%20Draw%20Me.m4a]]></url>
         <size>4232672</size>
-        <art><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
+        <art><![CDATA[http://localhost/ampache/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
         <preciserating>0</preciserating>
         <rating>0</rating>
 </song>
@@ -64,9 +64,9 @@
         <track>0</track>
         <time>420</time>
         <mime>audio/mp4</mime>
-        <url><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9500&uid=5&name=/Sonata%20Arctica%20-%20Gravenimage.m4a]]></url>
+        <url><![CDATA[http://localhost/ampache/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9500&uid=5&name=/Sonata%20Arctica%20-%20Gravenimage.m4a]]></url>
         <size>6778512</size>
-        <art><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
+        <art><![CDATA[http://localhost/ampache/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
         <preciserating>0</preciserating>
         <rating>0</rating>
 </song>
@@ -78,9 +78,9 @@
         <track>0</track>
         <time>240</time>
         <mime>audio/mp4</mime>
-        <url><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9499&uid=5&name=/Sonata%20Arctica%20-%20Silver%20Tongue.m4a]]></url>
+        <url><![CDATA[http://localhost/ampache/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9499&uid=5&name=/Sonata%20Arctica%20-%20Silver%20Tongue.m4a]]></url>
         <size>3841673</size>
-        <art><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
+        <art><![CDATA[http://localhost/ampache/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
         <preciserating>0</preciserating>
         <rating>0</rating>
 </song>
@@ -92,9 +92,9 @@
         <track>0</track>
         <time>279</time>
         <mime>audio/mp4</mime>
-        <url><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9504&uid=5&name=/Sonata%20Arctica%20-%20The%20Cage.m4a]]></url>
+        <url><![CDATA[http://localhost/ampache/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9504&uid=5&name=/Sonata%20Arctica%20-%20The%20Cage.m4a]]></url>
         <size>4467561</size>
-        <art><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
+        <art><![CDATA[http://localhost/ampache/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
         <preciserating>0</preciserating>
         <rating>0</rating>
 </song>
@@ -106,9 +106,9 @@
         <track>0</track>
         <time>310</time>
         <mime>audio/mp4</mime>
-        <url><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9501&uid=5&name=/Sonata%20Arctica%20-%20The%20Misery.m4a]]></url>
+        <url><![CDATA[http://localhost/ampache/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9501&uid=5&name=/Sonata%20Arctica%20-%20The%20Misery.m4a]]></url>
         <size>5006151</size>
-        <art><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
+        <art><![CDATA[http://localhost/ampache/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
         <preciserating>0</preciserating>
         <rating>0</rating>
 </song>
@@ -120,9 +120,9 @@
         <track>0</track>
         <time>316</time>
         <mime>audio/mp4</mime>
-        <url><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9498&uid=5&name=/Sonata%20Arctica%20-%20The%20Rest%20of%20the%20Sun%20Belongs%20to%20Me%20%5B%2A%5D.m4a]]></url>
+        <url><![CDATA[http://localhost/ampache/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9498&uid=5&name=/Sonata%20Arctica%20-%20The%20Rest%20of%20the%20Sun%20Belongs%20to%20Me%20%5B%2A%5D.m4a]]></url>
         <size>5104811</size>
-        <art><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
+        <art><![CDATA[http://localhost/ampache/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
         <preciserating>0</preciserating>
         <rating>0</rating>
 </song>
@@ -134,9 +134,9 @@
         <track>0</track>
         <time>568</time>
         <mime>audio/mp4</mime>
-        <url><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9503&uid=5&name=/Sonata%20Arctica%20-%20The%20Ruins%20of%20My%20Life.m4a]]></url>
+        <url><![CDATA[http://localhost/ampache/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9503&uid=5&name=/Sonata%20Arctica%20-%20The%20Ruins%20of%20My%20Life.m4a]]></url>
         <size>4768753</size>
-        <art><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
+        <art><![CDATA[http://localhost/ampache/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
         <preciserating>0</preciserating>
         <rating>0</rating>
 </song>
@@ -148,9 +148,9 @@
         <track>0</track>
         <time>285</time>
         <mime>audio/mp4</mime>
-        <url><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9505&uid=5&name=/Sonata%20Arctica%20-%20Victoria%27s%20Secret.m4a]]></url>
+        <url><![CDATA[http://localhost/ampache/play/index.php?ssid=055bf1e3aa463d0eb4f15948cde064b7&oid=9505&uid=5&name=/Sonata%20Arctica%20-%20Victoria%27s%20Secret.m4a]]></url>
         <size>4594541</size>
-        <art><![CDATA[http://outback.daveeddy.com:5789/ampache-datadyne/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
+        <art><![CDATA[http://localhost/ampache/image.php?id=1192&auth=055bf1e3aa463d0eb4f15948cde064b7&name=art.jpg]]></art>
         <preciserating>0</preciserating>
         <rating>0</rating>
 </song>

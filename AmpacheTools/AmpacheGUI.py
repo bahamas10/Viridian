@@ -24,6 +24,13 @@ import gobject
 import urllib
 import re
 
+try: # check to see if json can write lists to a db
+	import json
+	JSON_INSTALLED = True
+except:
+	print "[warn] python-json module not found, playlist will not be saved."
+	JSON_INSTALLED = False
+
 try: # check for pynotify
 	import pynotify
 	pynotify.init('Viridian')
@@ -41,7 +48,7 @@ except:
 	
 ### Contstants ###
 ALBUM_ART_SIZE = 80
-SCRIPT_PATH    = os.path.dirname(sys.argv[0])
+#SCRIPT_PATH    = os.path.dirname(sys.argv[0]) # not sure which method to get script path is better
 SCRIPT_PATH    = os.path.abspath(os.path.dirname(__file__))
 IMAGES_DIR     = SCRIPT_PATH + os.sep + 'images' + os.sep
 THREAD_LOCK    = thread.allocate_lock()
@@ -64,7 +71,7 @@ class AmpacheGUI:
 			self.tray_icon.connect('popup-menu', self.status_icon_popup_menu)
 			self.tray_icon.set_tooltip('Viridian')
 		#thread.start_new_thread(self.query_position, (None,))
-		gobject.timeout_add(300, self.query_position)
+		gobject.timeout_add(250, self.query_position)
 		gtk.main()
 
 	def delete_event(self, widget, event, data=None):
@@ -90,6 +97,8 @@ class AmpacheGUI:
 		self.stop_all_threads()
 		size = self.window.get_size()
 		gtk.main_quit()
+		self.db_session.variable_set('current_playlist', str(self.audio_engine.get_playlist()))
+		self.db_session.variable_set('volume', self.audio_engine.get_volume())
 		self.db_session.variable_set('window_size_width',  size[0])
 		self.db_session.variable_set('window_size_height', size[1])
 
@@ -289,15 +298,27 @@ class AmpacheGUI:
 		top_bar_left_top.pack_start(event_box_play, False, False, 0)
 		top_bar_left_top.pack_start(event_box_next, False, False, 0)
 		
-		### Repeat Songs
+		### Volume slider, repeat songs
+		volume_slider = gtk.HScale()
+		volume_slider.set_inverted(False)
+		volume_slider.set_range(0, 100)
+		volume_slider.set_increments(1, 10)
+		volume_slider.set_draw_value(False)
+		volume_slider.connect('change-value', self.on_volume_slider_change)
+		volume_slider.set_size_request(80, 20)
+		volume = self.db_session.variable_get('volume')
+		if volume == None:
+			volume = 100
+		volume = float(volume)
+		volume_slider.set_value(volume)
+		
 		repeat_songs_checkbutton = gtk.CheckButton("Repeat")
 		repeat_songs_checkbutton.set_active(False)
 		repeat_songs_checkbutton.connect("toggled", self.toggle_repeat_songs)
 		
-		self.notification_label = gtk.Label(" ")
-		
-		top_bar_left_bottom.pack_start(repeat_songs_checkbutton, False, False, 0)
-		top_bar_left_bottom.pack_start(self.notification_label, False, False, 10)
+		top_bar_left_bottom.pack_start(gtk.Label("Volume: "), False, False, 0)
+		top_bar_left_bottom.pack_start(volume_slider, False, False, 2)
+		top_bar_left_bottom.pack_start(repeat_songs_checkbutton, False, False, 2)
 		
 		top_bar_left.pack_start(top_bar_left_top, False, False, 0)
 		top_bar_left.pack_start(top_bar_left_bottom, False, False, 0)
@@ -310,6 +331,11 @@ class AmpacheGUI:
 		#################################
 		vbox = gtk.VBox()
 		
+		self.time_seek_label = gtk.Label(" ")
+		vbox.pack_start(self.time_seek_label, False, False, 5)
+		
+		top_bar.pack_start(vbox)
+			
 		hbox = gtk.HBox()
 		
 		self.time_elapsed_label = gtk.Label("0:00")
@@ -320,21 +346,20 @@ class AmpacheGUI:
 		self.time_elapsed_slider.set_range(0, 1)
 		self.time_elapsed_slider.set_increments(1, 10)
 		self.time_elapsed_slider.set_draw_value(False)
-		self.time_elapsed_slider.connect('value-changed', self.on_time_elapsed_slider_change)
+		self.time_elapsed_slider.set_update_policy(gtk.UPDATE_DELAYED)
+		self.time_elapsed_signals = []
+		self.time_elapsed_signals.append(self.time_elapsed_slider.connect('value-changed', self.on_time_elapsed_slider_change))
+		self.time_elapsed_signals.append(self.time_elapsed_slider.connect('change-value', self.on_time_elapsed_slider_change_value))
 		hbox.pack_start(self.time_elapsed_slider, True, True, 2)
 		
 		self.time_total_label = gtk.Label("0:00")
 		hbox.pack_start(self.time_total_label, False, False, 2)
 		
-		vbox.pack_start(hbox, False, False, 40)
+		vbox.pack_start(hbox, False, False, 10)
 		
-		self.time_seek_label = gtk.Label(" ")
-		vbox.pack_start(self.time_seek_label, False, False, 5)
-		
-		top_bar.pack_start(vbox)
 		
 		#################################
-		# Now Playing / Album Art
+		# Now Playing
 		#################################
 		now_playing_info = gtk.VBox()
 
@@ -348,6 +373,11 @@ class AmpacheGUI:
 		now_playing_info.pack_start(self.current_artist_label, False, False, 1)
 		now_playing_info.pack_start(self.current_album_label,  False, False, 1)
 		
+		top_bar.pack_start(now_playing_info, False, False, 15)
+		
+		#################################
+		#  Album Art
+		#################################
 		vbox = gtk.VBox()
 		
 		self.album_art_image = gtk.Image()
@@ -370,9 +400,10 @@ class AmpacheGUI:
 		vbox.pack_start(event_box_album, False, False, 0)
 		vbox.pack_start(hbox, False, False, 0)
 	
-		top_bar.pack_end(vbox, False, False, 0)
-		top_bar.pack_end(now_playing_info, False, False, 15)
+		top_bar.pack_start(vbox, False, False, 0)
 		
+		
+		########
 		main_box.pack_start(top_bar, False, False, 3)
 		"""End Now Playing Info/Album Art"""
 		
@@ -573,7 +604,7 @@ class AmpacheGUI:
 			new_column.set_resizable(True)
 			new_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
 			if column == "Track":
-				new_column.set_fixed_width(50)
+				new_column.set_fixed_width(60)
 			elif column == "Title":
 				new_column.set_fixed_width(230)
 			elif column == "Artist":
@@ -658,7 +689,13 @@ class AmpacheGUI:
 		### Check for credentials and login ###
 		if self.ampache_conn.has_credentials():
 			self.update_statusbar("Attempting to authenticate...")
-			self.login_and_get_artists("First")
+			if self.login_and_get_artists("First"):
+				if JSON_INSTALLED:
+					list = self.db_session.variable_get('current_playlist')
+					if list != None:
+						list = json.read(list)
+						self.audio_engine.set_playlist(list)
+						self.update_playlist_window()
 		else:
 			self.update_statusbar("Set Ampache information by going to Edit -> Preferences") 
 			if self.ampache_conn.is_first_time():
@@ -670,10 +707,10 @@ class AmpacheGUI:
 		else:	
 			show_playlist = self.db_session.variable_get('show_playlist')
 			if show_playlist == None:
-				show_playlist = False
+				show_playlist = True
 			show_downloads = self.db_session.variable_get('show_downloads')
-			if show_playlist == None:
-				show_playlist = False
+			if show_downloads == None:
+				show_downloads = False
 				
 			view_statusbar = self.db_session.variable_get('view_statusbar')
 			if view_statusbar == None:
@@ -685,7 +722,7 @@ class AmpacheGUI:
 			if show_playlist == False:
 				self.playlist_window.hide()
 			if show_downloads == False:
-				self.playlist_window.hide()
+				self.downloads_window.hide()
 			if show_playlist == False and show_downloads == False:
 				self.side_panel.hide()
 			if view_statusbar == False:
@@ -1248,8 +1285,10 @@ class AmpacheGUI:
 				custom_name = artists[artist_id]['custom_name']
 				model.append([artist_name, artist_id, custom_name])
 			self.update_statusbar("Ready.")
+			return True
 		else: # auth failed
 			self.update_statusbar("Authentication Failed.")
+			return False
 		
 				
 	#######################################
@@ -1456,12 +1495,20 @@ class AmpacheGUI:
 	# Misc Selection Methods
 	#######################################
 	def on_time_elapsed_slider_change(self, slider):
+		"""When the user moves the seek bar."""
 		seek_time_secs = slider.get_value()
 		gobject.idle_add(self.time_seek_label.set_text, self.__convert_seconds_to_human_readable(seek_time_secs))
-		self.audio_engine.seek(seek_time_secs)
+		print self.audio_engine.seek(seek_time_secs)
 		return True
 	
-			
+	def on_time_elapsed_slider_change_value(self, slider, data1=None, data2=None):
+		"""When the user drags the slide bar but doesn't commit yet"""
+		seek_time_secs = slider.get_value()
+		gobject.idle_add(self.time_seek_label.set_text, self.__convert_seconds_to_human_readable(seek_time_secs))
+		
+	def on_volume_slider_change(self, range, scroll, value):
+		"""Change the volume."""
+		self.audio_engine.set_volume(value)
 
 	#######################################
 	# Button Clicked Methods
@@ -1706,7 +1753,7 @@ class AmpacheGUI:
 		about = gtk.AboutDialog()
 		about.set_name("Viridian")
 		about.set_version("1.0-alpha")
-		#about.set_copyright("(c) Dave Eddy")
+		about.set_copyright("(c) Dave Eddy <dave@daveeddy.com>")
 		about.set_comments("Viridian is a front-end for an Ampache Server (see http://ampache.org)")
 		about.set_website("http://www.viridianplayer.com")
 		about.set_authors(["Author:", "Dave Eddy <dave@daveeddy.com>", "http://www.daveeddy.com", "", "AudioEngine by:", "Michael Zeller <link@conquerthesound.com>", "http://conquerthesound.com"])
@@ -1715,6 +1762,15 @@ class AmpacheGUI:
 			about.set_logo(gtk.gdk.pixbuf_new_from_file(IMAGES_DIR + "logo.png"))
 		except:
 			pass
+		gpl = ""
+		try: 
+			h = open(SCRIPT_PATH + os.sep + 'doc' + os.sep + 'gpl.txt')
+			s = h.readlines()
+			for line in s:
+				gpl += line
+		except:
+			gpl = "GPL v3"
+		about.set_license(gpl)
 		about.run()
 		about.destroy()
 		
@@ -1754,15 +1810,15 @@ class AmpacheGUI:
 		self.time_elapsed_slider.set_range(0, song_time)
 		self.time_total_label.set_text(self.__convert_seconds_to_human_readable(song_time))
 		
-		song_title  = self.current_song_info['song_title']
-		artist_name = self.current_song_info['artist_name']
-		album_name  = self.current_song_info['album_name']
+		song_title  = self.current_song_info['song_title'].replace('&', '&amp;') #HACK
+		artist_name = self.current_song_info['artist_name'].replace('&', '&amp;') #HACK
+		album_name  = self.current_song_info['album_name'].replace('&', '&amp;') #HACK
 		self.current_song_label.set_markup(   '<span size="13000"><b>'+song_title+'</b></span>'  )
 		self.current_artist_label.set_markup( '<span size="10000">'+artist_name+'</span>' )
 		self.current_album_label.set_markup(  '<span size="10000">'+album_name+'</span>'  )
 		### Update the statusbar and tray icon ###
-		self.set_tray_tooltip(song_title + ' - ' + artist_name)
-		self.update_statusbar(song_title + ' - ' + artist_name)
+		self.set_tray_tooltip(song_title + ' - ' + artist_name + ' - ' + album_name)
+		self.update_statusbar(song_title + ' - ' + artist_name + ' - ' + album_name)
 		
 		### Get the album Art ###
 		album_id   = self.current_song_info['album_id']
@@ -1806,7 +1862,7 @@ class AmpacheGUI:
 			
 	def audioengine_error_callback(self, error_message):
 		"""Display the gstreamer error in the notification label."""
-		gobject.idle_add(lambda : self.notification_label.set_text(error_message))
+		self.update_statusbar(error_message)
 			
 	#######################################
 	# Ampache Session Callback
@@ -1881,8 +1937,7 @@ class AmpacheGUI:
 	def stop_all_threads(self):
 		"""Stops all running threads."""
 		self.pre_cache_continue = False
-		self.download_song_continue = False
-
+		
 	def refresh_gui(self):
 		"""Refresh the GUI by calling gtk.main_iteration(). """
 		while gtk.events_pending():
@@ -1958,13 +2013,16 @@ class AmpacheGUI:
 	#######################################
 	def query_position(self, data=None):
 		"""Thread that updates the label and the seek/slider."""
+		self.time_seek_label.set_text(" ")
 		new_time_nanoseconds = self.audio_engine.query_position()
 		if new_time_nanoseconds != -1:
 			new_time_seconds = new_time_nanoseconds / 1000 / 1000 / 1000
 			new_time_human_readable = self.__convert_seconds_to_human_readable(new_time_seconds)
-			self.time_elapsed_slider.handler_block_by_func(self.on_time_elapsed_slider_change)
+			for signal in self.time_elapsed_signals:
+				self.time_elapsed_slider.handler_block(signal)
 			self.time_elapsed_slider.set_value(new_time_seconds)
-			self.time_elapsed_slider.handler_unblock_by_func(self.on_time_elapsed_slider_change)
+			for signal in self.time_elapsed_signals:
+				self.time_elapsed_slider.handler_unblock(signal)
 			self.time_elapsed_label.set_text(new_time_human_readable)
 		return True
 
@@ -1972,19 +2030,6 @@ class AmpacheGUI:
 	#######################################
 	# Private Methods
 	#######################################
-	def __convert_seconds_to_human_readable(self, number):
-		"""Converts seconds to a human readable string."""
-		if number == 0:
-			return "0:00"
-		# convert time in seconds to HH:MM:SS THIS WILL FAIL IF LENGTH > 24 HOURS
-		new_time = time.strftime('%H:%M:%S', time.gmtime(number))
-		if new_time[:3] == "00:": # strip out hours if below 60 minutes
-			new_time = new_time[3:]
-		if new_time[:3] == "00:": # strip out hours if below 60 minutes
-			new_time = new_time[1:]
-		return new_time
-
-	
 	#################
 	# Sort Functions
 	#################
@@ -2068,7 +2113,7 @@ class AmpacheGUI:
 
 	#################
 	# Internal Helper Functions
-	#################
+	#################	
 	def __clear_all_list_stores(self):
 		"""Clears all list stores in the GUI."""
 		self.song_list_store.clear()
@@ -2178,4 +2223,16 @@ class AmpacheGUI:
 			return str(round(bytes / 1024, 1)) + ' KB'
 		elif bytes < 1024:
 			return str(bytes) + ' bytes'
+		
+	def __convert_seconds_to_human_readable(self, number):
+		"""Converts seconds to a human readable string."""
+		if number == 0:
+			return "0:00"
+		# convert time in seconds to HH:MM:SS THIS WILL FAIL IF LENGTH > 24 HOURS
+		new_time = time.strftime('%H:%M:%S', time.gmtime(number))
+		if new_time[:3] == "00:": # strip out hours if below 60 minutes
+			new_time = new_time[3:]
+		if new_time[:3] == "00:": # strip out hours if below 60 minutes
+			new_time = new_time[1:]
+		return new_time
 

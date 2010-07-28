@@ -33,7 +33,7 @@ class AudioEngine:
 		self.song_num = -1
 		
 		# create a playbin (plays media form an uri)
-		self.player = gst.element_factory_make("playbin", "player")
+		self.player = gst.element_factory_make("playbin2", "player")
 		bus = self.player.get_bus()
 		bus.add_signal_watch()
 		bus.enable_sync_message_emission()
@@ -110,6 +110,10 @@ class AudioEngine:
 			except:
 				pass
 		return None
+	
+	def set_playlist(self, list):
+		self.songs_list = list
+		return True
 		
 	def get_playlist(self):
 		"""Returns the current playlist in a list of song_ids."""
@@ -136,16 +140,30 @@ class AudioEngine:
 			return False
 		return True
 	
+	def set_volume(self, percent):
+		"""Sets the volume, must be 0-100."""
+		if percent < 0 or percent > 100:
+			return False
+		volume = percent / 100.0
+		self.player.set_property('volume', volume)
+		
+	def get_volume(self):
+		"""Gets the volume."""
+		return self.player.get_property('volume')*100
+	
 	def clear_playlist(self, data=None):
+		"""Clear the current playlist and stop the song."""
 		self.stop()
 		self.songs_list = []
 		self.song_num = -1
 		self.ampache_gui.audioengine_song_changed(None)
 	
 	def seek(self, seek_time_secs):
-		self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_KEY_UNIT, seek_time_secs * gst.SECOND)
-		return True
-	
+		return self.player.seek_simple(gst.FORMAT_TIME,  gst.SEEK_FLAG_KEY_UNIT, seek_time_secs * gst.SECOND)
+		#gst_time = seek_time_secs * gst.MSECOND
+		#event = gst.event_new_seek(1.0, gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH, gst.SEEK_TYPE_SET, gst_time, gst.SEEK_TYPE_NONE, 0)
+		return self.player.send_event(event)
+		
 	def stop(self): 
 		"""Tells the player to stop."""
 		try:
@@ -171,9 +189,11 @@ class AudioEngine:
 		return True
 	
 	def change_song(self, song_num):
+		"""Change song to the given song number."""
 		self.play_from_list_of_songs(self.songs_list, song_num)
 	
 	def remove_from_playlist(self, song_id):
+		"""Remove the song_id from the playlist."""
 		try:
 			song_num = self.songs_list.index(song_id)
 			if song_num <= self.song_num:
@@ -184,6 +204,7 @@ class AudioEngine:
 		return True
 	
 	def insert_into_playlist(self, song_id, song_num=None):
+		"""insert the song_id into the playlist, song_num is optional."""
 		if song_num == None:
 			self.songs_list.append(song_id)
 		else:

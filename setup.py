@@ -24,5 +24,5 @@ setup(name='Viridian',
 	url='http://www.daveeddy.com',
 	scripts=['viridian'],
 	packages=['AmpacheTools'],
-	package_data={'AmpacheTools' : ['images/*']}
+	package_data={'AmpacheTools' : ['images/*', 'doc/*']}
 )

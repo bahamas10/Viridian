@@ -18,7 +18,7 @@
 __program__    = "Viridian"
 __author__     = "David Eddy"
 __credits__    = ["Michael Zeller", "Skye Sawyer"]
-__license__    = "GPL"
+__license__    = "GPLv3"
 __version__    = "1.0"
 __maintainer__ = "David Eddy"
 __email__      = "dave@daveeddy.com"
