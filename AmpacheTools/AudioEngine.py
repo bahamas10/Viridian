@@ -27,8 +27,8 @@ class AudioEngine:
 		# Variables
 		##################################
 		self.ampache_conn = ampache_conn
-		self.repeat_songs = False # default
 		
+		self.repeat_songs = False
 		self.songs_list = []
 		self.song_num = -1
 		
@@ -74,13 +74,9 @@ class AudioEngine:
 		elif t == gst.MESSAGE_ERROR: # error!
 			self.stop()
 			err, debug = message.parse_error()
-			print "Gstreamer Error: %s" % err, debug
-			result =  "Gstreamer Error: %s" % err, debug
+			result =  "Gstreamer Error: %s %s" % (err, debug)
+			print result
 			self.ampache_gui.audioengine_error_callback(result)
-		#elif t == gst.MESSAGE_BUFFERING:
-			#self.ampache_gui.audioengine_buffering_callback(message.structure['buffer-percent'])
-		#elif t == gst.MESSAGE_DURATION:
-			#print gst.QUERY_DURATION
 			
 	def query_position(self):
 		"""Returns position in nanoseconds"""
@@ -112,6 +108,7 @@ class AudioEngine:
 		return None
 	
 	def set_playlist(self, list):
+		"""Sets the current playlist to list."""
 		self.songs_list = list
 		return True
 		
@@ -125,20 +122,17 @@ class AudioEngine:
 	
 	def get_current_song_id(self):
 		"""Returns the current playing song_id or None."""
-		try:
-			if self.song_num == -1:
-				return None
-			return self.songs_list[self.song_num]
-		except:
+		if self.song_num == -1:
 			return None
+		return self.songs_list[self.song_num]
 		
 	def set_repeat_songs(self, value): # must be True or False
 		"""Set songs to repeat.  Takes True or False."""
-		try:
-			self.repeat_songs = value
-		except:
-			return False
-		return True
+		self.repeat_songs = value
+		
+	def get_repeat_songs(self):
+		"""True if songs are set to repeat."""
+		return self.repeat_songs
 	
 	def set_volume(self, percent):
 		"""Sets the volume, must be 0-100."""
@@ -159,6 +153,7 @@ class AudioEngine:
 		self.ampache_gui.audioengine_song_changed(None)
 	
 	def seek(self, seek_time_secs):
+		"""Seek function, doesn't work on some distros."""
 		return self.player.seek_simple(gst.FORMAT_TIME,  gst.SEEK_FLAG_KEY_UNIT, seek_time_secs * gst.SECOND)
 		#gst_time = seek_time_secs * gst.MSECOND
 		#event = gst.event_new_seek(1.0, gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH, gst.SEEK_TYPE_SET, gst_time, gst.SEEK_TYPE_NONE, 0)
@@ -219,7 +214,8 @@ class AudioEngine:
 				self.song_num = (self.song_num + len(self.songs_list)) % len(self.songs_list) # this is for repeating tracks
 			else: # the user doesn't want the album to repeat
 				if self.song_num < 0:
-					self.song_num = None
+					self.song_num = 0
+					return True
 			print "New song_num", self.song_num
 			self.play_from_list_of_songs(self.songs_list, self.song_num)
 		except:
@@ -233,13 +229,15 @@ class AudioEngine:
 		try:
 			if self.song_num == None: # the user clicked prev too many times
 				self.song_num = 0
-			self.song_num += 1
+			else:
+				self.song_num += 1
 			if self.repeat_songs: # if the user wants the album to repeat
 				self.song_num = self.song_num % len(self.songs_list)
 			else: # don't repeat
-				if self.song_num > len(self.songs_list):
+				if self.song_num >= len(self.songs_list):
 					# dont' let the current position go over the playlist length
-					self.song_num = len(self.songs_list) 
+					self.song_num = len(self.songs_list) - 1
+					return
 			print "New song_num", self.song_num
 			self.play_from_list_of_songs(self.songs_list, self.song_num)
 		except:

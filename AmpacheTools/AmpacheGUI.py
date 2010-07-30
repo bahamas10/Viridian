@@ -23,12 +23,13 @@ import thread
 import gobject
 import urllib
 import re
+import shutil
 
 try: # check to see if json can write lists to a db
 	import json
 	JSON_INSTALLED = True
 except:
-	print "[warn] python-json module not found, playlist will not be saved."
+	print "[Warn] python-json module not found, playlist will not be saved."
 	JSON_INSTALLED = False
 
 try: # check for pynotify
@@ -48,10 +49,12 @@ except:
 	
 ### Contstants ###
 ALBUM_ART_SIZE = 80
-#SCRIPT_PATH    = os.path.dirname(sys.argv[0]) # not sure which method to get script path is better
+#SCRIPT_PATH   = os.path.dirname(sys.argv[0]) # not sure which method to get script path is better
 SCRIPT_PATH    = os.path.abspath(os.path.dirname(__file__))
 IMAGES_DIR     = SCRIPT_PATH + os.sep + 'images' + os.sep
 THREAD_LOCK    = thread.allocate_lock()
+VIRIDIAN_DIR   = os.path.expanduser("~") + os.sep + '.viridian'
+ALBUM_ART_DIR  = VIRIDIAN_DIR + os.sep + 'album_art'
 
 class AmpacheGUI:
 	"""The Ampache GUI Class"""
@@ -70,8 +73,11 @@ class AmpacheGUI:
 			self.tray_icon.connect('activate', self.status_icon_activate)
 			self.tray_icon.connect('popup-menu', self.status_icon_popup_menu)
 			self.tray_icon.set_tooltip('Viridian')
+		
+		### Seek Bar ###
 		#thread.start_new_thread(self.query_position, (None,))
 		gobject.timeout_add(250, self.query_position)
+		
 		gtk.main()
 
 	def delete_event(self, widget, event, data=None):
@@ -81,7 +87,7 @@ class AmpacheGUI:
 		else:
 			if self.first_time_closing:
 				self.main_gui_toggle_hidden()
-				self.create_dialog_alert("info", """Viridian is still running in the status bar.  If you do not want Viridian to continue running when the window is closed you can disable this in the preferences window.""", True)
+				self.create_dialog_alert("info", """Viridian is still running in the status bar.  If you do not want Viridian to continue running when the window is closed you can disable it in Preferences.""", True)
 				self.first_time_closing = False
 				self.db_session.variable_set('first_time_closing', 'False')
 			else: 
@@ -111,6 +117,8 @@ class AmpacheGUI:
 		self.audio_engine = audio_engine
 		self.ampache_conn = ampache_conn
 		self.db_session   = db_session
+		
+		self.catalog_up_to_date = None
 
 		##################################
 		# Load Images
@@ -461,6 +469,14 @@ class AmpacheGUI:
 		
 		hbox.pack_start(button, False, False, 2)
 		
+		combobox = gtk.combo_box_new_text()
+		combobox.append_text('Replace Mode')
+		combobox.append_text('Add Mode')
+		combobox.connect('changed', self.playlist_mode_changed)
+		
+		
+		hbox.pack_start(combobox, False, False, 2)
+		
 		self.playlist_window.pack_start(hbox, False, False, 2)
 		
 		self.side_panel.pack_start(self.playlist_window)
@@ -660,7 +676,11 @@ class AmpacheGUI:
 		if repeat_songs:
 			repeat_songs_checkbutton.set_active(True)
 			self.audio_engine.set_repeat_songs(True)
-			
+		
+		self.playlist_mode = self.db_session.variable_get('playlist_mode')
+		if self.playlist_mode == None:
+			self.playlist_mode = 0
+		combobox.set_active(self.playlist_mode)	
 		
 	def main_gui_callback(self):
 		"""Function that gets called after GUI has loaded.
@@ -687,6 +707,11 @@ class AmpacheGUI:
 			self.downloads_directory = os.path.expanduser("~")
 			
 		### Check for credentials and login ###
+		username = self.db_session.variable_get('credentials_username')
+		password = self.db_session.variable_get('credentials_password')
+		url      = self.db_session.variable_get('credentials_url')
+		
+		self.ampache_conn.set_credentials(username, password, url)
 		if self.ampache_conn.has_credentials():
 			self.update_statusbar("Attempting to authenticate...")
 			if self.login_and_get_artists("First"):
@@ -698,7 +723,7 @@ class AmpacheGUI:
 						self.update_playlist_window()
 		else:
 			self.update_statusbar("Set Ampache information by going to Edit -> Preferences") 
-			if self.ampache_conn.is_first_time():
+			if self.db_session.is_first_time():
 				self.create_dialog_alert("info", """This looks like the first time you are running Viridian.  To get started, go to Edit -> Preferences and set your account information.""", True)
 				
 	def main_gui_toggle_hidden(self):
@@ -781,7 +806,8 @@ class AmpacheGUI:
 		try:
 			self.ampache_text_entry.set_text(self.ampache_conn.url)
 		except:
-			pass	
+			pass
+		
 		hbox.pack_start(self.ampache_text_entry)
 
 		account_box.pack_start(hbox, False, False, 2)
@@ -803,6 +829,7 @@ class AmpacheGUI:
 			self.username_text_entry.set_text(self.ampache_conn.username)
 		except:
 			pass
+			
 		hbox.pack_start(self.username_text_entry)
 	
 		account_box.pack_start(hbox, False, False, 2)
@@ -818,6 +845,7 @@ class AmpacheGUI:
 			self.password_text_entry.set_text(self.ampache_conn.password)
 		except:
 			pass
+		
 		self.password_text_entry.set_visibility(False)
 		hbox.pack_start(self.password_text_entry)
 	
@@ -899,7 +927,7 @@ class AmpacheGUI:
 		image = gtk.Image()
 		
 		if self.ampache_conn.has_credentials() and self.ampache_conn.is_authenticated():
-			if self.ampache_conn.is_up_to_date():
+			if self.catalog_up_to_date:
 				image.set_from_stock(gtk.STOCK_YES,gtk.ICON_SIZE_SMALL_TOOLBAR)
 				label.set_text("Local catalog is up-to-date.")
 			else:
@@ -1212,7 +1240,7 @@ class AmpacheGUI:
 	def toggle_quit_when_window_closed(self, widget, data=None):
 		"""Toggle to decide if the program quits or keeps running when the main window is closed."""
 		self.quit_when_window_closed = widget.get_active()
-		self.db_session.variable_set('quit_when_window_closed', self.quit_when_window_closed)
+		self.db_session.variable_set('quit_when_window_closed', widget.get_active())
 		
 	#######################################
 	# Radio Buttons
@@ -1241,7 +1269,15 @@ class AmpacheGUI:
 				cb.set_sensitive(True)
 				cb.set_active(False)
 
-		
+	#######################################
+	# Combo Boxes
+	#######################################
+	def playlist_mode_changed(self, combobox):
+		model = combobox.get_model()
+		index = combobox.get_active()
+		self.playlist_mode = index
+		self.db_session.variable_set('playlist_mode', self.playlist_mode)
+		return
 		
 	#######################################
 	# Initial Authentication
@@ -1260,25 +1296,45 @@ class AmpacheGUI:
 		print "Username = %s" % username
 		print "Password = " + len(password)*"*"
 		# set the credentials and try to login
-		if self.ampache_conn.authenticate(): # auth successful
+		self.__successfully_authed = None
+		thread.start_new_thread(self.__authenticate, (None,))
+		while self.__successfully_authed == None:
+			self.refresh_gui()
+		if self.__successfully_authed: # auth successful
 			self.update_statusbar("Authentication Successful.")
 			print "Authentication Successful!"
 			print "Authentication = %s" % self.ampache_conn.auth
 			print "Number of artists = %d" % self.ampache_conn.artists_num
 			
-			if not self.ampache_conn.is_up_to_date():
+			catalog_update   = self.db_session.variable_get('catalog_update')
+			last_update_time = self.ampache_conn.get_last_update_time()
+			
+			if data == "changed":
+				catalog_update = last_update_time
+				self.db_session.variable_set('catalog_update', last_update_time)
+			
+			self.catalog_up_to_date = False
+			if catalog_update >= last_update_time:
+				self.catalog_up_to_date = True
+				
+			if not self.catalog_up_to_date:
 				# not up to date
 				if data == "First" and self.automatically_update:
-					self.ampache_conn.clear_cached_catalog()
+					self.db_session.clear_cached_catalog()
+					self.db_session.variable_set('catalog_update', last_update_time)
+					self.catalog_up_to_date = True
 				elif data == True or data == "First": # open a popup
 					if self.create_catalog_updated_dialog(): # user pressed update
-						self.ampache_conn.clear_cached_catalog()
+						self.db_session.clear_cached_catalog()
+						self.db_session.variable_set('catalog_update', last_update_time)
+						self.catalog_up_to_date = True
+						
 				#else: #do nothing, pull from cache
-						
-						
+							
 			# load the artists window with, you guessed it, artists
 			self.update_statusbar("Pulling Artists...")
-			artists = self.ampache_conn.get_artist_dict()
+			self.check_and_populate_artists()
+			artists = self.db_session.get_artist_dict()
 			model = self.artist_list_store
 			for artist_id in artists:
 				artist_name = artists[artist_id]['name']
@@ -1318,7 +1374,8 @@ class AmpacheGUI:
 		model = self.album_list_store
 		model.clear()
 		model.append(["All Albums", -1, -1, 0])
-		albums = self.ampache_conn.get_album_dict(self.artist_id)
+		self.check_and_populate_albums(self.artist_id)
+		albums = self.db_session.get_album_dict(self.artist_id)
 		# alphabetize the list
 		for album in albums:
 			album_name  = albums[album]['name']
@@ -1372,18 +1429,24 @@ class AmpacheGUI:
 	#######################################
 	def albums_on_activated(self, widget, row, col):
 		"""The function that runs when the user double-clicks an album."""
+		
 		model = widget.get_model()
 		
 		album_name = model[row][0]
 		album_id   = model[row][1]
 		
-		# get all songs in the current songs menu and play them
-		list = []
-		for song in self.song_list_store:
-			list.append(song[6])
-			
-		print "Sending this list of songs to player", list
-		self.audio_engine.play_from_list_of_songs(list)
+		if self.playlist_mode == 0: # replace mode
+			# get all songs in the current songs menu and play them
+			list = []
+			for song in self.song_list_store:
+				list.append(song[6])
+				
+			print "Sending this list of songs to player", list
+			self.audio_engine.play_from_list_of_songs(list)
+		else: # add mode
+			for song in self.song_list_store:
+				self.audio_engine.insert_into_playlist(song[6])
+			self.update_playlist_window()
 
 	def songs_on_activated(self, widget, row, col):
 		"""The function that runs when the user double-clicks a song."""
@@ -1392,14 +1455,17 @@ class AmpacheGUI:
 		song_title = model[row][1]
 		song_id    = model[row][6]
 
-		list = []
-		for song in model:
-			list.append(song[6])
-		
-		song_num = row[0]
-		
-		print "Sending this list of songs to player", list
-		self.audio_engine.play_from_list_of_songs(list, song_num)
+		if self.playlist_mode == 0: # replace mode
+			list = []
+			for song in model:
+				list.append(song[6])
+			
+			song_num = row[0]
+			print "Sending this list of songs to player", list
+			self.audio_engine.play_from_list_of_songs(list, song_num)
+		else: # add mode
+			self.audio_engine.insert_into_playlist(song_id)
+			self.update_playlist_window()
 
 	def playlist_on_activated(self, widget, row, col):
 		"""The function that runs when the user double-clicks a song in the playlist."""
@@ -1531,13 +1597,16 @@ class AmpacheGUI:
 		
 		# if the code makes it this far, the credentials have been changed
 		self.stop_all_threads()
-		self.ampache_conn.clear_album_art()
-		self.ampache_conn.clear_cached_catalog()
-		if self.ampache_conn.set_credentials(url, username, password): # credentials saved
+		self.clear_album_art()
+		self.db_session.clear_cached_catalog()
+		if self.ampache_conn.set_credentials(username, password, url): # credentials saved
+			self.db_session.variable_set('credentials_username', username)
+			self.db_session.variable_set('credentials_password', password)
+			self.db_session.variable_set('credentials_url', url)
 			self.update_statusbar("Saved Credentials")
 			print "Credentials Saved"
 			self.destroy_settings(window)
-			self.login_and_get_artists()
+			self.login_and_get_artists("changed")
 		else:
 			self.update_statusbar("Couldn't save credentials!")
 			print "[Error] Couldn't save credentials!"
@@ -1602,20 +1671,20 @@ class AmpacheGUI:
 		self.button_clear_cache_locked = True
 		print "Clearing cached catalog -- will reauthenticate and pull artists"
 		self.stop_all_threads()
-		self.ampache_conn.clear_cached_catalog()
+		self.db_session.clear_cached_catalog()
 		self.login_and_get_artists()
 		self.button_clear_cache_locked = False	
 		
 	def button_clear_album_art_clicked(self, widget=None, data=None):
 		"""Clear local album art."""
-		self.ampache_conn.clear_album_art()
+		self.clear_album_art()
 		self.update_statusbar("Album Art Cleared")
 		
 	def button_reset_everything_clicked(self, widget=None, data=None):
 		"""Reset everything."""
 		answer = self.create_dialog_ok_or_close("Reset Viridian", """Are you sure you want to delete all personal information stored with Viridian?""")
 		if answer == "ok":
-			self.ampache_conn.reset_everything()
+			self.reset_everything()
 			self.destroy()
 		
 	def button_pre_cache_info_clicked(self, widget=None, data=None):
@@ -1641,7 +1710,7 @@ class AmpacheGUI:
 		self.pre_cache_continue = True # this will be set to false if this function should stop
 		try:
 			start_time = int(time.time())
-			artists = self.ampache_conn.get_artist_ids()
+			artists = self.db_session.get_artist_ids()
 			i = 0
 			num_artists = len(artists)
 			for artist_id in artists:
@@ -1649,12 +1718,12 @@ class AmpacheGUI:
 				if self.pre_cache_continue == False:
 					self.button_pre_cache_locked = False
 					return False
-				self.ampache_conn.populate_albums_dict(artist_id)
+				self.check_and_populate_albums(artist_id)
 				self.update_statusbar("Pulling all albums from artists: %d/%d" % (i, num_artists) )
 				#gobject.idle_add(self.update_statusbar, 1, "Pulling all albums from artists: %d/%d" % (i, num_artists) )
 			self.update_statusbar("Finished pulling albums")
 			
-			albums = self.ampache_conn.get_album_ids()
+			albums = self.db_session.get_album_ids()
 			i = 0
 			num_albums = len(albums)
 			for album_id in albums:
@@ -1662,7 +1731,7 @@ class AmpacheGUI:
 				if self.pre_cache_continue == False:
 					self.button_pre_cache_locked = False
 					return False
-				self.ampache_conn.populate_songs_dict(album_id)
+				self.check_and_populate_songs(album_id)
 				self.update_statusbar("Pulling all songs from albums: %d/%d" % (i, num_albums) )
 			end_time = int(time.time())
 			time_taken = end_time - start_time
@@ -1711,7 +1780,7 @@ class AmpacheGUI:
 	#######################################
 	# Dialogs
 	#######################################
-	def create_dialog_alert(self, dialog_type, message, ok=None):
+	def create_dialog_alert(self, dialog_type, message, ok=False):
 		"""Creates a generic dialog of the type specified with close."""
 		if dialog_type == "warn": 
 			dialog_type = gtk.MESSAGE_WARNING
@@ -1727,6 +1796,7 @@ class AmpacheGUI:
 			md = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT, dialog_type, gtk.BUTTONS_OK, message)
 		else: # display Close button
 			md = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT, dialog_type, gtk.BUTTONS_CLOSE, message)
+		md.set_title('Viridian')
 		md.run()
 		md.destroy()
 	
@@ -1740,6 +1810,7 @@ class AmpacheGUI:
 		md.set_border_width(3)
 		md.set_resizable(False)
 		md.show_all()
+		md.set_title('Viridian')
 		resp = md.run()
 		md.destroy()
 		if resp == gtk.RESPONSE_OK:
@@ -1769,7 +1840,7 @@ class AmpacheGUI:
 			for line in s:
 				gpl += line
 		except:
-			gpl = "GPL v3"
+			gpl = "GPL v3 <http://www.gnu.org/licenses/gpl.html>"
 		about.set_license(gpl)
 		about.run()
 		about.destroy()
@@ -1790,7 +1861,7 @@ class AmpacheGUI:
 	def audioengine_song_changed(self, song_id):
 		"""The function that gets called when the AudioEngine changes songs."""
 		if song_id != None:
-			self.current_song_info = self.ampache_conn.get_single_song_dict(song_id)
+			self.current_song_info = self.db_session.get_single_song_dict(song_id)
 		gobject.idle_add(self.__audioengine_song_changed, song_id)
 		
 	def __audioengine_song_changed(self, song_id):
@@ -1799,6 +1870,7 @@ class AmpacheGUI:
 			self.current_song_info = None
 			self.play_pause_image.set_from_pixbuf(self.images_pixbuf_play)
 			self.set_tray_tooltip('Viridian')
+			self.window.set_title("Viridian")
 			self.set_tray_icon(None)
 			self.playlist_list_store.clear()
 			return False
@@ -1817,12 +1889,15 @@ class AmpacheGUI:
 		self.current_artist_label.set_markup( '<span size="10000">'+artist_name+'</span>' )
 		self.current_album_label.set_markup(  '<span size="10000">'+album_name+'</span>'  )
 		### Update the statusbar and tray icon ###
-		self.set_tray_tooltip(song_title + ' - ' + artist_name + ' - ' + album_name)
+		self.set_tray_tooltip("Viridan :: " + song_title + ' - ' + artist_name + ' - ' + album_name)
 		self.update_statusbar(song_title + ' - ' + artist_name + ' - ' + album_name)
+		self.window.set_title("Viridan :: " + song_title + ' - ' + artist_name + ' - ' + album_name)
 		
 		### Get the album Art ###
 		album_id   = self.current_song_info['album_id']
-		art_folder = self.ampache_conn.art_folder
+		art_folder = ALBUM_ART_DIR
+		if not os.path.exists(ALBUM_ART_DIR):
+			os.mkdir(ALBUM_ART_DIR)
 		self.current_album_art_file = art_folder + os.sep + str(album_id)
 		if os.path.isfile(self.current_album_art_file):
 			print "Album art exists locally"
@@ -1839,7 +1914,7 @@ class AmpacheGUI:
 		self.album_art_image.set_from_pixbuf(image_pixbuf)
 		self.set_tray_icon(image_pixbuf)
 		
-		self.update_statusbar(song_title + " - " + artist_name) # refresh
+		self.refresh_gui()
 		
 		### Send notifications OSD ###
 		self.notification("Now Playing", song_title + ' - ' + artist_name, self.current_album_art_file)
@@ -1862,19 +1937,33 @@ class AmpacheGUI:
 			
 	def audioengine_error_callback(self, error_message):
 		"""Display the gstreamer error in the notification label."""
-		self.update_statusbar(error_message)
+		self.update_statusbar("An error has occured.")
+		self.create_dialog_alert('warn', """GStreamer has encountered an error, this is most likely caused by:
+- gstreamer-plugins not being installed.
+- Ampache not transcoding the file correctly.
+- A lost or dropped connection to the server.
+		
+Message from GStreamer:
+%s""" % error_message)
 			
-	#######################################
-	# Ampache Session Callback
-	#######################################
-	def authentication_failed_callback(self):
-		"""Clear all lists when the authentication fails."""
-		self.__clear_all_list_stores()
-	
+
 			
 	#######################################
 	# Convenience Functions
 	#######################################
+	def check_and_populate_artists(self):
+		"""Returns an artist list by either grabbing from the DB or from Ampache."""
+		if self.db_session.table_is_empty('artists'):
+			self.db_session.populate_artists_table(self.ampache_conn.get_artists())
+		
+	def check_and_populate_albums(self, artist_id):
+		if self.db_session.table_is_empty('albums', artist_id):
+			self.db_session.populate_albums_table(artist_id, self.ampache_conn.get_albums_by_artist(artist_id))
+	
+	def check_and_populate_songs(self, album_id):
+		if self.db_session.table_is_empty('songs', album_id):
+			self.db_session.populate_songs_table(album_id, self.ampache_conn.get_songs_by_album(album_id))
+	
 	def update_statusbar(self, text):
 		"""Update the status bar and run pending main_iteration() events."""
 		try:
@@ -1953,7 +2042,7 @@ class AmpacheGUI:
 		self.playlist_list_store.clear()
 		i = 0
 		for temp_song_id in cur_playlist:
-			cur_song = self.ampache_conn.get_playlist_song_dict(temp_song_id)
+			cur_song = self.db_session.get_playlist_song_dict(temp_song_id)
 			cur_string = cur_song['song_title'] + ' - ' + cur_song['artist_name'] + ' - ' + cur_song['album_name']
 			cur_string = cur_string.replace('&', '&amp;') #HACK
 			now_playing = self.images_pixbuf_empty
@@ -1963,8 +2052,15 @@ class AmpacheGUI:
 			self.playlist_list_store.append([now_playing, cur_string, temp_song_id])
 			i += 1
 			
+	#######################################
+	# Download Songs / Albums
+	#######################################
 	def download_album_clicked(self, widget):
 		"""The user cliked download album."""
+		# check to see if the downloads directory exists
+		if not os.path.exists(self.downloads_directory):
+			self.create_dialog_alert("warn", "The folder %s does not exist.  You can change the folder in Preferences.", True)
+			return False
 		if self.show_downloads_checkbox.active == False:
 			self.side_panel.show()
 			self.downloads_window.show()
@@ -1974,6 +2070,10 @@ class AmpacheGUI:
 
 	def download_song_clicked(self, widget, song_id, show_panel=True):
 		"""The user clicked download song."""
+		# check to see if the downloads directory exists
+		if not os.path.exists(self.downloads_directory):
+			self.create_dialog_alert("warn", "The folder %s does not exist.  You can change the folder in Preferences." % (self.downloads_directory), True)
+			return False
 		if show_panel and self.show_downloads_checkbox.active == False:
 			self.side_panel.show()
 			self.downloads_window.show()
@@ -2006,6 +2106,27 @@ class AmpacheGUI:
 		if numblocks != 0:
 			#self.update_statusbar("Downloading " + base + ": " + str(percent) + "%")
 			gobject.idle_add(lambda : self.downloads_list_store.set(iter1, 1, percent))
+			
+	#######################################
+	# Resets
+	#######################################
+	def clear_album_art(self):
+		"""Clear local album art."""
+		if os.path.exists(ALBUM_ART_DIR):
+			print "+++ Checking for album art +++"
+			for root, dirs, files in os.walk(ALBUM_ART_DIR):
+				for name in files:
+					print "Deleting ", os.path.join(root, name)
+					os.remove(os.path.join(root, name))
+				
+	def reset_everything(self):
+		"""Delete all private/personal data from the users system."""
+		try:
+			self.stop_all_threads()
+			shutil.rmtree(VIRIDIAN_DIR)
+			os.rmdir(VIRIDIAN_DIR)
+		except:
+			pass
 			
 			
 	#######################################
@@ -2113,7 +2234,11 @@ class AmpacheGUI:
 
 	#################
 	# Internal Helper Functions
-	#################	
+	#################
+	def __authenticate(self, data=None):
+		self.__successfully_authed = self.ampache_conn.authenticate()
+		return True
+		
 	def __clear_all_list_stores(self):
 		"""Clears all list stores in the GUI."""
 		self.song_list_store.clear()
@@ -2130,35 +2255,40 @@ class AmpacheGUI:
 		self.button_album_art_locked = True
 		print "Re-Fetching album art... ",
 		self.update_statusbar("Re-Fetching album art...")
+		if not os.path.exists(ALBUM_ART_DIR):
+			os.mkdir(ALBUM_ART_DIR)
 		try:
 			album_id   = self.current_song_info['album_id']
-			art_folder = self.ampache_conn.art_folder
+			art_folder = ALBUM_ART_DIR
 			art_file   = art_folder + os.sep + str(album_id)
 			album_art  = self.ampache_conn.get_album_art(album_id)
 			response   = urllib2.urlopen(album_art)
 			f = open(art_file, 'w')
 			f.write(response.read())
 			f.close()
-			image_pixbuf = self.__create_image_pixbuf(art_file, ALBUM_ART_SIZE)
-			self.album_art_image.set_from_pixbuf(image_pixbuf)
-			print "Done!"
+
 		except: 
 			self.update_statusbar("Re-Fetching album art... Failed!")
 			print "Failed!"
 			self.button_album_art_locked = False
 			return False
+		image_pixbuf = self.__create_image_pixbuf(art_file, ALBUM_ART_SIZE)
+		self.album_art_image.set_from_pixbuf(image_pixbuf)
+		self.set_tray_icon(image_pixbuf)
+		print "Done!"
 		self.update_statusbar("Re-Fetching album art... Success!")
 		self.button_album_art_locked = False
 		return True
 
 	def __add_songs_to_list_store(self, album_id):
 		"""Takes an album_id, and adds all of that albums songs to the GUI."""
-		songs = self.ampache_conn.get_song_dict(album_id)
+		self.check_and_populate_songs(album_id)
+		songs = self.db_session.get_song_dict(album_id)
 		model = self.song_list_store
 		
 		if not songs:
 			print "Error pulling ", album_id
-			self.update_statusbar("Error with album -- Check Ampache")
+			self.update_statusbar("Error with album -- Check Ampache -- Album ID = %d" % album_id)
 			return False
 		
 		for song in songs:
@@ -2180,7 +2310,10 @@ class AmpacheGUI:
 			
 			model.append([song_track, song_title, artist_name, album_name, song_time, song_size, song_id])
 		return True
-
+			
+	##############################################
+	# GTK Helpers
+	##############################################
 	def __create_single_column_tree_view(self, column_name, model, sort_column=None):
 		"""Create a treeview by passing a column_name and a  model (gtk.ListStore())."""
 		tree_view = gtk.TreeView(model)
@@ -2211,8 +2344,16 @@ class AmpacheGUI:
 			height = width
 		image = gtk.gdk.pixbuf_new_from_file(file).scale_simple(width, height, gtk.gdk.INTERP_BILINEAR)
 		return image
-	
-	
+		
+	##########################################
+	# Custom database functions
+	##########################################
+	# this is where db functions will go to make DatabaseSession usable with any program, like AmpacheSession
+		
+		
+	##########################################
+	# String/Int formatters
+	##########################################	
 	def __human_readable_filesize(self, bytes):
 		"""Converts bytes to humand_readable form."""
 		if bytes >= 1073741824:

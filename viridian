@@ -50,14 +50,13 @@ if __name__ == "__main__":
 	except: # some distros don't support this, so just open a second instance i guess....
 		# create a session
 		db_session   = AmpacheTools.DatabaseSession()
-		ampache_conn = AmpacheTools.AmpacheSession(db_session)
+		ampache_conn = AmpacheTools.AmpacheSession()
 		audio_engine = AmpacheTools.AudioEngine(ampache_conn)
 		# create the gui and attach it to the session
 		gui = AmpacheTools.AmpacheGUI(ampache_conn, audio_engine, db_session)
 		service = AmpacheService(gui)
 		# allow the audioengine and ampachesession to callback to the GUI (for messages like End Of Song)
 		audio_engine.set_ampache_gui_hook(gui)
-		ampache_conn.set_ampache_gui_hook(gui)
 		# display the gui
 		gui.main()
 
