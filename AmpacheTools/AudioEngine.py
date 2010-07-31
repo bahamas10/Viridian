@@ -54,7 +54,7 @@ class AudioEngine:
 		self.song_num = song_num
 		try: # get the song_url and play it
 			song_url = self.ampache_conn.get_song_url( self.songs_list[self.song_num] )
-			self.stop()
+			self.player.set_state(gst.STATE_NULL)
 			self.player.set_property('uri', song_url)
 			self.player.set_state(gst.STATE_PLAYING)
 			self.ampache_gui.audioengine_song_changed(songs_list[song_num]) # hook into GUI
@@ -81,6 +81,7 @@ class AudioEngine:
 			
 	def on_about_to_finish(self, player):
 		print "almost..."
+		#self.next_track_gapless()
 			
 	def query_position(self):
 		"""Returns position in nanoseconds"""
@@ -155,6 +156,7 @@ class AudioEngine:
 		self.songs_list = []
 		self.song_num = -1
 		self.ampache_gui.audioengine_song_changed(None)
+		return True
 	
 	def seek(self, seek_time_secs):
 		"""Seek function, doesn't work on some distros."""
@@ -163,6 +165,7 @@ class AudioEngine:
 	def stop(self): 
 		"""Tells the player to stop."""
 		try:
+			print self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH, 0)
 			self.player.set_state(gst.STATE_NULL)
 		except:
 			return False
@@ -240,6 +243,7 @@ class AudioEngine:
 					if auto:
 						self.song_num = -1
 						self.stop()
+						self.ampache_gui.audioengine_song_changed(None)
 						return
 					else:
 						self.song_num = len(self.songs_list) - 1
@@ -249,3 +253,26 @@ class AudioEngine:
 		except:
 			return False
 		return True
+	
+	#def next_track_gapless(self):
+		#"""Tell the player to play the next song right away."""
+		#try:
+			#if self.song_num == None: # the user clicked prev too many times
+				#self.song_num = 0
+			#else:
+				#self.song_num += 1
+			#if self.repeat_songs: # if the user wants the album to repeat
+				#self.song_num = self.song_num % len(self.songs_list)
+			#else: # don't repeat
+				#if self.song_num >= len(self.songs_list):
+					## dont' let the current position go over the playlist length
+					#self.song_num = -1
+					#self.stop()
+					#return
+
+			#print "New song_num", self.song_num
+			#self.player.set_property('uri', self.ampache_conn.get_song_url(self.songs_list[self.song_num]))
+			#self.ampache_gui.audioengine_song_changed(songs_list[song_num])
+		#except:
+			#return False
+		#return True

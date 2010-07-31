@@ -172,6 +172,25 @@ class AmpacheGUI:
 		sep = gtk.SeparatorMenuItem()
 		file_menu.append(sep)
 		
+		newi = gtk.ImageMenuItem("Save Playlist", agr)
+		img = gtk.image_new_from_stock(gtk.STOCK_SAVE, gtk.ICON_SIZE_MENU)
+		newi.set_image(img)
+		key, mod = gtk.accelerator_parse("<Control>S")
+		newi.add_accelerator("activate", agr, key, mod, gtk.ACCEL_VISIBLE)
+		newi.connect("activate", self.button_save_playlist_clicked)
+		file_menu.append(newi)
+		
+		newi = gtk.ImageMenuItem("Load Playlist", agr)
+		img = gtk.image_new_from_stock(gtk.STOCK_OPEN, gtk.ICON_SIZE_MENU)
+		newi.set_image(img)
+		key, mod = gtk.accelerator_parse("<Control>O")
+		newi.add_accelerator("activate", agr, key, mod, gtk.ACCEL_VISIBLE)
+		newi.connect("activate", self.button_load_playlist_clicked)
+		file_menu.append(newi)
+		
+		sep = gtk.SeparatorMenuItem()
+		file_menu.append(sep)
+		
 		newi = gtk.MenuItem("Clear Album Art")
 		newi.connect("activate", self.button_clear_album_art_clicked)
 		file_menu.append(newi)
@@ -721,7 +740,10 @@ class AmpacheGUI:
 						try:
 							list = json.read(list)
 						except:
-							list = json.loads(list)
+							try:
+								list = json.loads(list)
+							except:
+								pass
 						self.audio_engine.set_playlist(list)
 						self.update_playlist_window()
 		else:
@@ -1140,7 +1162,7 @@ class AmpacheGUI:
 		menu.append(show_window)
 		
 		### Display Song Info is song is playing ###
-		if self.audio_engine.get_state() == "playing":
+		if self.audio_engine.get_state() != "stopped" and self.audio_engine.get_state() != None:
 			menu.append(gtk.SeparatorMenuItem())
 			np = gtk.MenuItem("- Now Playing -")
 			np.set_sensitive(False)
@@ -1648,11 +1670,11 @@ class AmpacheGUI:
 		elif state == "playing":
 			self.audio_engine.pause()
 			self.play_pause_image.set_from_pixbuf(self.images_pixbuf_play)
-			self.set_tray_icon(None)
+			#self.set_tray_icon(None)
 		else:
 			if self.audio_engine.play():
 				self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
-				self.set_tray_icon(self.album_art_image.get_pixbuf())
+				#self.set_tray_icon(self.album_art_image.get_pixbuf())
 
 		
 	def button_prev_clicked(self, widget, data=None):
@@ -1662,6 +1684,65 @@ class AmpacheGUI:
 	def button_next_clicked(self, widget, data=None):
 		"""Next Track."""
 		self.audio_engine.next_track()
+		
+	def button_save_playlist_clicked(self, widget, data=None):
+		"""The save playlist button was clicked."""
+		if not self.audio_engine.get_playlist():
+			self.create_dialog_alert("error", "Cannot save empty playlist.", True)
+			print "no list"
+			return False
+		chooser = gtk.FileChooserDialog(title="Save as...",action=gtk.FILE_CHOOSER_ACTION_SAVE,
+				buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK))
+		response = chooser.run()
+		if response == gtk.RESPONSE_OK:
+			filename = chooser.get_filename()
+			f = open(filename, 'w')
+			f.write(str(self.audio_engine.get_playlist()))
+			f.close()
+			print "save playlist", filename
+		chooser.destroy()
+	
+		
+	def button_load_playlist_clicked(self, widget, data=None):
+		"""The load playlist button was clicked."""
+		if not JSON_INSTALLED:
+			self.create_dialog_alert("error", "The python-json module is required to read playlist files.", True)
+			return False
+		answer = self.create_dialog_ok_or_close("Ampache Catalog Updated", """Loading a playlist can have weird results if the local cache has not been fully pre-cached (File -> Pre-Cache).  Do you want to continue?""")
+		if answer != "ok":
+			return False
+		chooser = gtk.FileChooserDialog(title="Open a playlist",action=gtk.FILE_CHOOSER_ACTION_OPEN,
+			buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+		response = chooser.run()
+		if response == gtk.RESPONSE_OK:
+			filename = chooser.get_filename()
+			chooser.destroy()
+			list = []
+			try:
+				f = open(filename, 'r')
+				lines = f.readlines()
+				f.close()
+			except:
+				self.create_dialog_alert("error", "Cannot read playlist.", True)
+				return False
+			if not lines:
+				self.create_dialog_alert("error", "Playlist is empty.", True)
+				return False
+			try:
+				list = json.read(lines[0])
+			except:
+				try:
+					list = json.loads(lines[0])
+				except:
+					self.create_dialog_alert("error", "Corrupt playlist", True)
+					return False	
+			self.audio_engine.stop()
+			self.audio_engine.clear_playlist()
+			self.audio_engine.set_playlist(list)
+			self.update_playlist_window()
+			print "load playlist", filename
+		else:
+			chooser.destroy()
 		
 	def button_clear_cached_artist_info_clicked(self, widget=None, data=None):
 		"""Clear local cache."""
@@ -1675,6 +1756,8 @@ class AmpacheGUI:
 		print "Clearing cached catalog -- will reauthenticate and pull artists"
 		self.stop_all_threads()
 		self.db_session.clear_cached_catalog()
+		#self.audio_engine.stop()
+		self.db_session.variable_set('current_playlist', str(self.audio_engine.get_playlist()))
 		self.login_and_get_artists()
 		self.button_clear_cache_locked = False	
 		
@@ -1813,7 +1896,7 @@ class AmpacheGUI:
 		md.set_border_width(3)
 		md.set_resizable(False)
 		md.show_all()
-		md.set_title('Viridian')
+		#md.set_title('Viridian')
 		resp = md.run()
 		md.destroy()
 		if resp == gtk.RESPONSE_OK:
@@ -1931,12 +2014,6 @@ class AmpacheGUI:
 				self.rating_stars_list[i].set_from_pixbuf(self.images_pixbuf_gray_star)
 			i += 1
 		self.update_playlist_window()
-		
-	def audioengine_buffering_callback(self, percent):
-		"""Show the percantage buffered of the current song."""
-		gobject.idle_add(lambda : self.notification_label.set_text("Buffering: " + str(percent) + "%"))
-		if percent == 100:
-			gobject.idle_add(lambda : self.notification_label.set_text(" "))
 			
 	def audioengine_error_callback(self, error_message):
 		"""Display the gstreamer error in the notification label."""
@@ -2016,15 +2093,13 @@ Message from GStreamer:
 		self.update_playlist_window()
 		return True
 	
-			
+				
 	def remove_from_playlist(self, widget, song_id, treeview):
 		"""Remove a song from the current playlist."""
 		if self.audio_engine.remove_from_playlist(song_id):
-			selection = treeview.get_selection()
-			result = selection.get_selected()
-			if result: #result could be None
-				model, iter = result
-				model.remove(iter)
+			self.update_playlist_window()
+			return True
+		return False
 
 	def stop_all_threads(self):
 		"""Stops all running threads."""
