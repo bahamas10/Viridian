@@ -38,6 +38,7 @@ class AudioEngine:
 		bus.add_signal_watch()
 		bus.enable_sync_message_emission()
 		bus.connect("message", self.on_message)
+		self.player.connect("about-to-finish", self.on_about_to_finish)
 
 	def set_ampache_gui_hook(self, ampache_gui):
 		"""Attach the GUI to this object, so the audio_engine can alert the GUI of song changes"""
@@ -70,13 +71,16 @@ class AudioEngine:
 		if t == gst.MESSAGE_EOS: # end of song
 			self.stop()
 			print "Song is over -- trying next song"
-			self.next_track()
+			self.next_track(True)
 		elif t == gst.MESSAGE_ERROR: # error!
 			self.stop()
 			err, debug = message.parse_error()
 			result =  "Gstreamer Error: %s %s" % (err, debug)
 			print result
 			self.ampache_gui.audioengine_error_callback(result)
+			
+	def on_about_to_finish(self, player):
+		print "almost..."
 			
 	def query_position(self):
 		"""Returns position in nanoseconds"""
@@ -154,10 +158,7 @@ class AudioEngine:
 	
 	def seek(self, seek_time_secs):
 		"""Seek function, doesn't work on some distros."""
-		return self.player.seek_simple(gst.FORMAT_TIME,  gst.SEEK_FLAG_KEY_UNIT, seek_time_secs * gst.SECOND)
-		#gst_time = seek_time_secs * gst.MSECOND
-		#event = gst.event_new_seek(1.0, gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH, gst.SEEK_TYPE_SET, gst_time, gst.SEEK_TYPE_NONE, 0)
-		return self.player.send_event(event)
+		return self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_KEY_UNIT, int(seek_time_secs) * gst.SECOND)
 		
 	def stop(self): 
 		"""Tells the player to stop."""
@@ -223,7 +224,7 @@ class AudioEngine:
 		return True
 	
 	
-	def next_track(self):
+	def next_track(self, auto=False):
 		"""Tells the player to go forward a song in the playlist.
 		This function takes care of repeating songs if enabled."""
 		try:
@@ -236,8 +237,13 @@ class AudioEngine:
 			else: # don't repeat
 				if self.song_num >= len(self.songs_list):
 					# dont' let the current position go over the playlist length
-					self.song_num = len(self.songs_list) - 1
-					return
+					if auto:
+						self.song_num = -1
+						self.stop()
+						return
+					else:
+						self.song_num = len(self.songs_list) - 1
+						return
 			print "New song_num", self.song_num
 			self.play_from_list_of_songs(self.songs_list, self.song_num)
 		except:

@@ -718,7 +718,10 @@ class AmpacheGUI:
 				if JSON_INSTALLED:
 					list = self.db_session.variable_get('current_playlist')
 					if list != None:
-						list = json.read(list)
+						try:
+							list = json.read(list)
+						except:
+							list = json.loads(list)
 						self.audio_engine.set_playlist(list)
 						self.update_playlist_window()
 		else:
