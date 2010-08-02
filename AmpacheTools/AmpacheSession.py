@@ -25,6 +25,7 @@ import datetime
 import re
 import socket
 
+
 ### Constants ###
 AUTH_MAX_RETRY = 3 # how many times to try and reauth before failure
 DEFAULT_TIMEOUT = 5
@@ -315,5 +316,62 @@ class AmpacheSession:
 			return None
 		return list
 		
+	def get_song_info(self, song_id):
+		"""Gets all info from the songs_id."""
+		values = {'action' : 'song',
+			  'filter' : song_id,
+			  'auth'   : self.auth,
+		}
+		song_dict = {}
+		data = urllib.urlencode(values)
+		try: # try to query Ampache
+			response = urllib2.urlopen(self.xml_rpc, data)
+			dom = xml.dom.minidom.parseString(response.read())
+		except: # The data pulled from Ampache was invalid
+			print "Error Pulling Data! -- Check Ampache -- Song ID = %d" % song_id
+			return None
+		try: # try to get the list of albums
+			root = dom.getElementsByTagName('root')[0]
+			song = root.getElementsByTagName('song')[0]
+			if not song: # list is empty, reauth
+				raise Exception('Reauthenticate')
+		except: # something failed, try to reauth and do it again
+			if self.authenticate():
+				return self.get_song_info(song_id)
+			else: # couldn't authenticate
+				return None
+		try:
+			song_id        = int(song.getAttribute('id'))
+			song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
+			artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
+			artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
+			album_id       = int(song.getElementsByTagName('album')[0].getAttribute('id'))
+			album_name     = song.getElementsByTagName('album')[0].childNodes[0].data
+			
+			song_track     = int(song.getElementsByTagName('track')[0].childNodes[0].data)
+			song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
+			song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
+			
+			precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
+			rating         = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
+			art            = song.getElementsByTagName('art')[0].childNodes[0].data
+			url            = song.getElementsByTagName('url')[0].childNodes[0].data
+			song_dict = {   'song_id'        : song_id,
+					'song_title'     : song_title,
+					'artist_id'      : artist_id,
+					'artist_name'    : artist_name,
+					'album_id'       : album_id,
+					'album_name'     : album_name,
+					'song_track'     : song_track,
+					'song_time'      : song_time,
+					'song_size'      : song_size,
+					'precise_rating' : precise_rating,
+					'rating'         : rating,
+					'art'            : art,
+					'url'            : url,
+					}
+		except:
+			return None
+		return song_dict
 
 

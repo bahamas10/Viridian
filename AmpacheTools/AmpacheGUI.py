@@ -24,13 +24,7 @@ import gobject
 import urllib
 import re
 import shutil
-
-try: # check to see if json can write lists to a db
-	import json
-	JSON_INSTALLED = True
-except:
-	print "[Warn] python-json module not found, playlist will not be saved."
-	JSON_INSTALLED = False
+import cPickle
 
 try: # check for pynotify
 	import pynotify
@@ -47,6 +41,11 @@ except:
   	print "pygtk required!"
 	sys.exit(1);
 	
+# personal helper functions
+import dbfunctions
+import helperfunctions
+import guifunctions
+	
 ### Contstants ###
 ALBUM_ART_SIZE = 80
 #SCRIPT_PATH   = os.path.dirname(sys.argv[0]) # not sure which method to get script path is better
@@ -61,7 +60,9 @@ class AmpacheGUI:
 	def main(self):
 		"""Method to call gtk.main() and display the GUI."""
 		gobject.threads_init()
+		
 		gobject.idle_add(self.main_gui_callback)
+		
 		### Status tray icon ####
 		self.tray_icon_to_display = self.db_session.variable_get('tray_icon_to_display')
 		if self.tray_icon_to_display == None: # default to standard
@@ -84,7 +85,7 @@ class AmpacheGUI:
 		"""Keep the window alive when it is X'd out."""
 		if not hasattr(self, 'tray_icon') or self.quit_when_window_closed: # no tray icon set, must destroy
 			self.destroy()
-		else:
+		else: # don't quit, just hide
 			if self.first_time_closing:
 				self.main_gui_toggle_hidden()
 				self.create_dialog_alert("info", """Viridian is still running in the status bar.  If you do not want Viridian to continue running when the window is closed you can disable it in Preferences.""", True)
@@ -103,12 +104,12 @@ class AmpacheGUI:
 		self.stop_all_threads()
 		size = self.window.get_size()
 		gtk.main_quit()
-		self.db_session.variable_set('current_playlist', str(self.audio_engine.get_playlist()))
+		self.db_session.variable_set('current_playlist', cPickle.dumps(self.audio_engine.get_playlist()))
 		self.db_session.variable_set('volume', self.audio_engine.get_volume())
 		self.db_session.variable_set('window_size_width',  size[0])
 		self.db_session.variable_set('window_size_height', size[1])
 
-	def __init__(self, ampache_conn, audio_engine, db_session):
+	def __init__(self, ampache_conn, audio_engine, db_session, is_first_time):
 		"""Constructor for the AmpacheGUI Class.
 		Takes an AmpacheSession Object, an AudioEngine Object and a DatabaseSession Object."""
 		#################################
@@ -118,19 +119,36 @@ class AmpacheGUI:
 		self.ampache_conn = ampache_conn
 		self.db_session   = db_session
 		
+		self.is_first_time = is_first_time
+		
 		self.catalog_up_to_date = None
+		
+		volume = self.db_session.variable_get('volume')
+		if volume == None:
+			volume = 100
+		volume = float(volume)
+		width = self.db_session.variable_get('window_size_width')
+		if width == None:
+			width = 900
+		height = self.db_session.variable_get('window_size_height')
+		if height == None:
+			height = 600
+		height = int(height)
+		width  = int(width)
+		
+		dbfunctions.create_initial_tables(self.db_session)
 
 		##################################
 		# Load Images
 		##################################
-		self.images_pixbuf_play  = self.__create_image_pixbuf(IMAGES_DIR + 'play.png', 75)
-		self.images_pixbuf_pause = self.__create_image_pixbuf(IMAGES_DIR + 'pause.png', 75)
-		self.images_pixbuf_gold_star = self.__create_image_pixbuf(IMAGES_DIR + 'star_rating_gold.png', 16)
-		self.images_pixbuf_gray_star = self.__create_image_pixbuf(IMAGES_DIR + 'star_rating_gray.png', 16)
-		images_pixbuf_prev = self.__create_image_pixbuf(IMAGES_DIR + 'prev.png', 75)
-		images_pixbuf_next = self.__create_image_pixbuf(IMAGES_DIR + 'next.png', 75)
-		self.images_pixbuf_playing = self.__create_image_pixbuf(IMAGES_DIR + 'playing.png', 15)
-		self.images_pixbuf_empty   = self.__create_image_pixbuf(IMAGES_DIR + 'empty.png', 1)
+		self.images_pixbuf_play  = guifunctions.create_image_pixbuf(IMAGES_DIR + 'play.png', 75)
+		self.images_pixbuf_pause = guifunctions.create_image_pixbuf(IMAGES_DIR + 'pause.png', 75)
+		self.images_pixbuf_gold_star = guifunctions.create_image_pixbuf(IMAGES_DIR + 'star_rating_gold.png', 16)
+		self.images_pixbuf_gray_star = guifunctions.create_image_pixbuf(IMAGES_DIR + 'star_rating_gray.png', 16)
+		images_pixbuf_prev = guifunctions.create_image_pixbuf(IMAGES_DIR + 'prev.png', 75)
+		images_pixbuf_next = guifunctions.create_image_pixbuf(IMAGES_DIR + 'next.png', 75)
+		self.images_pixbuf_playing = guifunctions.create_image_pixbuf(IMAGES_DIR + 'playing.png', 15)
+		self.images_pixbuf_empty   = guifunctions.create_image_pixbuf(IMAGES_DIR + 'empty.png', 1)
 
 		##################################
 		# Main Window
@@ -140,14 +158,6 @@ class AmpacheGUI:
 		self.window.connect("delete_event", self.delete_event)
 		self.window.connect("destroy", self.destroy)
 		self.window.set_title("Viridian")
-		width = self.db_session.variable_get('window_size_width')
-		if width == None:
-			width = 900
-		height = self.db_session.variable_get('window_size_height')
-		if height == None:
-			height = 600
-		height = int(height)
-		width  = int(width)
 		self.window.resize(width, height)
 
 		main_box = gtk.VBox()
@@ -333,10 +343,6 @@ class AmpacheGUI:
 		volume_slider.set_draw_value(False)
 		volume_slider.connect('change-value', self.on_volume_slider_change)
 		volume_slider.set_size_request(80, 20)
-		volume = self.db_session.variable_get('volume')
-		if volume == None:
-			volume = 100
-		volume = float(volume)
 		volume_slider.set_value(volume)
 		
 		repeat_songs_checkbutton = gtk.CheckButton("Repeat")
@@ -427,7 +433,7 @@ class AmpacheGUI:
 		vbox.pack_start(event_box_album, False, False, 0)
 		vbox.pack_start(hbox, False, False, 0)
 	
-		top_bar.pack_start(vbox, False, False, 0)
+		top_bar.pack_start(vbox, False, False, 4)
 		
 		
 		########
@@ -460,7 +466,7 @@ class AmpacheGUI:
 		tree_view.connect("button_press_event", self.playlist_on_right_click)
 		tree_view.set_rules_hint(True)
 		
-		new_column = self.__create_column("    ", 0, None, True)
+		new_column = guifunctions.create_column("    ", 0, None, True)
 		new_column.set_reorderable(False)
 		new_column.set_resizable(False)
 		new_column.set_clickable(False)
@@ -470,7 +476,7 @@ class AmpacheGUI:
 		
 		renderer_text = gtk.CellRendererText()
 		new_column = gtk.TreeViewColumn("Current Playlist", renderer_text, markup=1)
-		#new_column = self.__create_column("Current Playlist", 1)
+		#new_column = guifunctions.create_column("Current Playlist", 1)
 		new_column.set_reorderable(False)
 		new_column.set_resizable(False)
 		new_column.set_clickable(False)
@@ -567,10 +573,10 @@ class AmpacheGUI:
 		
 		# name, id, custom_name
 		self.artist_list_store = gtk.ListStore(str, int, str)
-		self.artist_list_store.set_sort_func(0, self.__sort_artists_by_custom_name)
-		#self.artist_list_store.set_default_sort_func(self.__sort_artists_by_custom_name)
+		self.artist_list_store.set_sort_func(0, helperfunctions.sort_artists_by_custom_name)
+		#self.artist_list_store.set_default_sort_func(helperfunctions.sort_artists_by_custom_name)
 		self.artist_list_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
-		tree_view = self.__create_single_column_tree_view("Artist", self.artist_list_store)
+		tree_view = guifunctions.create_single_column_tree_view("Artist", self.artist_list_store)
 		tree_view.connect("cursor-changed", self.artists_cursor_changed)
 		#tree_view.connect("popup-menu", self.artists_cursor_changed)
 		tree_view.set_search_column(0)
@@ -585,17 +591,18 @@ class AmpacheGUI:
 		albums_scrolled_window.set_shadow_type(gtk.SHADOW_ETCHED_IN)
 		albums_scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 	
+		albums_column = guifunctions.create_column("Albums", 0)
+	
 		# name, id, year, stars
 		self.album_list_store = gtk.ListStore(str, int, int, int)
-		#self.album_list_store.set_default_sort_func(self.__sort_albums_by_year)
+		#self.album_list_store.set_default_sort_func(helperfunctions.sort_albums_by_year)
 		self.album_list_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
-		self.album_list_store.set_sort_func(0, self.__sort_albums_by_year ) # sort albums by year!
+		self.album_list_store.set_sort_func(0, helperfunctions.sort_albums_by_year, albums_column ) # sort albums by year!
 		
 		tree_view = gtk.TreeView(self.album_list_store)
 		tree_view.set_rules_hint(True)
-		self.albums_column = self.__create_column("Albums", 0)
-		self.albums_column.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
-		tree_view.append_column(self.albums_column)
+		albums_column.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+		tree_view.append_column(albums_column)
 
 		tree_view.connect("cursor-changed", self.albums_cursor_changed)
 		tree_view.connect("row-activated",  self.albums_on_activated)
@@ -620,10 +627,10 @@ class AmpacheGUI:
 			
 		# track, title, time, size, id
 		self.song_list_store = gtk.ListStore(int, str, str, str, str, str, int)
-		self.song_list_store.set_sort_func(0, self.__sort_songs_by_track) 
-		self.song_list_store.set_sort_func(1, self.__sort_songs_by_title) 
-		self.song_list_store.set_sort_func(2, self.__sort_songs_by_artist) 
-		self.song_list_store.set_sort_func(3, self.__sort_songs_by_album) 
+		self.song_list_store.set_sort_func(0, helperfunctions.sort_songs_by_track) 
+		self.song_list_store.set_sort_func(1, helperfunctions.sort_songs_by_title) 
+		self.song_list_store.set_sort_func(2, helperfunctions.sort_songs_by_artist) 
+		self.song_list_store.set_sort_func(3, helperfunctions.sort_songs_by_album) 
 		self.song_list_store.set_sort_column_id(2,gtk.SORT_ASCENDING)
 
 		tree_view = gtk.TreeView(self.song_list_store)
@@ -634,7 +641,7 @@ class AmpacheGUI:
 		
 		i = 0
 		for column in ("Track", "Title", "Artist", "Album", "Time", "Size"):
-			new_column = self.__create_column(column, i)
+			new_column = guifunctions.create_column(column, i)
 			new_column.set_reorderable(True)
 			new_column.set_resizable(True)
 			new_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
@@ -734,21 +741,14 @@ class AmpacheGUI:
 		if self.ampache_conn.has_credentials():
 			self.update_statusbar("Attempting to authenticate...")
 			if self.login_and_get_artists("First"):
-				if JSON_INSTALLED:
-					list = self.db_session.variable_get('current_playlist')
-					if list != None:
-						try:
-							list = json.read(list)
-						except:
-							try:
-								list = json.loads(list)
-							except:
-								pass
-						self.audio_engine.set_playlist(list)
-						self.update_playlist_window()
+				list = self.db_session.variable_get('current_playlist')
+				if list != None:
+					list = cPickle.loads(str(list))
+					self.audio_engine.set_playlist(list)
+					self.update_playlist_window()
 		else:
 			self.update_statusbar("Set Ampache information by going to Edit -> Preferences") 
-			if self.db_session.is_first_time():
+			if self.is_first_time:
 				self.create_dialog_alert("info", """This looks like the first time you are running Viridian.  To get started, go to Edit -> Preferences and set your account information.""", True)
 				
 	def main_gui_toggle_hidden(self):
@@ -1345,12 +1345,12 @@ class AmpacheGUI:
 			if not self.catalog_up_to_date:
 				# not up to date
 				if data == "First" and self.automatically_update:
-					self.db_session.clear_cached_catalog()
+					dbfunctions.clear_cached_catalog(self.db_session)
 					self.db_session.variable_set('catalog_update', last_update_time)
 					self.catalog_up_to_date = True
 				elif data == True or data == "First": # open a popup
 					if self.create_catalog_updated_dialog(): # user pressed update
-						self.db_session.clear_cached_catalog()
+						dbfunctions.clear_cached_catalog(self.db_session)
 						self.db_session.variable_set('catalog_update', last_update_time)
 						self.catalog_up_to_date = True
 						
@@ -1359,7 +1359,7 @@ class AmpacheGUI:
 			# load the artists window with, you guessed it, artists
 			self.update_statusbar("Pulling Artists...")
 			self.check_and_populate_artists()
-			artists = self.db_session.get_artist_dict()
+			artists = dbfunctions.get_artist_dict(self.db_session)
 			model = self.artist_list_store
 			for artist_id in artists:
 				artist_name = artists[artist_id]['name']
@@ -1400,7 +1400,7 @@ class AmpacheGUI:
 		model.clear()
 		model.append(["All Albums", -1, -1, 0])
 		self.check_and_populate_albums(self.artist_id)
-		albums = self.db_session.get_album_dict(self.artist_id)
+		albums = dbfunctions.get_album_dict(self.db_session, self.artist_id)
 		# alphabetize the list
 		for album in albums:
 			album_name  = albums[album]['name']
@@ -1588,14 +1588,14 @@ class AmpacheGUI:
 	def on_time_elapsed_slider_change(self, slider):
 		"""When the user moves the seek bar."""
 		seek_time_secs = slider.get_value()
-		gobject.idle_add(self.time_seek_label.set_text, self.__convert_seconds_to_human_readable(seek_time_secs))
+		gobject.idle_add(self.time_seek_label.set_text, helperfunctions.convert_seconds_to_human_readable(seek_time_secs))
 		print self.audio_engine.seek(seek_time_secs)
 		return True
 	
 	def on_time_elapsed_slider_change_value(self, slider, data1=None, data2=None):
 		"""When the user drags the slide bar but doesn't commit yet"""
 		seek_time_secs = slider.get_value()
-		gobject.idle_add(self.time_seek_label.set_text, self.__convert_seconds_to_human_readable(seek_time_secs))
+		gobject.idle_add(self.time_seek_label.set_text, helperfunctions.convert_seconds_to_human_readable(seek_time_secs))
 		
 	def on_volume_slider_change(self, range, scroll, value):
 		"""Change the volume."""
@@ -1623,7 +1623,7 @@ class AmpacheGUI:
 		# if the code makes it this far, the credentials have been changed
 		self.stop_all_threads()
 		self.clear_album_art()
-		self.db_session.clear_cached_catalog()
+		dbfunctions.clear_cached_catalog(self.db_session)
 		if self.ampache_conn.set_credentials(username, password, url): # credentials saved
 			self.db_session.variable_set('credentials_username', username)
 			self.db_session.variable_set('credentials_password', password)
@@ -1697,7 +1697,7 @@ class AmpacheGUI:
 		if response == gtk.RESPONSE_OK:
 			filename = chooser.get_filename()
 			f = open(filename, 'w')
-			f.write(str(self.audio_engine.get_playlist()))
+			cPickle.dump(self.audio_engine.get_playlist(), f)
 			f.close()
 			print "save playlist", filename
 		chooser.destroy()
@@ -1705,12 +1705,6 @@ class AmpacheGUI:
 		
 	def button_load_playlist_clicked(self, widget, data=None):
 		"""The load playlist button was clicked."""
-		if not JSON_INSTALLED:
-			self.create_dialog_alert("error", "The python-json module is required to read playlist files.", True)
-			return False
-		answer = self.create_dialog_ok_or_close("Ampache Catalog Updated", """Loading a playlist can have weird results if the local cache has not been fully pre-cached (File -> Pre-Cache).  Do you want to continue?""")
-		if answer != "ok":
-			return False
 		chooser = gtk.FileChooserDialog(title="Open a playlist",action=gtk.FILE_CHOOSER_ACTION_OPEN,
 			buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
 		response = chooser.run()
@@ -1720,22 +1714,14 @@ class AmpacheGUI:
 			list = []
 			try:
 				f = open(filename, 'r')
-				lines = f.readlines()
+				list = cPickle.load(f)
 				f.close()
 			except:
 				self.create_dialog_alert("error", "Cannot read playlist.", True)
 				return False
-			if not lines:
+			if not list:
 				self.create_dialog_alert("error", "Playlist is empty.", True)
 				return False
-			try:
-				list = json.read(lines[0])
-			except:
-				try:
-					list = json.loads(lines[0])
-				except:
-					self.create_dialog_alert("error", "Corrupt playlist", True)
-					return False	
 			self.audio_engine.stop()
 			self.audio_engine.clear_playlist()
 			self.audio_engine.set_playlist(list)
@@ -1755,7 +1741,7 @@ class AmpacheGUI:
 		self.button_clear_cache_locked = True
 		print "Clearing cached catalog -- will reauthenticate and pull artists"
 		self.stop_all_threads()
-		self.db_session.clear_cached_catalog()
+		dbfunctions.clear_cached_catalog(self.db_session)
 		#self.audio_engine.stop()
 		self.db_session.variable_set('current_playlist', str(self.audio_engine.get_playlist()))
 		self.login_and_get_artists()
@@ -1771,7 +1757,7 @@ class AmpacheGUI:
 		answer = self.create_dialog_ok_or_close("Reset Viridian", """Are you sure you want to delete all personal information stored with Viridian?""")
 		if answer == "ok":
 			self.reset_everything()
-			self.destroy()
+			gtk.main_quit()
 		
 	def button_pre_cache_info_clicked(self, widget=None, data=None):
 		"""Pre-cache all album and song info."""
@@ -1796,7 +1782,7 @@ class AmpacheGUI:
 		self.pre_cache_continue = True # this will be set to false if this function should stop
 		try:
 			start_time = int(time.time())
-			artists = self.db_session.get_artist_ids()
+			artists = dbfunctions.get_artist_ids(self.db_session)
 			i = 0
 			num_artists = len(artists)
 			for artist_id in artists:
@@ -1809,7 +1795,7 @@ class AmpacheGUI:
 				#gobject.idle_add(self.update_statusbar, 1, "Pulling all albums from artists: %d/%d" % (i, num_artists) )
 			self.update_statusbar("Finished pulling albums")
 			
-			albums = self.db_session.get_album_ids()
+			albums = dbfunctions.get_album_ids(self.db_session)
 			i = 0
 			num_albums = len(albums)
 			for album_id in albums:
@@ -1822,9 +1808,7 @@ class AmpacheGUI:
 			end_time = int(time.time())
 			time_taken = end_time - start_time
 			# convert time in seconds to HH:MM:SS THIS WILL FAIL IF LENGTH > 24 HOURS
-			time_taken = time.strftime('%H:%M:%S', time.gmtime(time_taken))
-			if time_taken[:2] == "00": # strip out hours if below 60 minutes
-				time_taken = time_taken[3:]
+			time_taken = helperfunctions.convert_seconds_to_human_readable(time_taken)
 			
 			self.update_statusbar("Finished Pre Cache -- Time Taken: " + str(time_taken))
 			print "Finished Pre Cache -- Time Taken: " + str(time_taken)
@@ -1947,7 +1931,10 @@ class AmpacheGUI:
 	def audioengine_song_changed(self, song_id):
 		"""The function that gets called when the AudioEngine changes songs."""
 		if song_id != None:
-			self.current_song_info = self.db_session.get_single_song_dict(song_id)
+			if dbfunctions.song_has_info(self.db_session, song_id):
+				self.current_song_info = dbfunctions.get_single_song_dict(self.db_session, song_id)
+			else:
+				self.current_song_info = self.ampache_conn.get_song_info(song_id)
 		gobject.idle_add(self.__audioengine_song_changed, song_id)
 		
 	def __audioengine_song_changed(self, song_id):
@@ -1966,7 +1953,7 @@ class AmpacheGUI:
 		
 		song_time   = self.current_song_info['song_time']
 		self.time_elapsed_slider.set_range(0, song_time)
-		self.time_total_label.set_text(self.__convert_seconds_to_human_readable(song_time))
+		self.time_total_label.set_text(helperfunctions.convert_seconds_to_human_readable(song_time))
 		
 		song_title  = self.current_song_info['song_title'].replace('&', '&amp;') #HACK
 		artist_name = self.current_song_info['artist_name'].replace('&', '&amp;') #HACK
@@ -1996,7 +1983,7 @@ class AmpacheGUI:
 			f.close()
 			print "Done!"
 		# now create a pixel buffer for the image and set it in the GUI
-		image_pixbuf = self.__create_image_pixbuf(self.current_album_art_file, ALBUM_ART_SIZE)
+		image_pixbuf = guifunctions.create_image_pixbuf(self.current_album_art_file, ALBUM_ART_SIZE)
 		self.album_art_image.set_from_pixbuf(image_pixbuf)
 		self.set_tray_icon(image_pixbuf)
 		
@@ -2034,15 +2021,16 @@ Message from GStreamer:
 	def check_and_populate_artists(self):
 		"""Returns an artist list by either grabbing from the DB or from Ampache."""
 		if self.db_session.table_is_empty('artists'):
-			self.db_session.populate_artists_table(self.ampache_conn.get_artists())
+			dbfunctions.populate_artists_table(self.db_session, self.ampache_conn.get_artists())
 		
 	def check_and_populate_albums(self, artist_id):
-		if self.db_session.table_is_empty('albums', artist_id):
-			self.db_session.populate_albums_table(artist_id, self.ampache_conn.get_albums_by_artist(artist_id))
+		if dbfunctions.table_is_empty(self.db_session, 'albums', artist_id):
+			print "table is empty", artist_id
+			dbfunctions.populate_albums_table(self.db_session, artist_id, self.ampache_conn.get_albums_by_artist(artist_id))
 	
 	def check_and_populate_songs(self, album_id):
-		if self.db_session.table_is_empty('songs', album_id):
-			self.db_session.populate_songs_table(album_id, self.ampache_conn.get_songs_by_album(album_id))
+		if dbfunctions.table_is_empty(self.db_session, 'songs', album_id):
+			dbfunctions.populate_songs_table(self.db_session, album_id, self.ampache_conn.get_songs_by_album(album_id))
 	
 	def update_statusbar(self, text):
 		"""Update the status bar and run pending main_iteration() events."""
@@ -2119,15 +2107,22 @@ Message from GStreamer:
 		cur_song_num = self.audio_engine.get_current_song()
 		self.playlist_list_store.clear()
 		i = 0
-		for temp_song_id in cur_playlist:
-			cur_song = self.db_session.get_playlist_song_dict(temp_song_id)
+		for song_id in cur_playlist:
+			cur_song = {}
+			if dbfunctions.song_has_info(self.db_session, song_id):
+				cur_song = dbfunctions.get_playlist_song_dict(self.db_session, song_id)
+				print "db"	
+			else:
+				cur_song = self.ampache_conn.get_song_info(song_id)
+				print "ampache"
+	
 			cur_string = cur_song['song_title'] + ' - ' + cur_song['artist_name'] + ' - ' + cur_song['album_name']
 			cur_string = cur_string.replace('&', '&amp;') #HACK
 			now_playing = self.images_pixbuf_empty
 			if i == cur_song_num:
 				now_playing = self.images_pixbuf_playing
 				cur_string = '<b>' + cur_string + '</b>'
-			self.playlist_list_store.append([now_playing, cur_string, temp_song_id])
+			self.playlist_list_store.append([now_playing, cur_string, song_id])
 			i += 1
 			
 	#######################################
@@ -2216,7 +2211,7 @@ Message from GStreamer:
 		new_time_nanoseconds = self.audio_engine.query_position()
 		if new_time_nanoseconds != -1:
 			new_time_seconds = new_time_nanoseconds / 1000 / 1000 / 1000
-			new_time_human_readable = self.__convert_seconds_to_human_readable(new_time_seconds)
+			new_time_human_readable = helperfunctions.convert_seconds_to_human_readable(new_time_seconds)
 			for signal in self.time_elapsed_signals:
 				self.time_elapsed_slider.handler_block(signal)
 			self.time_elapsed_slider.set_value(new_time_seconds)
@@ -2229,86 +2224,6 @@ Message from GStreamer:
 	#######################################
 	# Private Methods
 	#######################################
-	#################
-	# Sort Functions
-	#################
-	def __sort_artists_by_custom_name(self, model, iter1, iter2, data=None):
-		"""Custom Function to sort artists by extracting words like "the" and "a"."""
-		band1 = model[iter1][2]
-		band2 = model[iter2][2]
-	
-		if band1 < band2:
-			return -1
-		elif band1 > band2:
-			return 1
-		return 0
-
-	def __sort_albums_by_year(self, model, iter1, iter2, data=None):
-		"""Custom function to sort albums by year."""
-		year1 = model[iter1][2]
-		year2 = model[iter2][2]
-		order = self.albums_column.get_sort_order()
-		# First check for -1 album (always top row)
-		if year1 == -1:
-			if order == gtk.SORT_DESCENDING:
-				return 1
-			else:
-				return -1
-		elif year2 == -1:
-			if order == gtk.SORT_DESCENDING:
-				return -1
-			else:
-				return 1
-		# otherwise organize them by their years
-		if year1 < year2:
-			return -1
-		elif year1 > year2:
-			return 1
-		return 0
-	
-	def __sort_songs_by_title(self, model, iter1, iter2, data=None):
-		"""Custom function to sort titles alphabetically."""
-		title1 = model[iter1][1]
-		title2 = model[iter2][1]
-		
-		if title1 < title2:
-			return -1
-		elif title2 < title1:
-			return 1
-		return 0
-
-	def __sort_songs_by_track(self, model, iter1, iter2, data=None):
-		"""Custom function to sort songs by track."""
-		track1 = model[iter1][0]
-		track2 = model[iter2][0]
-
-		if track1 < track2:
-			return -1
-		elif track1 > track2:
-			return 1
-		return self.__sort_songs_by_title(model, iter1, iter2, data)
-
-	def __sort_songs_by_album(self, model, iter1, iter2, data=None):
-		"""Custom function to sort songs by album, if the albums are the same it will sort by tracks."""
-		album1 = model[iter1][3]
-		album2 = model[iter2][3]
-
-		if album1 < album2:
-			return -1
-		elif album1 > album2:
-			return 1
-		return self.__sort_songs_by_track(model, iter1, iter2, data)
-
-	def __sort_songs_by_artist(self, model, iter1, iter2, data=None):
-		"""Custom function to sort songs by artist, if the artists are the same it will sort by albums."""
-		artist1 = model[iter1][2]
-		artist2 = model[iter2][2]
-
-		if artist1 < artist2:
-			return -1
-		elif artist1 > artist2:
-			return 1
-		return self.__sort_songs_by_album(model, iter1, iter2, data)
 
 	#################
 	# Internal Helper Functions
@@ -2350,7 +2265,7 @@ Message from GStreamer:
 			print "Failed!"
 			self.button_album_art_locked = False
 			return False
-		image_pixbuf = self.__create_image_pixbuf(art_file, ALBUM_ART_SIZE)
+		image_pixbuf = guifunctions.create_image_pixbuf(art_file, ALBUM_ART_SIZE)
 		self.album_art_image.set_from_pixbuf(image_pixbuf)
 		self.set_tray_icon(image_pixbuf)
 		print "Done!"
@@ -2361,7 +2276,7 @@ Message from GStreamer:
 	def __add_songs_to_list_store(self, album_id):
 		"""Takes an album_id, and adds all of that albums songs to the GUI."""
 		self.check_and_populate_songs(album_id)
-		songs = self.db_session.get_song_dict(album_id)
+		songs = dbfunctions.get_song_dict(self.db_session, album_id)
 		model = self.song_list_store
 		
 		if not songs:
@@ -2384,74 +2299,8 @@ Message from GStreamer:
 			if song_time[:2] == "00": # strip out hours if below 60 minutes
 				song_time = song_time[3:]
 			# convert size to humand_readable
-			song_size = self.__human_readable_filesize(float(song_size))
+			song_size = helperfunctions.convert_filesize_to_human_readable(float(song_size))
 			
 			model.append([song_track, song_title, artist_name, album_name, song_time, song_size, song_id])
 		return True
-			
-	##############################################
-	# GTK Helpers
-	##############################################
-	def __create_single_column_tree_view(self, column_name, model, sort_column=None):
-		"""Create a treeview by passing a column_name and a  model (gtk.ListStore())."""
-		tree_view = gtk.TreeView(model)
-		tree_view.set_rules_hint(True)
-		column = self.__create_column(column_name, 0, sort_column)
-		tree_view.append_column(column)
-		return tree_view
-
-	def __create_column(self, column_name, column_id, sort_column=None, pixbuf=False):
-		"""Helper function for treeviews, this will return a column ready to be appended."""
-		if pixbuf:
-			renderer_text = gtk.CellRendererPixbuf()
-			column = gtk.TreeViewColumn(column_name)
-			column.pack_start(renderer_text, expand=False)
-			column.add_attribute(renderer_text, 'pixbuf', 0)
-		else:
-			renderer_text = gtk.CellRendererText()
-			column = gtk.TreeViewColumn(column_name, renderer_text, text=column_id)
-		if sort_column != None:
-			column.set_sort_column_id(sort_column)
-		else:
-			column.set_sort_column_id(column_id)
-		return column
-
-	def __create_image_pixbuf(self, file, width, height=None):
-		"""Helper function to create a pixel buffer from a file of a set width and height."""
-		if height == None:
-			height = width
-		image = gtk.gdk.pixbuf_new_from_file(file).scale_simple(width, height, gtk.gdk.INTERP_BILINEAR)
-		return image
-		
-	##########################################
-	# Custom database functions
-	##########################################
-	# this is where db functions will go to make DatabaseSession usable with any program, like AmpacheSession
-		
-		
-	##########################################
-	# String/Int formatters
-	##########################################	
-	def __human_readable_filesize(self, bytes):
-		"""Converts bytes to humand_readable form."""
-		if bytes >= 1073741824:
-			return str(round(bytes / 1024 / 1024 / 1024, 1)) + ' GB'
-		elif bytes >= 1048576:
-			return str(round(bytes / 1024 / 1024, 1)) + ' MB'
-		elif bytes >= 1024:
-			return str(round(bytes / 1024, 1)) + ' KB'
-		elif bytes < 1024:
-			return str(bytes) + ' bytes'
-		
-	def __convert_seconds_to_human_readable(self, number):
-		"""Converts seconds to a human readable string."""
-		if number == 0:
-			return "0:00"
-		# convert time in seconds to HH:MM:SS THIS WILL FAIL IF LENGTH > 24 HOURS
-		new_time = time.strftime('%H:%M:%S', time.gmtime(number))
-		if new_time[:3] == "00:": # strip out hours if below 60 minutes
-			new_time = new_time[3:]
-		if new_time[:3] == "00:": # strip out hours if below 60 minutes
-			new_time = new_time[1:]
-		return new_time
 

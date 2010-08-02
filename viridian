@@ -28,6 +28,9 @@ import AmpacheTools
 
 import gobject
 import dbus, dbus.service, dbus.glib
+import os
+
+VIRIDIAN_DIR = os.path.expanduser("~") + os.sep + '.viridian'
 
 class AmpacheService(dbus.service.Object):
 	def __init__(self, app):
@@ -48,15 +51,25 @@ if __name__ == "__main__":
 		else:
 			raise Exception('Not Running')
 	except: # some distros don't support this, so just open a second instance i guess....
-		# create a session
-		db_session   = AmpacheTools.DatabaseSession()
+		is_first_time = False
+		if not os.path.exists(VIRIDIAN_DIR):
+			is_first_time = True
+			os.mkdir(VIRIDIAN_DIR)
+			os.chmod(VIRIDIAN_DIR, 0700)
+				
+		db_session   = AmpacheTools.DatabaseSession(VIRIDIAN_DIR + os.sep + 'db.sqlite')
 		ampache_conn = AmpacheTools.AmpacheSession()
 		audio_engine = AmpacheTools.AudioEngine(ampache_conn)
+		
 		# create the gui and attach it to the session
-		gui = AmpacheTools.AmpacheGUI(ampache_conn, audio_engine, db_session)
+		gui = AmpacheTools.AmpacheGUI(ampache_conn, audio_engine, db_session, is_first_time)
+		
+		# this is for dbus
 		service = AmpacheService(gui)
+		
 		# allow the audioengine and ampachesession to callback to the GUI (for messages like End Of Song)
 		audio_engine.set_ampache_gui_hook(gui)
+		
 		# display the gui
 		gui.main()
 

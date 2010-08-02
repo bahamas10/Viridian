@@ -156,7 +156,6 @@ class AudioEngine:
 		self.songs_list = []
 		self.song_num = -1
 		self.ampache_gui.audioengine_song_changed(None)
-		return True
 	
 	def seek(self, seek_time_secs):
 		"""Seek function, doesn't work on some distros."""
@@ -165,7 +164,7 @@ class AudioEngine:
 	def stop(self): 
 		"""Tells the player to stop."""
 		try:
-			print self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH, 0)
+			self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH, 0)
 			self.player.set_state(gst.STATE_NULL)
 		except:
 			return False
