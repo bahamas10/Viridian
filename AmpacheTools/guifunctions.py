@@ -19,9 +19,10 @@ import pygtk
 pygtk.require("2.0")
 import gtk
 
-##############################################
-# GTK Helpers
-##############################################
+"""
+ GTK Helper functions
+"""
+
 def create_single_column_tree_view(column_name, model, sort_column=None):
 	"""Create a treeview by passing a column_name and a  model (gtk.ListStore())."""
 	tree_view = gtk.TreeView(model)

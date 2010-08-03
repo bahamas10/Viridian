@@ -32,9 +32,13 @@ DEFAULT_TIMEOUT = 5
 socket.setdefaulttimeout(DEFAULT_TIMEOUT)
 
 class AmpacheSession:
-	"""The AmpacheSession Class.  This is used to communicate to Ampache via the API."""
+	"""
+	The AmpacheSession Class.  This is used to communicate to Ampache via the API.
+	"""
 	def __init__(self):
-		"""Initialize an AmpacheSession."""
+		"""
+		Initialize an AmpacheSession.
+		"""
 		self.url = None
 		self.username = None
 		self.password = None
@@ -45,7 +49,9 @@ class AmpacheSession:
 		self.auth_current_retry = 0
 
 	def set_credentials(self, username, password, url):
-		"""Save the ampache url, username, and password"""
+		"""
+		Save the ampache url, username, and password.
+		"""
 		# remove trailing slash off URL
 		if url != None:
 			while ( url[-1:] == '/' ):
@@ -61,11 +67,15 @@ class AmpacheSession:
 		return True
 
 	def get_credentials(self):
-		"""Retrun the url, username, and password as a tuple."""
+		"""
+		Retrun the url, username, and password as a tuple.
+		"""
 		return (self.username, self.password, self.url)
 	
 	def has_credentials(self):
-		"""Checks to see if the AmpacheSession object has credentials set."""
+		"""
+		Checks to see if the AmpacheSession object has credentials set.
+		"""
 		if self.username == None or self.password == None or self.url == None or self.xml_rpc == None:
 			return False
 		elif self.username == "" or self.password == "" or self.url == "" or self.xml_rpc == "":
@@ -73,8 +83,10 @@ class AmpacheSession:
 		return True
 			
 	def authenticate(self):
-		"""Attempt to authenticate to Ampache.  Returns True if successful and False if not.
-		This will retry AUTH_MAX_RETRY times."""
+		"""
+		Attempt to authenticate to Ampache.  Returns True if successful and False if not.
+		This will retry AUTH_MAX_RETRY(=3) times.
+		"""
 		# check for the necessary information
 		if not self.has_credentials():
 			return False
@@ -129,7 +141,9 @@ class AmpacheSession:
 		return True
 				
 	def is_authenticated(self):
-		"""Returns True if self.auth is set, and False if it is not."""
+		"""
+		Returns True if self.auth is set, and False if it is not.
+		"""
 		if self.auth != None:
 			return True
 		return False
@@ -138,11 +152,15 @@ class AmpacheSession:
 	# Public Getter Methods
 	#######################################
 	def get_last_update_time(self):
-		"""Returns the last time the catalog on the Ampache server was updated."""
+		"""
+		Returns the last time the catalog on the Ampache server was updated.
+		"""
 		return self.last_update_time
 	
 	def get_song_url(self, song_id):
-		"""Takes a song_id and returns the url to the song (with the current authentication)."""
+		"""
+		Takes a song_id and returns the url to the song (with the current authentication).
+		"""
 		values = {'action' : 'song',
 			  'filter' : song_id,
 			  'auth'   : self.auth,
@@ -167,7 +185,9 @@ class AmpacheSession:
 		return song_url
 		
 	def get_album_art(self, album_id):
-		"""Takes an album_id and returns the url to the artwork (with the current authentication)."""
+		"""
+		Takes an album_id and returns the url to the artwork (with the current authentication).
+		"""
 		values = {'action' : 'album',
 			  'filter' : album_id,
 			  'auth'   : self.auth,
@@ -193,7 +213,14 @@ class AmpacheSession:
 		
 		
 	def get_artists(self, offset=None):
-		"""Gets all artists and return as a list"""
+		"""
+		Gets all artists and return as a list of dictionaries.
+		Example: [
+				{ 'artist_id' : artist_id, 'artist_name' : artist_name},
+				{ 'artist_id' : 1, 'artist_name' : 'The Reign of Kindo'},
+				{ ... },
+			 ]
+		"""
 		if offset == None:
 			if self.artists_num <= 5000: # no offset needed
 				print "Less than 5000 artists"
@@ -232,16 +259,33 @@ class AmpacheSession:
 				return None
 		try: # get the artists
 			for child in nodes:
-				artist_name        = child.getElementsByTagName('name')[0].childNodes[0].data
-				artist_id          = int(child.getAttribute('id'))
-				custom_artist_name = re.sub('^the |^a ', '', artist_name.lower())
-				list.append( [artist_id, artist_name, custom_artist_name] )
+				artist_name = child.getElementsByTagName('name')[0].childNodes[0].data
+				artist_id   = int(child.getAttribute('id'))
+				dict = { 'artist_id'   : artist_id,
+				         'artist_name' : artist_name,
+				       }
+				list.append( dict )
 		except: # something failed
 			return None
 		return list
 
 	def get_albums_by_artist(self, artist_id):
-		"""Gets all albums by the artist_id."""
+		"""
+		Gets all albums by the artist_id and returns as a list of dictionaries.
+		Example: [
+				{	 'artist_id'      : artist_id,
+					 'artist_name'    : artist_name,
+					 'album_id'       : album_id,
+					 'album_name'     : album_name,
+					 'album_year'     : album_year,
+					 'album_tracks'   : album_tracks,
+					 'album_disk'     : album_disk,
+					 'album_rating'   : album_rating,
+					 'precise_rating' : precise_rating,
+				},
+				{ ... },
+			 ]
+		"""
 		values = {'action' : 'artist_albums',
 			  'filter' : artist_id,
 			  'auth'   : self.auth,
@@ -266,20 +310,56 @@ class AmpacheSession:
 				return None
 		try:
 			for child in nodes:
-				album_id    = int(child.getAttribute('id'))
-				album_name  = child.getElementsByTagName('name')[0].childNodes[0].data
-				album_year  = child.getElementsByTagName('year')[0].childNodes[0].data
-				album_stars = child.getElementsByTagName('preciserating')[0].childNodes[0].data 
+				album_id       = int(child.getAttribute('id'))
+				album_name     = child.getElementsByTagName('name')[0].childNodes[0].data
+				artist_id      = int(child.getElementsByTagName('artist')[0].getAttribute('id'))
+				artist_name    = child.getElementsByTagName('artist')[0].childNodes[0].data
+				album_year     = child.getElementsByTagName('year')[0].childNodes[0].data
+				album_tracks   = int(child.getElementsByTagName('tracks')[0].childNodes[0].data)
+				album_disk     = int(child.getElementsByTagName('disk')[0].childNodes[0].data)
+				precise_rating = int(child.getElementsByTagName('preciserating')[0].childNodes[0].data)
+				album_rating   = child.getElementsByTagName('rating')[0].childNodes[0].data
 				if album_year == "N/A":
 					album_year = 0
 				album_year = int(album_year)
-				list.append( [artist_id, album_id, album_name, album_year, album_stars] )
+				
+				dict = { 'artist_id'      : artist_id,
+					 'artist_name'    : artist_name,
+					 'album_id'       : album_id,
+					 'album_name'     : album_name,
+					 'album_year'     : album_year,
+					 'album_tracks'   : album_tracks,
+					 'album_disk'     : album_disk,
+					 'album_rating'   : album_rating,
+					 'precise_rating' : precise_rating,
+				       }
+				list.append( dict )
 		except: #something failed
+			print "this artist failed", artist_id
 			return None
 		return list
 
 	def get_songs_by_album(self, album_id):
-		"""Gets all songs on album_id."""
+		"""
+		Gets all songs on album_id and returns as a list of dictionaries.
+		Example: [
+		  		{	'song_id'        : song_id,
+					'song_title'     : song_title,
+					'artist_id'      : artist_id,
+					'artist_name'    : artist_name,
+					'album_id'       : album_id,
+					'album_name'     : album_name,
+					'song_track'     : song_track,
+					'song_time'      : song_time,
+					'song_size'      : song_size,
+					'precise_rating' : precise_rating,
+					'rating'         : rating,
+					'art'            : art,
+					'url'            : url,
+				},
+				{ ... },
+			 ]
+		"""
 		values = {'action' : 'album_songs',
 			  'filter' : album_id,
 			  'auth'   : self.auth,
@@ -303,21 +383,61 @@ class AmpacheSession:
 			else: # couldn't authenticate
 				return None
 		try:
-			for child in nodes:
-				song_id     = int(child.getAttribute('id'))
-				song_title  = child.getElementsByTagName('title')[0].childNodes[0].data
-				song_track  = int(child.getElementsByTagName('track')[0].childNodes[0].data)
-				song_time   = int(child.getElementsByTagName('time')[0].childNodes[0].data)
-				song_size   = int(child.getElementsByTagName('size')[0].childNodes[0].data)
-				artist_name = child.getElementsByTagName('artist')[0].childNodes[0].data
-				album_name  = child.getElementsByTagName('album')[0].childNodes[0].data
-				list.append( [album_id, song_id, song_title, song_track, song_time, song_size, artist_name, album_name] )
+			for song in nodes:
+				song_id        = int(song.getAttribute('id'))
+				song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
+				artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
+				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
+				album_id       = int(song.getElementsByTagName('album')[0].getAttribute('id'))
+				album_name     = song.getElementsByTagName('album')[0].childNodes[0].data
+				
+				song_track     = int(song.getElementsByTagName('track')[0].childNodes[0].data)
+				song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
+				song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
+				
+				precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
+				rating         = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
+				art            = song.getElementsByTagName('art')[0].childNodes[0].data
+				url            = song.getElementsByTagName('url')[0].childNodes[0].data
+				dict = {   'song_id'        : song_id,
+						'song_title'     : song_title,
+						'artist_id'      : artist_id,
+						'artist_name'    : artist_name,
+						'album_id'       : album_id,
+						'album_name'     : album_name,
+						'song_track'     : song_track,
+						'song_time'      : song_time,
+						'song_size'      : song_size,
+						'precise_rating' : precise_rating,
+						'rating'         : rating,
+						'art'            : art,
+						'url'            : url,
+					}
+				list.append( dict )
 		except:
+			print "this album failed", album_id
 			return None
 		return list
 		
 	def get_song_info(self, song_id):
-		"""Gets all info from the songs_id."""
+		"""
+		Gets all info about a song from the song_id and returns it as a dictionary.
+		Example: {      'song_id'        : song_id,
+				'song_title'     : song_title,
+				'artist_id'      : artist_id,
+				'artist_name'    : artist_name,
+				'album_id'       : album_id,
+				'album_name'     : album_name,
+				'song_track'     : song_track,
+				'song_time'      : song_time,
+				'song_size'      : song_size,
+				'precise_rating' : precise_rating,
+				'rating'         : rating,
+				'art'            : art,
+				'url'            : url,
+			 }
+		
+		"""
 		values = {'action' : 'song',
 			  'filter' : song_id,
 			  'auth'   : self.auth,

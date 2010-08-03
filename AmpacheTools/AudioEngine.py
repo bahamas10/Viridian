@@ -115,7 +115,6 @@ class AudioEngine:
 	def set_playlist(self, list):
 		"""Sets the current playlist to list."""
 		self.songs_list = list
-		return True
 		
 	def get_playlist(self):
 		"""Returns the current playlist in a list of song_ids."""
@@ -211,47 +210,42 @@ class AudioEngine:
 	def prev_track(self):
 		"""Tells the player to go back a song in the playlist.
 		This function takes care of repeating songs if enabled."""
-		try:
-			self.song_num -= 1
-			if self.repeat_songs: # if the user wants the album to repeat
-				self.song_num = (self.song_num + len(self.songs_list)) % len(self.songs_list) # this is for repeating tracks
-			else: # the user doesn't want the album to repeat
-				if self.song_num < 0:
-					self.song_num = 0
-					return True
-			print "New song_num", self.song_num
-			self.play_from_list_of_songs(self.songs_list, self.song_num)
-		except:
-			return False
-		return True
+
+		self.song_num -= 1
+		if self.repeat_songs: # if the user wants the album to repeat
+			self.song_num = (self.song_num + len(self.songs_list)) % len(self.songs_list) # this is for repeating tracks
+		else: # the user doesn't want the album to repeat
+			if self.song_num < 0:
+				self.song_num = 0
+				return True
+		print "New song_num", self.song_num
+		self.play_from_list_of_songs(self.songs_list, self.song_num)
+
 	
 	
 	def next_track(self, auto=False):
 		"""Tells the player to go forward a song in the playlist.
 		This function takes care of repeating songs if enabled."""
-		try:
-			if self.song_num == None: # the user clicked prev too many times
-				self.song_num = 0
-			else:
-				self.song_num += 1
-			if self.repeat_songs: # if the user wants the album to repeat
-				self.song_num = self.song_num % len(self.songs_list)
-			else: # don't repeat
-				if self.song_num >= len(self.songs_list):
-					# dont' let the current position go over the playlist length
-					if auto:
-						self.song_num = -1
-						self.stop()
-						self.ampache_gui.audioengine_song_changed(None)
-						return
-					else:
-						self.song_num = len(self.songs_list) - 1
-						return
-			print "New song_num", self.song_num
-			self.play_from_list_of_songs(self.songs_list, self.song_num)
-		except:
-			return False
-		return True
+		if self.song_num == None: # the user clicked prev too many times
+			self.song_num = 0
+		else:
+			self.song_num += 1
+		if self.repeat_songs: # if the user wants the album to repeat
+			self.song_num = self.song_num % len(self.songs_list)
+		else: # don't repeat
+			if self.song_num >= len(self.songs_list):
+				# dont' let the current position go over the playlist length
+				if auto:
+					self.song_num = -1
+					self.stop()
+					self.ampache_gui.audioengine_song_changed(None)
+					return
+				else:
+					self.song_num = len(self.songs_list) - 1
+					return
+		print "New song_num", self.song_num
+		self.play_from_list_of_songs(self.songs_list, self.song_num)
+
 	
 	#def next_track_gapless(self):
 		#"""Tell the player to play the next song right away."""

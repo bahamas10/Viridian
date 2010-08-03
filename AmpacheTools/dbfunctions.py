@@ -83,10 +83,11 @@ def populate_albums_table(db_session, artist_id, list):
 	"""Save the list of albums in the albums table."""
 	if not list: # list is empty
 		return False
+	#print list
 	c = db_session.cursor()
 	c.execute("""DELETE FROM albums WHERE artist_id = ?""", [artist_id])
 	for album_list in list:
-		c.execute("""INSERT INTO albums (artist_id, album_id, name, year, stars)
+		c.execute("""INSERT INTO albums (artist_id, album_id, name, year, precise_rating)
 			VALUES (?,?,?,?,?)""", album_list)
 	db_session.commit()
 	c.close()
@@ -191,7 +192,7 @@ def get_artist_dict(db_session):
 			artist_name = row[1]
 			custom_name = row[2]
 			artist_dict[artist_id] = { 'name'        : artist_name,
-						'custom_name' : custom_name,
+						   'custom_name' : custom_name,
 						}
 	except:
 		artist_dict = None
@@ -205,16 +206,16 @@ def get_album_dict(db_session, artist_id):
 	album_dict = {}
 	try:
 		c = db_session.cursor()
-		c.execute("""SELECT album_id, name, year, stars FROM albums
+		c.execute("""SELECT album_id, name, year, precise_rating FROM albums
 			WHERE artist_id = ? order by year""", [artist_id])
 		for row in c:
-			album_id    = row[0]
-			album_name  = row[1]
-			album_year  = row[2]
-			album_stars = row[3]
-			album_dict[album_id] = { 'name'  : album_name,
-						'year'  : album_year,
-						'stars' : album_stars,
+			album_id      = row[0]
+			album_name    = row[1]
+			album_year    = row[2]
+			precise_rating = row[3]
+			album_dict[album_id] = {'name'          : album_name,
+						'year'          : album_year,
+						'precise_rating' : precise_rating,
 						}
 	except:
 		album_dict = None
@@ -273,12 +274,12 @@ def get_single_song_dict(db_session, song_id):
 					'song_id'     : song_id,
 					'artist_name' : artist_name,
 					}
-		c.execute("""SELECT name, album_id, stars FROM albums
+		c.execute("""SELECT name, album_id, precise_rating FROM albums
 			WHERE album_id = ?""", [song_dict['album_id']])
 		data = c.fetchone()
-		song_dict['album_name']  = data[0]
-		song_dict['artist_id']   = data[1]
-		song_dict['album_stars'] = data[2]
+		song_dict['album_name']    = data[0]
+		song_dict['artist_id']     = data[1]
+		song_dict['precise_rating'] = data[2]
 	except:
 		song_dict = None
 	db_session.commit()
@@ -317,14 +318,14 @@ def create_initial_tables(db_session):
 		)
 	''')
 	c.execute('''CREATE TABLE IF NOT EXISTS albums
-		(artist_id int NOT NULL DEFAULT '', 
+		(artist_id int NOT NULL DEFAULT '',
 		album_id int NOT NULL DEFAULT '',
 		name text NOT NULL DEFAULT '',
 		year int DEFAULT '',
-		stars int DEFAULT 0,
-		PRIMARY KEY (album_id, artist_id)
+		precise_rating int DEFAULT 0,
+		PRIMARY KEY (artist_id, album_id)
 		)
-	''')
+	''') 
 	c.execute('''CREATE TABLE IF NOT EXISTS songs
 		(album_id int NOT NULL DEFAULT '', 
 		song_id int NOT NULL DEFAULT '',
@@ -339,7 +340,6 @@ def create_initial_tables(db_session):
 	''')
 	db_session.commit()
 	c.close()
-	return True
 
 
 	

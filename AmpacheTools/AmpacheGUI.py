@@ -129,7 +129,7 @@ class AmpacheGUI:
 		volume = float(volume)
 		width = self.db_session.variable_get('window_size_width')
 		if width == None:
-			width = 900
+			width = 1100
 		height = self.db_session.variable_get('window_size_height')
 		if height == None:
 			height = 600
@@ -233,7 +233,7 @@ class AmpacheGUI:
 		editm.set_submenu(edit_menu)
 
 		newi = gtk.ImageMenuItem(gtk.STOCK_PREFERENCES, agr)
-		key, mod = gtk.accelerator_parse("<Control>E")
+		key, mod = gtk.accelerator_parse("<Control>P")
 		newi.add_accelerator("activate", agr, key, mod, gtk.ACCEL_VISIBLE)
 
 		newi.connect("activate", self.show_settings)
@@ -251,7 +251,7 @@ class AmpacheGUI:
 		newi = gtk.CheckMenuItem("Show Playlist")
 		show_playlist = self.db_session.variable_get('show_playlist')
 		if show_playlist == None:
-			show_playlist = False
+			show_playlist = True
 		newi.set_active(show_playlist)
 		newi.connect("activate", self.toggle_playlist_view)
 		view_menu.append(newi)
@@ -401,12 +401,12 @@ class AmpacheGUI:
 		self.current_artist_label = gtk.Label()
 		self.current_album_label  = gtk.Label()
 
-		now_playing_info.pack_start(filler, False, False, 1)
+		now_playing_info.pack_start(filler, False, False, 0)
 		now_playing_info.pack_start(self.current_song_label,   False, False, 1)
 		now_playing_info.pack_start(self.current_artist_label, False, False, 1)
 		now_playing_info.pack_start(self.current_album_label,  False, False, 1)
 		
-		top_bar.pack_start(now_playing_info, False, False, 15)
+		top_bar.pack_start(now_playing_info, False, False, 5)
 		
 		#################################
 		#  Album Art
@@ -433,7 +433,7 @@ class AmpacheGUI:
 		vbox.pack_start(event_box_album, False, False, 0)
 		vbox.pack_start(hbox, False, False, 0)
 	
-		top_bar.pack_start(vbox, False, False, 4)
+		top_bar.pack_start(vbox, False, False, 1)
 		
 		
 		########
@@ -1339,7 +1339,7 @@ class AmpacheGUI:
 				self.db_session.variable_set('catalog_update', last_update_time)
 			
 			self.catalog_up_to_date = False
-			if catalog_update >= last_update_time:
+			if catalog_update >= last_update_time and last_update_time != -1:
 				self.catalog_up_to_date = True
 				
 			if not self.catalog_up_to_date:
@@ -1403,15 +1403,15 @@ class AmpacheGUI:
 		albums = dbfunctions.get_album_dict(self.db_session, self.artist_id)
 		# alphabetize the list
 		for album in albums:
-			album_name  = albums[album]['name']
-			album_year  = albums[album]['year']
-			album_stars = albums[album]['stars']
+			album_name    = albums[album]['name']
+			album_year    = albums[album]['year']
+			precise_rating = albums[album]['precise_rating']
 			album_id    = album
 			self.update_statusbar("Fetching Album: " + album_name)
 			album_string = album_name + ' (' + str(album_year) + ')'
 			if album_year == 0:
 				album_string = album_name
-			model.append([album_string, album_id, album_year, album_stars])
+			model.append([album_string, album_id, album_year, precise_rating])
 		self.update_statusbar(self.artist_name)
 		
 
@@ -1780,43 +1780,43 @@ class AmpacheGUI:
 		
 	def __button_pre_cache_info_clicked(self, widget=None, data=None):
 		self.pre_cache_continue = True # this will be set to false if this function should stop
-		try:
-			start_time = int(time.time())
-			artists = dbfunctions.get_artist_ids(self.db_session)
-			i = 0
-			num_artists = len(artists)
-			for artist_id in artists:
-				i += 1
-				if self.pre_cache_continue == False:
-					self.button_pre_cache_locked = False
-					return False
-				self.check_and_populate_albums(artist_id)
-				self.update_statusbar("Pulling all albums from artists: %d/%d" % (i, num_artists) )
-				#gobject.idle_add(self.update_statusbar, 1, "Pulling all albums from artists: %d/%d" % (i, num_artists) )
-			self.update_statusbar("Finished pulling albums")
+		#try:
+		start_time = int(time.time())
+		artists = dbfunctions.get_artist_ids(self.db_session)
+		i = 0
+		num_artists = len(artists)
+		for artist_id in artists:
+			i += 1
+			if self.pre_cache_continue == False:
+				self.button_pre_cache_locked = False
+				return False
+			self.check_and_populate_albums(artist_id)
+			self.update_statusbar("Pulling all albums from artists: %d/%d" % (i, num_artists) )
+			#gobject.idle_add(self.update_statusbar, 1, "Pulling all albums from artists: %d/%d" % (i, num_artists) )
+		self.update_statusbar("Finished pulling albums")
+		
+		albums = dbfunctions.get_album_ids(self.db_session)
+		i = 0
+		num_albums = len(albums)
+		for album_id in albums:
+			i += 1
+			if self.pre_cache_continue == False:
+				self.button_pre_cache_locked = False
+				return False
+			self.check_and_populate_songs(album_id)
+			self.update_statusbar("Pulling all songs from albums: %d/%d" % (i, num_albums) )
 			
-			albums = dbfunctions.get_album_ids(self.db_session)
-			i = 0
-			num_albums = len(albums)
-			for album_id in albums:
-				i += 1
-				if self.pre_cache_continue == False:
-					self.button_pre_cache_locked = False
-					return False
-				self.check_and_populate_songs(album_id)
-				self.update_statusbar("Pulling all songs from albums: %d/%d" % (i, num_albums) )
-			end_time = int(time.time())
-			time_taken = end_time - start_time
-			# convert time in seconds to HH:MM:SS THIS WILL FAIL IF LENGTH > 24 HOURS
-			time_taken = helperfunctions.convert_seconds_to_human_readable(time_taken)
-			
-			self.update_statusbar("Finished Pre Cache -- Time Taken: " + str(time_taken))
-			print "Finished Pre Cache -- Time Taken: " + str(time_taken)
-		except:
-			print "Error!"
-			self.update_statusbar("Error with pre-cache!")
-			self.button_pre_cache_locked = False
-			return False
+		end_time = int(time.time())
+		time_taken = end_time - start_time
+		time_taken = helperfunctions.convert_seconds_to_human_readable(time_taken)
+		
+		self.update_statusbar("Finished Pre Cache -- Time Taken: " + str(time_taken))
+		print "Finished Pre Cache -- Time Taken: " + str(time_taken)
+		#except:
+			#print "Error with pre-cache!"
+			#self.update_statusbar("Error with pre-cache!")
+			#self.button_pre_cache_locked = False
+			#return False
 		self.button_pre_cache_locked = False
 		return False
 		
@@ -1896,7 +1896,7 @@ class AmpacheGUI:
 		about.set_version("1.0-alpha")
 		about.set_copyright("(c) Dave Eddy <dave@daveeddy.com>")
 		about.set_comments("Viridian is a front-end for an Ampache Server (see http://ampache.org)")
-		about.set_website("http://www.viridianplayer.com")
+		about.set_website("http://viridian.daveeddy.com")
 		about.set_authors(["Author:", "Dave Eddy <dave@daveeddy.com>", "http://www.daveeddy.com", "", "AudioEngine by:", "Michael Zeller <link@conquerthesound.com>", "http://conquerthesound.com"])
 		about.set_artists(["Skye Sawyer <skyelauren.s@gmail.com>", "http://www.skyeillustration.com", "", "Media Icons by:", "http://mysitemyway.com", "http://ampache.org"])
 		try:
@@ -1955,12 +1955,17 @@ class AmpacheGUI:
 		self.time_elapsed_slider.set_range(0, song_time)
 		self.time_total_label.set_text(helperfunctions.convert_seconds_to_human_readable(song_time))
 		
-		song_title  = self.current_song_info['song_title'].replace('&', '&amp;') #HACK
-		artist_name = self.current_song_info['artist_name'].replace('&', '&amp;') #HACK
-		album_name  = self.current_song_info['album_name'].replace('&', '&amp;') #HACK
-		self.current_song_label.set_markup(   '<span size="13000"><b>'+song_title+'</b></span>'  )
-		self.current_artist_label.set_markup( '<span size="10000">'+artist_name+'</span>' )
-		self.current_album_label.set_markup(  '<span size="10000">'+album_name+'</span>'  )
+		song_title  = self.current_song_info['song_title']
+		artist_name = self.current_song_info['artist_name']
+		album_name  = self.current_song_info['album_name']
+		
+		song_title_html  = helperfunctions.convert_string_to_html(song_title)
+		artist_name_html = helperfunctions.convert_string_to_html(artist_name)
+		album_name_html  = helperfunctions.convert_string_to_html(album_name)
+		
+		self.current_song_label.set_markup(   '<span size="13000"><b>'+song_title_html+'</b></span>'  )
+		self.current_artist_label.set_markup( '<span size="10000">'+artist_name_html+'</span>' )
+		self.current_album_label.set_markup(  '<span size="10000">'+album_name_html+'</span>'  )
 		### Update the statusbar and tray icon ###
 		self.set_tray_tooltip("Viridan :: " + song_title + ' - ' + artist_name + ' - ' + album_name)
 		self.update_statusbar(song_title + ' - ' + artist_name + ' - ' + album_name)
@@ -1990,9 +1995,9 @@ class AmpacheGUI:
 		self.refresh_gui()
 		
 		### Send notifications OSD ###
-		self.notification("Now Playing", song_title + ' - ' + artist_name, self.current_album_art_file)
+		self.notification("Now Playing", song_title + ' - ' + artist_name + ' - ' + album_name, self.current_album_art_file)
 		# rating stars
-		stars = self.current_song_info['album_stars']
+		stars = self.current_song_info['precise_rating']
 		i = 0
 		while i < 5:
 			if stars > i:
@@ -2021,16 +2026,34 @@ Message from GStreamer:
 	def check_and_populate_artists(self):
 		"""Returns an artist list by either grabbing from the DB or from Ampache."""
 		if self.db_session.table_is_empty('artists'):
-			dbfunctions.populate_artists_table(self.db_session, self.ampache_conn.get_artists())
+			artists = self.ampache_conn.get_artists()
+			if artists == None:
+				return False
+			list = []
+			for artist in artists:
+				custom_artist_name = re.sub('^the |^a ', '', artist['artist_name'].lower())
+				list.append([artist['artist_id'], artist['artist_name'], custom_artist_name])
+			dbfunctions.populate_artists_table(self.db_session, list)
 		
 	def check_and_populate_albums(self, artist_id):
 		if dbfunctions.table_is_empty(self.db_session, 'albums', artist_id):
-			print "table is empty", artist_id
-			dbfunctions.populate_albums_table(self.db_session, artist_id, self.ampache_conn.get_albums_by_artist(artist_id))
+			albums = self.ampache_conn.get_albums_by_artist(artist_id)
+			if albums == None:
+				return False
+			list = []
+			for album in albums:
+				list.append([artist_id, album['album_id'], album['album_name'], album['album_year'] , album['precise_rating']])
+			dbfunctions.populate_albums_table(self.db_session, artist_id, list)
 	
 	def check_and_populate_songs(self, album_id):
 		if dbfunctions.table_is_empty(self.db_session, 'songs', album_id):
-			dbfunctions.populate_songs_table(self.db_session, album_id, self.ampache_conn.get_songs_by_album(album_id))
+			songs = self.ampache_conn.get_songs_by_album(album_id)
+			if songs == None:
+				return False
+			list = []
+			for song in songs:
+				list.append([album_id, song['song_id'], song['song_title'], song['song_track'], song['song_time'], song['song_size'], song['artist_name'], song['album_name']])
+			dbfunctions.populate_songs_table(self.db_session, album_id, list)
 	
 	def update_statusbar(self, text):
 		"""Update the status bar and run pending main_iteration() events."""
@@ -2105,25 +2128,28 @@ Message from GStreamer:
 	def __update_playlist_window(self):
 		cur_playlist = self.audio_engine.get_playlist()
 		cur_song_num = self.audio_engine.get_current_song()
-		self.playlist_list_store.clear()
+		list = []
 		i = 0
 		for song_id in cur_playlist:
 			cur_song = {}
 			if dbfunctions.song_has_info(self.db_session, song_id):
-				cur_song = dbfunctions.get_playlist_song_dict(self.db_session, song_id)
-				print "db"	
+				cur_song = dbfunctions.get_playlist_song_dict(self.db_session, song_id)	
 			else:
 				cur_song = self.ampache_conn.get_song_info(song_id)
-				print "ampache"
-	
 			cur_string = cur_song['song_title'] + ' - ' + cur_song['artist_name'] + ' - ' + cur_song['album_name']
-			cur_string = cur_string.replace('&', '&amp;') #HACK
+			cur_string = helperfunctions.convert_string_to_html(cur_string)
 			now_playing = self.images_pixbuf_empty
 			if i == cur_song_num:
 				now_playing = self.images_pixbuf_playing
 				cur_string = '<b>' + cur_string + '</b>'
-			self.playlist_list_store.append([now_playing, cur_string, song_id])
+			list.append([now_playing, cur_string, song_id])
 			i += 1
+			self.refresh_gui()
+		self.playlist_list_store.clear()
+		for string in list:
+			self.playlist_list_store.append(string)
+		#self.update_statusbar('Ready.')
+			
 			
 	#######################################
 	# Download Songs / Albums

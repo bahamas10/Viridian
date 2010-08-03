@@ -19,9 +19,13 @@ import time
 import gtk
 
 
-##########################################
-# String/Int formatters
-##########################################	
+"""
+Random functions for AmpacheGUI
+"""	
+
+#################
+# Formatters
+#################
 def convert_filesize_to_human_readable(bytes):
 	"""Converts bytes to humand_readable form."""
 	if bytes >= 1073741824:
@@ -46,6 +50,14 @@ def convert_seconds_to_human_readable(seconds):
 	if new_time[:3] == "00:": # convert 00:xx to 0:x
 		new_time = new_time[1:]
 	return new_time
+	
+def convert_string_to_html(string):
+	"""Change characters to HTML friendly versions."""
+	return string.replace('&', '&amp;')
+
+def convert_html_to_string(html):
+	"""Replace HTML characters to their normal character counterparts."""
+	return html.replace('&amp;', '&').replace('%20', ' ').replace('%27', "'")
 	
 #################
 # Sort Functions
@@ -82,6 +94,13 @@ def sort_albums_by_year(model, iter1, iter2, column):
 		return -1
 	elif year1 > year2:
 		return 1
+	else:
+		name1 = model[iter1][0]
+		name2 = model[iter2][0]
+		if name1 < name2:
+			return -1
+		elif name1 > name2:
+			return 1
 	return 0
 
 def sort_songs_by_title(model, iter1, iter2, data=None):

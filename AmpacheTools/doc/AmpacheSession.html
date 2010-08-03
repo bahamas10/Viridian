@@ -1,0 +1,148 @@
+
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module AmpacheSession</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>AmpacheSession</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="AmpacheSession.py">AmpacheSession.py</a></font></td></tr></table>
+    <p><tt>#&nbsp;-*-&nbsp;coding:&nbsp;utf-8&nbsp;-*-<br>
+###&nbsp;BEGIN&nbsp;LICENSE<br>
+#&nbsp;Copyright&nbsp;(C)&nbsp;2010&nbsp;Dave&nbsp;Eddy&nbsp;&lt;dave@daveeddy.com&gt;<br>
+#&nbsp;This&nbsp;program&nbsp;is&nbsp;free&nbsp;software:&nbsp;you&nbsp;can&nbsp;redistribute&nbsp;it&nbsp;and/or&nbsp;modify&nbsp;it<br>
+#&nbsp;under&nbsp;the&nbsp;terms&nbsp;of&nbsp;the&nbsp;GNU&nbsp;General&nbsp;Public&nbsp;License&nbsp;version&nbsp;3,&nbsp;as&nbsp;published<br>
+#&nbsp;by&nbsp;the&nbsp;Free&nbsp;Software&nbsp;Foundation.<br>
+#<br>
+#&nbsp;This&nbsp;program&nbsp;is&nbsp;distributed&nbsp;in&nbsp;the&nbsp;hope&nbsp;that&nbsp;it&nbsp;will&nbsp;be&nbsp;useful,&nbsp;but<br>
+#&nbsp;WITHOUT&nbsp;ANY&nbsp;WARRANTY;&nbsp;without&nbsp;even&nbsp;the&nbsp;implied&nbsp;warranties&nbsp;of<br>
+#&nbsp;MERCHANTABILITY,&nbsp;SATISFACTORY&nbsp;QUALITY,&nbsp;or&nbsp;FITNESS&nbsp;FOR&nbsp;A&nbsp;PARTICULAR<br>
+#&nbsp;PURPOSE.&nbsp;&nbsp;See&nbsp;the&nbsp;GNU&nbsp;General&nbsp;Public&nbsp;License&nbsp;for&nbsp;more&nbsp;details.<br>
+#<br>
+#&nbsp;You&nbsp;should&nbsp;have&nbsp;received&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;GNU&nbsp;General&nbsp;Public&nbsp;License&nbsp;along<br>
+#&nbsp;with&nbsp;this&nbsp;program.&nbsp;&nbsp;If&nbsp;not,&nbsp;see&nbsp;&lt;<a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>&gt;.<br>
+###&nbsp;END&nbsp;LICENSE</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#fffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="datetime.html">datetime</a><br>
+<a href="hashlib.html">hashlib</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="re.html">re</a><br>
+<a href="socket.html">socket</a><br>
+<a href="time.html">time</a><br>
+</td><td width="25%" valign=top><a href="urllib.html">urllib</a><br>
+<a href="urllib2.html">urllib2</a><br>
+<a href="_xmlplus.html">_xmlplus</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="AmpacheSession.html#AmpacheSession">AmpacheSession</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="AmpacheSession">class <strong>AmpacheSession</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>The&nbsp;<a href="#AmpacheSession">AmpacheSession</a>&nbsp;Class.&nbsp;&nbsp;This&nbsp;is&nbsp;used&nbsp;to&nbsp;communicate&nbsp;to&nbsp;Ampache&nbsp;via&nbsp;the&nbsp;API.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="AmpacheSession-__init__"><strong>__init__</strong></a>(self)</dt><dd><tt>Initialize&nbsp;an&nbsp;<a href="#AmpacheSession">AmpacheSession</a>.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-authenticate"><strong>authenticate</strong></a>(self)</dt><dd><tt>Attempt&nbsp;to&nbsp;authenticate&nbsp;to&nbsp;Ampache.&nbsp;&nbsp;Returns&nbsp;True&nbsp;if&nbsp;successful&nbsp;and&nbsp;False&nbsp;if&nbsp;not.<br>
+This&nbsp;will&nbsp;retry&nbsp;AUTH_MAX_RETRY(=3)&nbsp;times.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_album_art"><strong>get_album_art</strong></a>(self, album_id)</dt><dd><tt>Takes&nbsp;an&nbsp;album_id&nbsp;and&nbsp;returns&nbsp;the&nbsp;url&nbsp;to&nbsp;the&nbsp;artwork&nbsp;(with&nbsp;the&nbsp;current&nbsp;authentication).</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_albums_by_artist"><strong>get_albums_by_artist</strong></a>(self, artist_id)</dt><dd><tt>Gets&nbsp;all&nbsp;albums&nbsp;by&nbsp;the&nbsp;artist_id&nbsp;and&nbsp;returns&nbsp;as&nbsp;a&nbsp;list&nbsp;of&nbsp;dictionaries.<br>
+Example:&nbsp;[<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'artist_id'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;artist_id,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'artist_name'&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;artist_name,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'album_id'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;album_id,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'album_name'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;album_name,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'album_year'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;album_year,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'album_tracks'&nbsp;&nbsp;&nbsp;:&nbsp;album_tracks,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'album_disk'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;album_disk,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'album_rating'&nbsp;&nbsp;&nbsp;:&nbsp;album_rating,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'precise_rating'&nbsp;:&nbsp;precise_rating,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;...&nbsp;},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_artists"><strong>get_artists</strong></a>(self, offset<font color="#909090">=None</font>)</dt><dd><tt>Gets&nbsp;all&nbsp;artists&nbsp;and&nbsp;return&nbsp;as&nbsp;a&nbsp;list&nbsp;of&nbsp;dictionaries.<br>
+Example:&nbsp;[<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;'artist_id'&nbsp;:&nbsp;artist_id,&nbsp;'artist_name'&nbsp;:&nbsp;artist_name},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;'artist_id'&nbsp;:&nbsp;1,&nbsp;'artist_name'&nbsp;:&nbsp;'The&nbsp;Reign&nbsp;of&nbsp;Kindo'},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;...&nbsp;},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_credentials"><strong>get_credentials</strong></a>(self)</dt><dd><tt>Retrun&nbsp;the&nbsp;url,&nbsp;username,&nbsp;and&nbsp;password&nbsp;as&nbsp;a&nbsp;tuple.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_last_update_time"><strong>get_last_update_time</strong></a>(self)</dt><dd><tt>Returns&nbsp;the&nbsp;last&nbsp;time&nbsp;the&nbsp;catalog&nbsp;on&nbsp;the&nbsp;Ampache&nbsp;server&nbsp;was&nbsp;updated.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_song_info"><strong>get_song_info</strong></a>(self, song_id)</dt><dd><tt>Gets&nbsp;all&nbsp;info&nbsp;about&nbsp;a&nbsp;song&nbsp;from&nbsp;the&nbsp;song_id&nbsp;and&nbsp;returns&nbsp;it&nbsp;as&nbsp;a&nbsp;dictionary.<br>
+Example:&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'song_id'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;song_id,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'song_title'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;song_title,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'artist_id'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;artist_id,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'artist_name'&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;artist_name,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'album_id'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;album_id,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'album_name'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;album_name,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'song_track'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;song_track,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'song_time'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;song_time,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'song_size'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;song_size,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'precise_rating'&nbsp;:&nbsp;precise_rating,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'rating'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;rating,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'art'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;art,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'url'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;url,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_song_url"><strong>get_song_url</strong></a>(self, song_id)</dt><dd><tt>Takes&nbsp;a&nbsp;song_id&nbsp;and&nbsp;returns&nbsp;the&nbsp;url&nbsp;to&nbsp;the&nbsp;song&nbsp;(with&nbsp;the&nbsp;current&nbsp;authentication).</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-get_songs_by_album"><strong>get_songs_by_album</strong></a>(self, album_id)</dt><dd><tt>Gets&nbsp;all&nbsp;songs&nbsp;on&nbsp;album_id&nbsp;and&nbsp;returns&nbsp;as&nbsp;a&nbsp;list&nbsp;of&nbsp;dictionaries.<br>
+Example:&nbsp;[<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'song_id'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;song_id,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'song_title'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;song_title,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'artist_id'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;artist_id,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'artist_name'&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;artist_name,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'album_id'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;album_id,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'album_name'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;album_name,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'song_track'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;song_track,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'song_time'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;song_time,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'song_size'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;song_size,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'precise_rating'&nbsp;:&nbsp;precise_rating,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'rating'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;rating,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'art'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;art,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'url'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;url,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;...&nbsp;},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-has_credentials"><strong>has_credentials</strong></a>(self)</dt><dd><tt>Checks&nbsp;to&nbsp;see&nbsp;if&nbsp;the&nbsp;<a href="#AmpacheSession">AmpacheSession</a>&nbsp;object&nbsp;has&nbsp;credentials&nbsp;set.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-is_authenticated"><strong>is_authenticated</strong></a>(self)</dt><dd><tt>Returns&nbsp;True&nbsp;if&nbsp;self.<strong>auth</strong>&nbsp;is&nbsp;set,&nbsp;and&nbsp;False&nbsp;if&nbsp;it&nbsp;is&nbsp;not.</tt></dd></dl>
+
+<dl><dt><a name="AmpacheSession-set_credentials"><strong>set_credentials</strong></a>(self, username, password, url)</dt><dd><tt>Save&nbsp;the&nbsp;ampache&nbsp;url,&nbsp;username,&nbsp;and&nbsp;password.</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>AUTH_MAX_RETRY</strong> = 3<br>
+<strong>DEFAULT_TIMEOUT</strong> = 5</td></tr></table>
+</body></html>
