@@ -18,7 +18,6 @@
 import time
 import gtk
 
-
 """
 Random functions for AmpacheGUI
 """	

@@ -1322,37 +1322,42 @@ class AmpacheGUI:
 		print "Password = " + len(password)*"*"
 		# set the credentials and try to login
 		self.__successfully_authed = None
+		################ Thread to authenticate (so the GUI doesn't lock) ############
 		thread.start_new_thread(self.__authenticate, (None,))
 		while self.__successfully_authed == None:
 			self.refresh_gui()
+		##############################################################################
 		if self.__successfully_authed: # auth successful
 			self.update_statusbar("Authentication Successful.")
 			print "Authentication Successful!"
 			print "Authentication = %s" % self.ampache_conn.auth
 			print "Number of artists = %d" % self.ampache_conn.artists_num
 			
-			catalog_update   = self.db_session.variable_get('catalog_update')
-			last_update_time = self.ampache_conn.get_last_update_time()
+			db_time      = int(self.db_session.variable_get('catalog_update'))
+			ampache_time = int(self.ampache_conn.get_last_update_time())
 			
 			if data == "changed":
-				catalog_update = last_update_time
-				self.db_session.variable_set('catalog_update', last_update_time)
+				db_time = ampache_time
+				self.db_session.variable_set('catalog_update', db_time)
 			
 			self.catalog_up_to_date = False
-			if catalog_update >= last_update_time and last_update_time != -1:
+			if db_time >= ampache_time and ampache_time != -1:
 				self.catalog_up_to_date = True
-				
+			
 			if not self.catalog_up_to_date:
 				# not up to date
-				if data == "First" and self.automatically_update:
+				if data == "First" and self.automatically_update: # first time opening, update auto
 					dbfunctions.clear_cached_catalog(self.db_session)
-					self.db_session.variable_set('catalog_update', last_update_time)
+					self.db_session.variable_set('catalog_update', ampache_time)
 					self.catalog_up_to_date = True
 				elif data == True or data == "First": # open a popup
 					if self.create_catalog_updated_dialog(): # user pressed update
 						dbfunctions.clear_cached_catalog(self.db_session)
-						self.db_session.variable_set('catalog_update', last_update_time)
+						self.db_session.variable_set('catalog_update', ampache_time)
 						self.catalog_up_to_date = True
+				elif data == None: # clear_cache_button pressed
+					self.db_session.variable_set('catalog_update', ampache_time)
+					self.catalog_up_to_date = True
 						
 				#else: #do nothing, pull from cache
 							
