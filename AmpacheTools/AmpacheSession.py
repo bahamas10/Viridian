@@ -334,8 +334,9 @@ class AmpacheSession:
 					 'precise_rating' : precise_rating,
 				       }
 				list.append( dict )
-		except: #something failed
+		except Exception, detail: #something failed
 			print "this artist failed", artist_id
+			print detail
 			return None
 		return list
 
@@ -414,8 +415,9 @@ class AmpacheSession:
 						'url'            : url,
 					}
 				list.append( dict )
-		except:
+		except Exception, detail:
 			print "this album failed", album_id
+			print detail
 			return None
 		return list
 		
@@ -490,7 +492,9 @@ class AmpacheSession:
 					'art'            : art,
 					'url'            : url,
 					}
-		except:
+		except Exception, detail:
+			print "this song failed", song_id
+			print detail
 			return None
 		return song_dict
 

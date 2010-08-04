@@ -41,7 +41,7 @@ def table_is_empty(db_session, table_name, query_id):
 		elif table_name == "songs":
 			c.execute("""SELECT 1 FROM %s WHERE album_id = ? LIMIT 1""" % table_name, [query_id])
 		result = c.fetchone()
-		db_session.commit()
+		#db_session.commit()
 		c.close()
 		if result != None:
 			return False # not empty
@@ -55,7 +55,7 @@ def song_has_info(db_session, song_id):
 		c = db_session.cursor()
 		c.execute("""SELECT 1 FROM %s WHERE song_id = ? LIMIT 1""" % 'songs', [song_id])
 		result = c.fetchone()
-		db_session.commit()
+		#db_session.commit()
 		c.close()
 		if result == None:
 			return False # not empty
@@ -115,7 +115,7 @@ def get_album_id(db_session, song_id):
 	c = db_session.cursor()
 	c.execute("""SELECT album_id FROM songs WHERE song_id = ?""", [song_id])
 	result = c.fetchone()[0]
-	db_session.commit()
+	#db_session.commit()
 	c.close()
 	return result
 	
@@ -124,7 +124,7 @@ def get_album_name(db_session, album_id):
 	c = db_session.cursor()
 	c.execute("""SELECT album_name FROM albums WHERE album_id = ?""", [album_id])
 	result = c.fetchone()[0]
-	db_session.commit()
+	#db_session.commit()
 	c.close()
 	return result
 
@@ -133,7 +133,7 @@ def get_album_year(db_session, album_id):
 	c = db_session.cursor()
 	c.execute("""SELECT year FROM albums WHERE album_id = ?""", [album_id])
 	result = c.fetchone()[0]
-	db_session.commit()
+	#db_session.commit()
 	c.close()
 	return result
 
@@ -142,7 +142,7 @@ def get_artist_id(db_session, album_id):
 	c = db_session.cursor()
 	c.execute("""SELECT artist_id FROM albums WHERE album_id = ?""", [album_id])
 	result = c.fetchone()[0]
-	db_session.commit()
+	#db_session.commit()
 	c.close
 	return result
 	
@@ -151,7 +151,7 @@ def get_artist_name(db_session, artist_id):
 	c = db_session.cursor()
 	c.execute("""SELECT name FROM artists WHERE artist_id = ?""", [artist_id])
 	result = c.fetchone()[0]
-	db_session.commit()
+	#db_session.commit()
 	c.close()
 	return result
 
@@ -162,7 +162,7 @@ def get_artist_ids(db_session):
 	list = []
 	for row in c:
 		list.append(row[0])
-	db_session.commit()
+	#db_session.commit()
 	c.close()
 	return list
 	
@@ -173,7 +173,7 @@ def get_album_ids(db_session):
 	list = []
 	for row in c:
 		list.append(row[0])
-	db_session.commit()
+	#db_session.commit()
 	c.close()
 	return list
 	
@@ -196,7 +196,7 @@ def get_artist_dict(db_session):
 						}
 	except:
 		artist_dict = None
-	db_session.commit()
+	#db_session.commit()
 	c.close()
 	return artist_dict
 	
@@ -219,7 +219,7 @@ def get_album_dict(db_session, artist_id):
 						}
 	except:
 		album_dict = None
-	db_session.commit()
+	#db_session.commit()
 	c.close()
 	return album_dict
 	
@@ -248,7 +248,7 @@ def get_song_dict(db_session, album_id):
 						}
 	except:
 		song_dict = None
-	db_session.commit()
+	#db_session.commit()
 	c.close()
 	return song_dict
 	
@@ -282,7 +282,7 @@ def get_single_song_dict(db_session, song_id):
 		song_dict['precise_rating'] = data[2]
 	except:
 		song_dict = None
-	db_session.commit()
+	#db_session.commit()
 	c.close()
 	return song_dict
 
@@ -303,7 +303,7 @@ def get_playlist_song_dict(db_session, song_id):
 					}
 	except:
 		song_dict = None
-	db_session.commit()
+	#db_session.commit()
 	c.close()
 	return song_dict
 	

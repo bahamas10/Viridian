@@ -1701,11 +1701,15 @@ class AmpacheGUI:
 		response = chooser.run()
 		if response == gtk.RESPONSE_OK:
 			filename = chooser.get_filename()
-			f = open(filename, 'w')
-			cPickle.dump(self.audio_engine.get_playlist(), f)
-			f.close()
-			print "save playlist", filename
-		chooser.destroy()
+			try:
+				f = open(filename, 'w')
+				cPickle.dump(self.audio_engine.get_playlist(), f)
+				f.close()
+				print "save playlist", filename
+				self.create_dialog_alert("info", "Playlist saved to %s" % filename, True)
+			except:
+				self.create_dialog_alert("error", "Failed to save playlist!", True)
+	
 	
 		
 	def button_load_playlist_clicked(self, widget, data=None):
@@ -1776,7 +1780,7 @@ class AmpacheGUI:
 				return False
 		except:
 			pass
-		answer = self.create_dialog_ok_or_close("Pre-Cache", "This process can take a long time depending on the size of your catalog.  Proceed?")
+		answer = self.create_dialog_ok_or_close("Pre-Cache", "This will cache all of the artist, album, and song information (not the songs themselves) locally to make Viridian respond faster.  This process can take a long time depending on the size of your catalog.  Proceed?")
 		if answer != "ok":
 			return False
 		self.button_pre_cache_locked = True
@@ -1785,43 +1789,44 @@ class AmpacheGUI:
 		
 	def __button_pre_cache_info_clicked(self, widget=None, data=None):
 		self.pre_cache_continue = True # this will be set to false if this function should stop
-		#try:
-		start_time = int(time.time())
-		artists = dbfunctions.get_artist_ids(self.db_session)
-		i = 0
-		num_artists = len(artists)
-		for artist_id in artists:
-			i += 1
-			if self.pre_cache_continue == False:
-				self.button_pre_cache_locked = False
-				return False
-			self.check_and_populate_albums(artist_id)
-			self.update_statusbar("Pulling all albums from artists: %d/%d" % (i, num_artists) )
-			#gobject.idle_add(self.update_statusbar, 1, "Pulling all albums from artists: %d/%d" % (i, num_artists) )
-		self.update_statusbar("Finished pulling albums")
-		
-		albums = dbfunctions.get_album_ids(self.db_session)
-		i = 0
-		num_albums = len(albums)
-		for album_id in albums:
-			i += 1
-			if self.pre_cache_continue == False:
-				self.button_pre_cache_locked = False
-				return False
-			self.check_and_populate_songs(album_id)
-			self.update_statusbar("Pulling all songs from albums: %d/%d" % (i, num_albums) )
+		try:
+			start_time = int(time.time())
+			artists = dbfunctions.get_artist_ids(self.db_session)
+			i = 0
+			num_artists = len(artists)
+			for artist_id in artists:
+				i += 1
+				if self.pre_cache_continue == False:
+					self.button_pre_cache_locked = False
+					return False
+				self.check_and_populate_albums(artist_id)
+				self.update_statusbar("Pulling all albums from artists: %d/%d" % (i, num_artists) )
+				#gobject.idle_add(self.update_statusbar, 1, "Pulling all albums from artists: %d/%d" % (i, num_artists) )
+			self.update_statusbar("Finished pulling albums")
 			
-		end_time = int(time.time())
-		time_taken = end_time - start_time
-		time_taken = helperfunctions.convert_seconds_to_human_readable(time_taken)
-		
-		self.update_statusbar("Finished Pre Cache -- Time Taken: " + str(time_taken))
-		print "Finished Pre Cache -- Time Taken: " + str(time_taken)
-		#except:
-			#print "Error with pre-cache!"
-			#self.update_statusbar("Error with pre-cache!")
-			#self.button_pre_cache_locked = False
-			#return False
+			albums = dbfunctions.get_album_ids(self.db_session)
+			i = 0
+			num_albums = len(albums)
+			for album_id in albums:
+				i += 1
+				if self.pre_cache_continue == False:
+					self.button_pre_cache_locked = False
+					return False
+				self.check_and_populate_songs(album_id)
+				self.update_statusbar("Pulling all songs from albums: %d/%d" % (i, num_albums) )
+				
+			end_time = int(time.time())
+			time_taken = end_time - start_time
+			time_taken = helperfunctions.convert_seconds_to_human_readable(time_taken)
+			
+			self.update_statusbar("Finished Pre Cache -- Time Taken: " + str(time_taken))
+			print "Finished Pre Cache -- Time Taken: " + str(time_taken)
+		except Exception, detail:
+			print "Error with pre-cache!", detail
+			self.update_statusbar("Error with pre-cache!")
+			self.button_pre_cache_locked = False
+			self.create_dialog_alert("error", "Error with pre-cache!\n\n"+str(detail) )
+			return False
 		self.button_pre_cache_locked = False
 		return False
 		
@@ -1904,12 +1909,12 @@ class AmpacheGUI:
 		about.set_website("http://viridian.daveeddy.com")
 		about.set_authors(["Author:", "Dave Eddy <dave@daveeddy.com>", "http://www.daveeddy.com", "", "AudioEngine by:", "Michael Zeller <link@conquerthesound.com>", "http://conquerthesound.com"])
 		about.set_artists(["Skye Sawyer <skyelauren.s@gmail.com>", "http://www.skyeillustration.com", "", "Media Icons by:", "http://mysitemyway.com", "http://ampache.org"])
-		try:
+		try: # try to set the logo
 			about.set_logo(gtk.gdk.pixbuf_new_from_file(IMAGES_DIR + "logo.png"))
 		except:
 			pass
 		gpl = ""
-		try: 
+		try: # try to read the GPL, if not, just paste the link
 			h = open(SCRIPT_PATH + os.sep + 'doc' + os.sep + 'gpl.txt')
 			s = h.readlines()
 			for line in s:
@@ -1922,9 +1927,7 @@ class AmpacheGUI:
 		
 	def create_catalog_updated_dialog(self):
 		"""Create a dialog to tell the user the cache has been updated."""
-		answer = self.create_dialog_ok_or_close("Ampache Catalog Updated", """The Ampache catalog on the server is newer than the local cached catalog on this computer.  Would you like to update the local catalog by clearing the local cache?
-			 
-(You can also do this at anytime by going to File -> Clear Local Cache).""")
+		answer = self.create_dialog_ok_or_close("Ampache Catalog Updated", "The Ampache catalog on the server is newer than the local cached catalog on this computer.  Would you like to update the local catalog by clearing the local cache?\n\n(You can also do this at anytime by going to File -> Clear Local Cache).")
 		if answer == "ok":
 			return True
 		return False
@@ -2062,7 +2065,7 @@ Message from GStreamer:
 	
 	def update_statusbar(self, text):
 		"""Update the status bar and run pending main_iteration() events."""
-		try:
+		try: # try to pop off any text already on the bar
 			self.statusbar.pop(0)
 		except:
 			pass
@@ -2153,6 +2156,7 @@ Message from GStreamer:
 		self.playlist_list_store.clear()
 		for string in list:
 			self.playlist_list_store.append(string)
+		return False
 		#self.update_statusbar('Ready.')
 			
 			
@@ -2225,8 +2229,8 @@ Message from GStreamer:
 				
 	def reset_everything(self):
 		"""Delete all private/personal data from the users system."""
-		try:
-			self.stop_all_threads()
+		self.stop_all_threads()
+		try: 
 			shutil.rmtree(VIRIDIAN_DIR)
 			os.rmdir(VIRIDIAN_DIR)
 		except:
@@ -2281,7 +2285,7 @@ Message from GStreamer:
 		self.update_statusbar("Re-Fetching album art...")
 		if not os.path.exists(ALBUM_ART_DIR):
 			os.mkdir(ALBUM_ART_DIR)
-		try:
+		try: # attempt to get the current playing songs album art
 			album_id   = self.current_song_info['album_id']
 			art_folder = ALBUM_ART_DIR
 			art_file   = art_folder + os.sep + str(album_id)
@@ -2290,8 +2294,7 @@ Message from GStreamer:
 			f = open(art_file, 'w')
 			f.write(response.read())
 			f.close()
-
-		except: 
+		except: # cache was cleared or something and it fails...
 			self.update_statusbar("Re-Fetching album art... Failed!")
 			print "Failed!"
 			self.button_album_art_locked = False
