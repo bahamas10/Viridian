@@ -739,6 +739,29 @@ class AmpacheGUI:
 		if self.downloads_directory == None:
 			self.downloads_directory = os.path.expanduser("~")
 			
+		### Alternate Row Colors ###
+		playlist = self.db_session.variable_get('playlist')
+		if playlist == None:
+			playlist = True
+		downloads = self.db_session.variable_get('downloads')
+		if downloads == None:
+			downloads = True
+		artists = self.db_session.variable_get('artists')
+		if artists == None:
+			artists = False
+		albums = self.db_session.variable_get('albums')
+		if albums == None:
+			albums = False
+		songs = self.db_session.variable_get('songs')
+		if songs == None:
+			songs = True
+			
+		self.treeview_columns_dict['playlist'].set_rules_hint(playlist)
+		self.treeview_columns_dict['downloads'].set_rules_hint(downloads)
+		self.treeview_columns_dict['artists'].set_rules_hint(artists)
+		self.treeview_columns_dict['albums'].set_rules_hint(albums)
+		self.treeview_columns_dict['songs'].set_rules_hint(songs)
+			
 		### Check for credentials and login ###
 		username = self.db_session.variable_get('credentials_username')
 		password = self.db_session.variable_get('credentials_password')
@@ -826,7 +849,7 @@ class AmpacheGUI:
 		label.set_markup('<b>Account Settings</b>')
 		hbox.pack_start(label, False, False)
 		
-		account_box.pack_start(hbox, False, False, 5)
+		account_box.pack_start(hbox, False, False, 3)
 
 		### Ampache URL ###
 		hbox = gtk.HBox()
@@ -905,7 +928,7 @@ class AmpacheGUI:
 		label.set_markup('<b>Notifications</b>')
 		hbox.pack_start(label, False, False)
 		
-		display_box.pack_start(hbox, False, False, 5)
+		display_box.pack_start(hbox, False, False, 3)
 
 		hbox = gtk.HBox()
 
@@ -920,7 +943,7 @@ class AmpacheGUI:
 		display_notifications_checkbutton.connect("toggled", self.toggle_display_notifications)
 		hbox.pack_start(display_notifications_checkbutton)
 		
-		display_box.pack_start(hbox, False, False, 2)
+		display_box.pack_start(hbox, False, False, 1)
 
 		hbox = gtk.HBox()
 		
@@ -928,12 +951,13 @@ class AmpacheGUI:
 		label.set_markup('<b>Alternate Row Colors</b>')
 		hbox.pack_start(label, False, False)
 		
-		display_box.pack_start(hbox, False, False, 5)
+		display_box.pack_start(hbox, False, False, 3)
 
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		cb = gtk.CheckButton("Artists Column")
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'artists')
+		cb.set_active(self.treeview_columns_dict['artists'].get_rules_hint())
 		hbox.pack_start(cb)
 		display_box.pack_start(hbox, False, False, 0)
 
@@ -941,6 +965,7 @@ class AmpacheGUI:
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		cb = gtk.CheckButton("Albums Column")
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'albums')
+		cb.set_active(self.treeview_columns_dict['albums'].get_rules_hint())
 		hbox.pack_start(cb)
 		display_box.pack_start(hbox, False, False, 0)
 
@@ -948,6 +973,7 @@ class AmpacheGUI:
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		cb = gtk.CheckButton("Songs Column")
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'songs')
+		cb.set_active(self.treeview_columns_dict['songs'].get_rules_hint())
 		hbox.pack_start(cb)
 		display_box.pack_start(hbox, False, False, 0)
 
@@ -955,6 +981,7 @@ class AmpacheGUI:
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		cb = gtk.CheckButton("Playlist Column")
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'playlist')
+		cb.set_active(self.treeview_columns_dict['playlist'].get_rules_hint())
 		hbox.pack_start(cb)
 		display_box.pack_start(hbox, False, False, 0)
 
@@ -962,6 +989,7 @@ class AmpacheGUI:
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		cb = gtk.CheckButton("Downloads Column")
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'downloads')
+		cb.set_active(self.treeview_columns_dict['downloads'].get_rules_hint())
 		hbox.pack_start(cb)
 		display_box.pack_start(hbox, False, False, 0)
 
@@ -980,7 +1008,7 @@ class AmpacheGUI:
 		
 		hbox.pack_start(label, False, False)
 		
-		catalog_box.pack_start(hbox, False, False, 5)
+		catalog_box.pack_start(hbox, False, False, 3)
 		
 		hbox = gtk.HBox()
 		
@@ -1030,7 +1058,7 @@ class AmpacheGUI:
 		
 		hbox.pack_start(label, False, False)
 		
-		download_box.pack_start(hbox, False, False, 5)
+		download_box.pack_start(hbox, False, False, 3)
 		
 		hbox = gtk.HBox()
 		
@@ -1071,7 +1099,7 @@ class AmpacheGUI:
 		
 		hbox.pack_start(label, False, False)
 		
-		trayicon_box.pack_start(hbox, False, False, 5)
+		trayicon_box.pack_start(hbox, False, False, 3)
 		
 		cb = gtk.CheckButton("Quit Viridian when window is closed")
 		cb.connect("toggled", self.toggle_quit_when_window_closed)
@@ -1142,7 +1170,7 @@ class AmpacheGUI:
 		
 		hbox.pack_start(label, False, False)
 		
-		system_box.pack_start(hbox, False, False, 5)
+		system_box.pack_start(hbox, False, False, 3)
 		
 		hbox = gtk.HBox()
 		
@@ -1316,6 +1344,7 @@ class AmpacheGUI:
 	def toggle_alternate_row_colors(self, widget, data=None):
 		"""Toggle set rulse hint for the given treeview column."""
 		self.treeview_columns_dict[data].set_rules_hint(widget.get_active())
+		self.db_session.variable_set(data, widget.get_active())
 		
 	def toggle_quit_when_window_closed(self, widget, data=None):
 		"""Toggle to decide if the program quits or keeps running when the main window is closed."""
@@ -1682,6 +1711,7 @@ class AmpacheGUI:
 		
 		# if the code makes it this far, the credentials have been changed
 		self.stop_all_threads()
+		self.audio_engine.clear_playlist()
 		self.clear_album_art()
 		dbfunctions.clear_cached_catalog(self.db_session)
 		if self.ampache_conn.set_credentials(username, password, url): # credentials saved
@@ -1761,9 +1791,13 @@ class AmpacheGUI:
 				cPickle.dump(self.audio_engine.get_playlist(), f)
 				f.close()
 				print "save playlist", filename
+				chooser.destroy()
 				self.create_dialog_alert("info", "Playlist saved to %s" % filename, True)
 			except:
 				self.create_dialog_alert("error", "Failed to save playlist!", True)
+				chooser.destroy()
+		else:
+			chooser.destroy()
 	
 	
 		
@@ -1835,7 +1869,7 @@ class AmpacheGUI:
 				return False
 		except:
 			pass
-		answer = self.create_dialog_ok_or_close("Pre-Cache", "This will cache all of the artist, album, and song information (not the songs themselves) locally to make Viridian respond faster.  This process can take a long time depending on the size of your catalog.  Proceed?")
+		answer = self.create_dialog_ok_or_close("Pre-Cache", "This will cache all of the artist, album, and song information (not the songs themselves) locally to make Viridian respond faster.\n\nThis process can take a long time depending on the size of your catalog.  Proceed?")
 		if answer != "ok":
 			return False
 		self.button_pre_cache_locked = True
@@ -1982,7 +2016,7 @@ class AmpacheGUI:
 		
 	def create_catalog_updated_dialog(self):
 		"""Create a dialog to tell the user the cache has been updated."""
-		answer = self.create_dialog_ok_or_close("Ampache Catalog Updated", "The Ampache catalog on the server is newer than the local cached catalog on this computer.  Would you like to update the local catalog by clearing the local cache?\n\n(You can also do this at anytime by going to File -> Clear Local Cache).")
+		answer = self.create_dialog_ok_or_close("Ampache Catalog Updated", "The Ampache catalog on the server is newer than the locally cached catalog on this computer.\nWould you like to update the local catalog by clearing the local cache?\n\n(You can also do this at anytime by going to File -> Clear Local Cache).")
 		if answer == "ok":
 			return True
 		return False
@@ -2026,9 +2060,16 @@ class AmpacheGUI:
 		artist_name_html = helperfunctions.convert_string_to_html(artist_name)
 		album_name_html  = helperfunctions.convert_string_to_html(album_name)
 		
-		self.current_song_label.set_markup(   '<span size="13000"><b>'+song_title_html+'</b></span>'  )
+		### Update EVERYTHING to say the current artist, album, and song
+		if len(song_title_html) > 40:
+			self.current_song_label.set_markup('<span size="9000"><b>'+song_title_html+'</b></span>')
+		elif len(song_title_html) > 20:
+			self.current_song_label.set_markup('<span size="11000"><b>'+song_title_html+'</b></span>')
+		else:
+			self.current_song_label.set_markup('<span size="13000"><b>'+song_title_html+'</b></span>')
 		self.current_artist_label.set_markup( '<span size="10000">'+artist_name_html+'</span>' )
 		self.current_album_label.set_markup(  '<span size="10000">'+album_name_html+'</span>'  )
+		
 		### Update the statusbar and tray icon ###
 		self.set_tray_tooltip("Viridan :: " + song_title + ' - ' + artist_name + ' - ' + album_name)
 		self.update_statusbar(song_title + ' - ' + artist_name + ' - ' + album_name)
