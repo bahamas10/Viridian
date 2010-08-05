@@ -122,6 +122,7 @@ class AmpacheGUI:
 		self.is_first_time = is_first_time
 		
 		self.catalog_up_to_date = None
+		self.treeview_columns_dict = {}
 		
 		volume = self.db_session.variable_get('volume')
 		if volume == None:
@@ -462,6 +463,7 @@ class AmpacheGUI:
 		self.playlist_list_store = gtk.ListStore(gtk.gdk.Pixbuf, str, int)
 
 		tree_view = gtk.TreeView(self.playlist_list_store)
+		self.treeview_columns_dict['playlist'] = tree_view
 		tree_view.connect("row-activated", self.playlist_on_activated)
 		tree_view.connect("button_press_event", self.playlist_on_right_click)
 		tree_view.set_rules_hint(True)
@@ -518,6 +520,7 @@ class AmpacheGUI:
 		
 		self.downloads_list_store = gtk.ListStore(str, int, str)
 		tree_view = gtk.TreeView(self.downloads_list_store)
+		self.treeview_columns_dict['downloads'] = tree_view
 		tree_view.connect("row-activated", self.downloads_on_activated)
 		tree_view.connect("button_press_event", self.downloads_on_right_click)
 		tree_view.set_rules_hint(True)
@@ -577,6 +580,8 @@ class AmpacheGUI:
 		#self.artist_list_store.set_default_sort_func(helperfunctions.sort_artists_by_custom_name)
 		self.artist_list_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
 		tree_view = guifunctions.create_single_column_tree_view("Artist", self.artist_list_store)
+		self.treeview_columns_dict['artists'] = tree_view
+		tree_view.set_rules_hint(False)
 		tree_view.connect("cursor-changed", self.artists_cursor_changed)
 		#tree_view.connect("popup-menu", self.artists_cursor_changed)
 		tree_view.set_search_column(0)
@@ -600,7 +605,8 @@ class AmpacheGUI:
 		self.album_list_store.set_sort_func(0, helperfunctions.sort_albums_by_year, albums_column ) # sort albums by year!
 		
 		tree_view = gtk.TreeView(self.album_list_store)
-		tree_view.set_rules_hint(True)
+		self.treeview_columns_dict['albums'] = tree_view
+		tree_view.set_rules_hint(False)
 		albums_column.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
 		tree_view.append_column(albums_column)
 
@@ -634,6 +640,7 @@ class AmpacheGUI:
 		self.song_list_store.set_sort_column_id(2,gtk.SORT_ASCENDING)
 
 		tree_view = gtk.TreeView(self.song_list_store)
+		self.treeview_columns_dict['songs'] = tree_view
 		tree_view.connect("row-activated", self.songs_on_activated)
 		tree_view.connect("button_press_event", self.songs_on_right_click)
 		tree_view.set_rules_hint(True)
@@ -914,6 +921,50 @@ class AmpacheGUI:
 		hbox.pack_start(display_notifications_checkbutton)
 		
 		display_box.pack_start(hbox, False, False, 2)
+
+		hbox = gtk.HBox()
+		
+		label = gtk.Label()
+		label.set_markup('<b>Alternate Row Colors</b>')
+		hbox.pack_start(label, False, False)
+		
+		display_box.pack_start(hbox, False, False, 5)
+
+		hbox = gtk.HBox()
+		hbox.pack_start(gtk.Label("   "), False, False, 0)
+		cb = gtk.CheckButton("Artists Column")
+		cb.connect("toggled", self.toggle_alternate_row_colors, 'artists')
+		hbox.pack_start(cb)
+		display_box.pack_start(hbox, False, False, 0)
+
+		hbox = gtk.HBox()
+		hbox.pack_start(gtk.Label("   "), False, False, 0)
+		cb = gtk.CheckButton("Albums Column")
+		cb.connect("toggled", self.toggle_alternate_row_colors, 'albums')
+		hbox.pack_start(cb)
+		display_box.pack_start(hbox, False, False, 0)
+
+		hbox = gtk.HBox()
+		hbox.pack_start(gtk.Label("   "), False, False, 0)
+		cb = gtk.CheckButton("Songs Column")
+		cb.connect("toggled", self.toggle_alternate_row_colors, 'songs')
+		hbox.pack_start(cb)
+		display_box.pack_start(hbox, False, False, 0)
+
+		hbox = gtk.HBox()
+		hbox.pack_start(gtk.Label("   "), False, False, 0)
+		cb = gtk.CheckButton("Playlist Column")
+		cb.connect("toggled", self.toggle_alternate_row_colors, 'playlist')
+		hbox.pack_start(cb)
+		display_box.pack_start(hbox, False, False, 0)
+
+		hbox = gtk.HBox()
+		hbox.pack_start(gtk.Label("   "), False, False, 0)
+		cb = gtk.CheckButton("Downloads Column")
+		cb.connect("toggled", self.toggle_alternate_row_colors, 'downloads')
+		hbox.pack_start(cb)
+		display_box.pack_start(hbox, False, False, 0)
+
 		"""End Display Settings"""
 		"""Start Catalog Settings"""
 		#################################
@@ -1261,6 +1312,10 @@ class AmpacheGUI:
 		"""Toggle automatically updating the local cache."""
 		self.automatically_update = widget.get_active()
 		self.db_session.variable_set('automatically_update', widget.get_active())
+	
+	def toggle_alternate_row_colors(self, widget, data=None):
+		"""Toggle set rulse hint for the given treeview column."""
+		self.treeview_columns_dict[data].set_rules_hint(widget.get_active())
 		
 	def toggle_quit_when_window_closed(self, widget, data=None):
 		"""Toggle to decide if the program quits or keeps running when the main window is closed."""
