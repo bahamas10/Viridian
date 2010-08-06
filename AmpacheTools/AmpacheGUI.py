@@ -122,7 +122,8 @@ class AmpacheGUI:
 		self.is_first_time = is_first_time
 		
 		self.catalog_up_to_date = None
-		self.treeview_columns_dict = {}
+		self.current_song_info = None
+		self.tree_view_dict = {}
 		
 		volume = self.db_session.variable_get('volume')
 		if volume == None:
@@ -176,7 +177,7 @@ class AmpacheGUI:
 		filem = gtk.MenuItem("_File")
 		filem.set_submenu(file_menu)
 
-		newi = gtk.MenuItem("Reathenticate")
+		newi = gtk.MenuItem("Reauthenticate")
 		newi.connect("activate", self.button_reauthenticate_clicked)
 		file_menu.append(newi)
 		
@@ -463,7 +464,10 @@ class AmpacheGUI:
 		self.playlist_list_store = gtk.ListStore(gtk.gdk.Pixbuf, str, int)
 
 		tree_view = gtk.TreeView(self.playlist_list_store)
-		self.treeview_columns_dict['playlist'] = tree_view
+		self.tree_view_dict['playlist'] = tree_view
+		tree_view.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+		tree_view.set_reorderable(True)
+		tree_view.connect("drag-end", self.on_playlist_drag)
 		tree_view.connect("row-activated", self.playlist_on_activated)
 		tree_view.connect("button_press_event", self.playlist_on_right_click)
 		tree_view.set_rules_hint(True)
@@ -520,7 +524,7 @@ class AmpacheGUI:
 		
 		self.downloads_list_store = gtk.ListStore(str, int, str)
 		tree_view = gtk.TreeView(self.downloads_list_store)
-		self.treeview_columns_dict['downloads'] = tree_view
+		self.tree_view_dict['downloads'] = tree_view
 		tree_view.connect("row-activated", self.downloads_on_activated)
 		tree_view.connect("button_press_event", self.downloads_on_right_click)
 		tree_view.set_rules_hint(True)
@@ -580,7 +584,7 @@ class AmpacheGUI:
 		#self.artist_list_store.set_default_sort_func(helperfunctions.sort_artists_by_custom_name)
 		self.artist_list_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
 		tree_view = guifunctions.create_single_column_tree_view("Artist", self.artist_list_store)
-		self.treeview_columns_dict['artists'] = tree_view
+		self.tree_view_dict['artists'] = tree_view
 		tree_view.set_rules_hint(False)
 		tree_view.connect("cursor-changed", self.artists_cursor_changed)
 		#tree_view.connect("popup-menu", self.artists_cursor_changed)
@@ -605,7 +609,7 @@ class AmpacheGUI:
 		self.album_list_store.set_sort_func(0, helperfunctions.sort_albums_by_year, albums_column ) # sort albums by year!
 		
 		tree_view = gtk.TreeView(self.album_list_store)
-		self.treeview_columns_dict['albums'] = tree_view
+		self.tree_view_dict['albums'] = tree_view
 		tree_view.set_rules_hint(False)
 		albums_column.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
 		tree_view.append_column(albums_column)
@@ -640,7 +644,8 @@ class AmpacheGUI:
 		self.song_list_store.set_sort_column_id(2,gtk.SORT_ASCENDING)
 
 		tree_view = gtk.TreeView(self.song_list_store)
-		self.treeview_columns_dict['songs'] = tree_view
+		self.tree_view_dict['songs'] = tree_view
+		tree_view.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
 		tree_view.connect("row-activated", self.songs_on_activated)
 		tree_view.connect("button_press_event", self.songs_on_right_click)
 		tree_view.set_rules_hint(True)
@@ -756,11 +761,11 @@ class AmpacheGUI:
 		if songs == None:
 			songs = True
 			
-		self.treeview_columns_dict['playlist'].set_rules_hint(playlist)
-		self.treeview_columns_dict['downloads'].set_rules_hint(downloads)
-		self.treeview_columns_dict['artists'].set_rules_hint(artists)
-		self.treeview_columns_dict['albums'].set_rules_hint(albums)
-		self.treeview_columns_dict['songs'].set_rules_hint(songs)
+		self.tree_view_dict['playlist'].set_rules_hint(playlist)
+		self.tree_view_dict['downloads'].set_rules_hint(downloads)
+		self.tree_view_dict['artists'].set_rules_hint(artists)
+		self.tree_view_dict['albums'].set_rules_hint(albums)
+		self.tree_view_dict['songs'].set_rules_hint(songs)
 			
 		### Check for credentials and login ###
 		username = self.db_session.variable_get('credentials_username')
@@ -957,7 +962,7 @@ class AmpacheGUI:
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		cb = gtk.CheckButton("Artists Column")
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'artists')
-		cb.set_active(self.treeview_columns_dict['artists'].get_rules_hint())
+		cb.set_active(self.tree_view_dict['artists'].get_rules_hint())
 		hbox.pack_start(cb)
 		display_box.pack_start(hbox, False, False, 0)
 
@@ -965,7 +970,7 @@ class AmpacheGUI:
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		cb = gtk.CheckButton("Albums Column")
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'albums')
-		cb.set_active(self.treeview_columns_dict['albums'].get_rules_hint())
+		cb.set_active(self.tree_view_dict['albums'].get_rules_hint())
 		hbox.pack_start(cb)
 		display_box.pack_start(hbox, False, False, 0)
 
@@ -973,7 +978,7 @@ class AmpacheGUI:
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		cb = gtk.CheckButton("Songs Column")
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'songs')
-		cb.set_active(self.treeview_columns_dict['songs'].get_rules_hint())
+		cb.set_active(self.tree_view_dict['songs'].get_rules_hint())
 		hbox.pack_start(cb)
 		display_box.pack_start(hbox, False, False, 0)
 
@@ -981,7 +986,7 @@ class AmpacheGUI:
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		cb = gtk.CheckButton("Playlist Column")
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'playlist')
-		cb.set_active(self.treeview_columns_dict['playlist'].get_rules_hint())
+		cb.set_active(self.tree_view_dict['playlist'].get_rules_hint())
 		hbox.pack_start(cb)
 		display_box.pack_start(hbox, False, False, 0)
 
@@ -989,7 +994,7 @@ class AmpacheGUI:
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		cb = gtk.CheckButton("Downloads Column")
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'downloads')
-		cb.set_active(self.treeview_columns_dict['downloads'].get_rules_hint())
+		cb.set_active(self.tree_view_dict['downloads'].get_rules_hint())
 		hbox.pack_start(cb)
 		display_box.pack_start(hbox, False, False, 0)
 
@@ -1343,7 +1348,7 @@ class AmpacheGUI:
 	
 	def toggle_alternate_row_colors(self, widget, data=None):
 		"""Toggle set rulse hint for the given treeview column."""
-		self.treeview_columns_dict[data].set_rules_hint(widget.get_active())
+		self.tree_view_dict[data].set_rules_hint(widget.get_active())
 		self.db_session.variable_set(data, widget.get_active())
 		
 	def toggle_quit_when_window_closed(self, widget, data=None):
@@ -1595,24 +1600,49 @@ class AmpacheGUI:
 	#######################################
 	# Selection Methods (right-click)
 	#######################################
+	def foreach(self, model, path, iter, data):
+		list = data[0]
+		column = data[1]
+		list.append(model.get_value(iter, column))
+	
 	def playlist_on_right_click(self, treeview, event, data=None):
+		"""The user right-clicked the playlist."""
 		if event.button == 3:
+			# check to see if there is multiple selections
+			list = []
+			self.tree_view_dict['playlist'].get_selection().selected_foreach(self.foreach, [list, 2])
 			x = int(event.x)
 			y = int(event.y)
 			pthinfo = treeview.get_path_at_pos(x, y)
-			if pthinfo != None:
-				path, col, cellx, celly = pthinfo
-				# create popup
-				song_id = treeview.get_model()[path][2]
-				m = gtk.Menu()
-				i = gtk.MenuItem("Remove From Playlist")
-				i.connect('activate', self.remove_from_playlist, song_id, treeview)
-				m.append(i)
-				i = gtk.MenuItem("Download Song")
-				i.connect('activate', self.download_song_clicked, song_id)
-				m.append(i)
-				m.show_all()
-				m.popup(None, None, None, event.button, event.time, None)
+			if len(list) > 1: # multiple selected
+				if pthinfo != None:
+					path, col, cellx, celly = pthinfo
+					# create popup
+					song_id = treeview.get_model()[path][2]
+					m = gtk.Menu()
+					i = gtk.MenuItem("Remove From Playlist")
+					i.connect('activate', self.remove_from_playlist, song_id, treeview, list)
+					m.append(i)
+					i = gtk.MenuItem("Download Songs")
+					i.connect('activate', self.download_songs_clicked, list)
+					m.append(i)
+					m.show_all()
+					m.popup(None, None, None, event.button, event.time, None)
+				return True
+			else:
+				if pthinfo != None:
+					path, col, cellx, celly = pthinfo
+					# create popup
+					song_id = treeview.get_model()[path][2]
+					m = gtk.Menu()
+					i = gtk.MenuItem("Remove From Playlist")
+					i.connect('activate', self.remove_from_playlist, song_id, treeview)
+					m.append(i)
+					i = gtk.MenuItem("Download Song")
+					i.connect('activate', self.download_song_clicked, song_id)
+					m.append(i)
+					m.show_all()
+					m.popup(None, None, None, event.button, event.time, None)
 				
 	def downloads_on_right_click(self, treeview, event, data=None):
 		if event.button == 3:
@@ -1657,20 +1687,56 @@ class AmpacheGUI:
 			x = int(event.x)
 			y = int(event.y)
 			pthinfo = treeview.get_path_at_pos(x, y)
-			if pthinfo != None:
-				path, col, cellx, celly = pthinfo
-				# create popup
-				song_id = treeview.get_model()[path][6]
-				m = gtk.Menu()
-				i = gtk.MenuItem("Add Song to Playlist")
-				i.connect('activate', self.add_song_to_playlist, song_id)
-				m.append(i)
-				i = gtk.MenuItem("Download Song")
-				i.connect('activate', self.download_song_clicked, song_id)
-				m.append(i)
-				m.show_all()
-				m.popup(None, None, None, event.button, event.time, None)
-				
+			# check to see if there is multiple selections
+			list = []
+			self.tree_view_dict['songs'].get_selection().selected_foreach(self.foreach, [list, 6])
+			if len(list) > 1: # multiple selected
+				if pthinfo != None:
+					path, col, cellx, celly = pthinfo
+					# create popup
+					m = gtk.Menu()
+					i = gtk.MenuItem("Add Songs to Playlist")
+					i.connect('activate', self.add_songs_to_playlist, list)
+					m.append(i)
+					i = gtk.MenuItem("Download Songs")
+					i.connect('activate', self.download_songs_clicked, list)
+					m.append(i)
+					m.show_all()
+					m.popup(None, None, None, event.button, event.time, None)
+				return True
+			else:
+				if pthinfo != None:
+					path, col, cellx, celly = pthinfo
+					# create popup
+					song_id = treeview.get_model()[path][6]
+					m = gtk.Menu()
+					i = gtk.MenuItem("Add Song to Playlist")
+					i.connect('activate', self.add_song_to_playlist, song_id)
+					m.append(i)
+					i = gtk.MenuItem("Download Song")
+					i.connect('activate', self.download_song_clicked, song_id)
+					m.append(i)
+					m.show_all()
+					m.popup(None, None, None, event.button, event.time, None)
+					
+	#######################################
+	# Drag and Drop
+	#######################################
+	def on_playlist_drag(self, widget, context, data=None):
+		"""When the user changes the order of the playlist."""
+		list = []
+		i = 0
+		cur_song_num = None
+		for song in self.playlist_list_store: # iterate the rows
+			song_id = song[2]
+			list.append(song_id)
+			if song[0] is self.images_pixbuf_playing: # this row has a now playing icon
+				cur_song_num = i
+			i += 1
+		self.audio_engine.set_playlist(list)
+		if cur_song_num != None: # song is playing
+			self.audio_engine.set_current_song(cur_song_num)
+						
 	#######################################
 	# Misc Selection Methods
 	#######################################
@@ -2201,6 +2267,9 @@ Message from GStreamer:
 		self.update_playlist_window()
 		return True
 			
+	def add_songs_to_playlist(self, widget, list):
+		for song_id in list:
+			self.add_song_to_playlist(widget, song_id)
 		
 	def add_song_to_playlist(self, widget, song_id):
 		"""Takes a song_id and adds it to the playlist."""
@@ -2209,11 +2278,16 @@ Message from GStreamer:
 		return True
 	
 				
-	def remove_from_playlist(self, widget, song_id, treeview):
+	def remove_from_playlist(self, widget, song_id, treeview, list=None):
 		"""Remove a song from the current playlist."""
-		if self.audio_engine.remove_from_playlist(song_id):
-			self.update_playlist_window()
+		if list != None:
+			for song_id in list:
+				self.remove_from_playlist(widget, song_id, treeview, None)
 			return True
+		else:
+			if self.audio_engine.remove_from_playlist(song_id):
+				self.update_playlist_window()
+				return True
 		return False
 
 	def stop_all_threads(self):
@@ -2259,6 +2333,18 @@ Message from GStreamer:
 	#######################################
 	# Download Songs / Albums
 	#######################################
+	def download_songs_clicked(self, widget, list):
+		"""The user is downloading multiple songs from the playlist."""
+		if not os.path.exists(self.downloads_directory):
+			self.create_dialog_alert("warn", "The folder %s does not exist.  You can change the folder in Preferences.", True)
+			return False
+		if self.show_downloads_checkbox.active == False:
+			self.side_panel.show()
+			self.downloads_window.show()
+			self.show_downloads_checkbox.set_active(True)
+		for song_id in list:
+			self.download_song_clicked(widget, song_id, False)
+	
 	def download_album_clicked(self, widget):
 		"""The user cliked download album."""
 		# check to see if the downloads directory exists

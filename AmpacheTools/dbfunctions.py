@@ -16,7 +16,7 @@
 ### END LICENSE
 
 """ 
-Extra functions to query the database, to be used by AmpacheTools.AmpacheGUI
+ Extra functions to query the database, to be used by AmpacheTools.AmpacheGUI
 """
 
 def clear_cached_catalog(db_session):

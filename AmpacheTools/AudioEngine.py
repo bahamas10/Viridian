@@ -120,6 +120,10 @@ class AudioEngine:
 		"""Returns the current playlist in a list of song_ids."""
 		return self.songs_list
 	
+	def set_current_song(self, song_num):
+		"""Sets the current song num (doesn't affect what is currently playing)."""
+		self.song_num = song_num
+		
 	def get_current_song(self):
 		"""Returns the current playing songs position in the list."""
 		return self.song_num
@@ -165,6 +169,7 @@ class AudioEngine:
 		try:
 			self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH, 0)
 			self.player.set_state(gst.STATE_NULL)
+			self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH, 0)
 		except:
 			return False
 		return True

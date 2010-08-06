@@ -19,8 +19,8 @@ import time
 import gtk
 
 """
-Random functions for AmpacheGUI
-"""	
+ Misc. functions for AmpacheGUI
+"""
 
 #################
 # Formatters
