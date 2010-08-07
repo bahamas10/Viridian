@@ -2,7 +2,7 @@ To use: you can run ./viridian to run it from the current directory,
 or you can install it using:
 ~# python setup.py install
 
-If you have used Viridan before and found that an update has messed it up, 
+If you have used Viridian before and found that an update has messed it up, 
 open Viridian and go to Edit -> Preferences -> System and hit Reset Everything.
 
 You can also do this manually by executing 

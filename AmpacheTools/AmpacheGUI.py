@@ -2137,9 +2137,9 @@ class AmpacheGUI:
 		self.current_album_label.set_markup(  '<span size="10000">'+album_name_html+'</span>'  )
 		
 		### Update the statusbar and tray icon ###
-		self.set_tray_tooltip("Viridan :: " + song_title + ' - ' + artist_name + ' - ' + album_name)
+		self.set_tray_tooltip("Viridian :: " + song_title + ' - ' + artist_name + ' - ' + album_name)
 		self.update_statusbar(song_title + ' - ' + artist_name + ' - ' + album_name)
-		self.window.set_title("Viridan :: " + song_title + ' - ' + artist_name + ' - ' + album_name)
+		self.window.set_title("Viridian :: " + song_title + ' - ' + artist_name + ' - ' + album_name)
 		
 		### Get the album Art ###
 		album_id   = self.current_song_info['album_id']

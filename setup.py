@@ -18,7 +18,7 @@ from distutils.core import setup
 
 setup(name='Viridian',
 	version='1.0',
-	description='Viridan Media Player',
+	description='Viridian Media Player',
 	author='Dave Eddy',
 	author_email='dave@daveeddy.com',
 	url='http://www.daveeddy.com',
