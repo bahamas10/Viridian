@@ -167,9 +167,7 @@ class AudioEngine:
 	def stop(self): 
 		"""Tells the player to stop."""
 		try:
-			self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH, 0)
 			self.player.set_state(gst.STATE_NULL)
-			self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH, 0)
 		except:
 			return False
 		return True
