@@ -366,10 +366,10 @@ class AmpacheGUI:
 		#################################
 		vbox = gtk.VBox()
 		
-		self.time_seek_label = gtk.Label(" ")
-		vbox.pack_start(self.time_seek_label, False, False, 5)
+		vbox.pack_start(gtk.Label(" "), False, False, 1) # filler
 		
-		top_bar.pack_start(vbox)
+		self.time_seek_label = gtk.Label(" ")
+		vbox.pack_start(self.time_seek_label, False, False, 2)
 			
 		hbox = gtk.HBox()
 		
@@ -390,9 +390,9 @@ class AmpacheGUI:
 		self.time_total_label = gtk.Label("0:00")
 		hbox.pack_start(self.time_total_label, False, False, 2)
 		
-		vbox.pack_start(hbox, False, False, 10)
+		vbox.pack_start(hbox, False, False, 2)
 		
-		
+		top_bar.pack_start(vbox)
 		#################################
 		# Now Playing
 		#################################
