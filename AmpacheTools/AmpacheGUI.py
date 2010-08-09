@@ -1181,7 +1181,7 @@ class AmpacheGUI:
 		
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		
-		label = gtk.Label("To delete all personal information (including your username, password, album-art, cached information, etc.) press this button. NOTE: This will delete all personal settings stored on this computer and close itself.  When you reopen, it will be as though it is the first time you are running Viridian.")
+		label = gtk.Label("To delete all personal information (including your username, password, album-art, cached information, etc.) press this button. NOTE: This will delete all personal settings stored on this computer and Viridian will close itself.  When you reopen, it will be as though it is the first time you are running Viridian.")
 		label.set_line_wrap(True)
 		
 		hbox.pack_start(label, False, False)
@@ -1249,6 +1249,8 @@ class AmpacheGUI:
 		if self.audio_engine.get_state() != "stopped" and self.audio_engine.get_state() != None:
 			menu.append(gtk.SeparatorMenuItem())
 			np = gtk.MenuItem("- Now Playing -")
+			if self.audio_engine.get_state() == "paused":
+				np = gtk.MenuItem("- Now Playing (paused) -")
 			np.set_sensitive(False)
 			menu.append(np)
 
@@ -1743,8 +1745,12 @@ class AmpacheGUI:
 	def on_time_elapsed_slider_change(self, slider):
 		"""When the user moves the seek bar."""
 		seek_time_secs = slider.get_value()
-		gobject.idle_add(self.time_seek_label.set_text, helperfunctions.convert_seconds_to_human_readable(seek_time_secs))
-		print self.audio_engine.seek(seek_time_secs)
+		human_readable = helperfunctions.convert_seconds_to_human_readable(seek_time_secs)
+		gobject.idle_add(self.time_seek_label.set_text, human_readable)
+		if self.audio_engine.seek(seek_time_secs):
+			print "Seek to %s successful" % human_readable
+		else:
+			print "Seek to %s failed!" % human_readable
 		return True
 	
 	def on_time_elapsed_slider_change_value(self, slider, data1=None, data2=None):
@@ -2108,7 +2114,7 @@ class AmpacheGUI:
 			self.set_tray_tooltip('Viridian')
 			self.window.set_title("Viridian")
 			self.set_tray_icon(None)
-			self.playlist_list_store.clear()
+			self.update_playlist_window()
 			return False
 		self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
 
@@ -2283,6 +2289,7 @@ Message from GStreamer:
 		if list != None:
 			for song_id in list:
 				self.remove_from_playlist(widget, song_id, treeview, None)
+				#print self.audio_engine.get_current_song()
 			return True
 		else:
 			if self.audio_engine.remove_from_playlist(song_id):
