@@ -1597,7 +1597,7 @@ class AmpacheGUI:
 		"""The function that runs when the user double-clicks a song in the downloads window."""
 		model = widget.get_model()
 		full_path = model[row][2]
-		os.popen("gnome-open '%s' &" % (os.path.dirname(full_path)))
+		self.gnome_open(os.path.dirname(full_path))
 		
 	#######################################
 	# Selection Methods (right-click)
@@ -1657,10 +1657,10 @@ class AmpacheGUI:
 				full_path = treeview.get_model()[path][2]
 				m = gtk.Menu()
 				i = gtk.MenuItem("Open Song")
-				i.connect('activate', lambda _: os.popen("gnome-open '%s' &" % (full_path)))
+				i.connect('activate', lambda _: self.gnome_open(full_path))
 				m.append(i)
 				i = gtk.MenuItem("Open Containing Folder")
-				i.connect('activate', lambda _: os.popen("gnome-open '%s' &" % (os.path.dirname(full_path))))
+				i.connect('activate', lambda _: self.gnome_open(os.path.dirname(full_path)))
 				m.append(i)
 				m.show_all()
 				m.popup(None, None, None, event.button, event.time, None)
@@ -2009,7 +2009,7 @@ class AmpacheGUI:
 		# create popup
 		m = gtk.Menu()
 		i = gtk.MenuItem("Open Image")
-		i.connect('activate', lambda x: os.popen("gnome-open '%s' &" % (self.current_album_art_file)))
+		i.connect('activate', lambda x: self.gnome_open(self.current_album_art_file))
 		m.append(i)
 		i = gtk.MenuItem("Refresh Album Art")
 		i.connect('activate', self.__re_fetch_album_art)
@@ -2230,6 +2230,10 @@ Message from GStreamer:
 			for song in songs:
 				list.append([album_id, song['song_id'], song['song_title'], song['song_track'], song['song_time'], song['song_size'], song['artist_name'], song['album_name']])
 			dbfunctions.populate_songs_table(self.db_session, album_id, list)
+			
+	def gnome_open(self, uri):
+		"""Open with gnome-open."""
+		os.popen("gnome-open '%s' &" % (uri))
 	
 	def update_statusbar(self, text):
 		"""Update the status bar and run pending main_iteration() events."""
