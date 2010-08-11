@@ -57,7 +57,7 @@ if __name__ == "__main__":
 			os.mkdir(VIRIDIAN_DIR)
 			os.chmod(VIRIDIAN_DIR, 0700)
 				
-		db_session   = AmpacheTools.DatabaseSession(VIRIDIAN_DIR + os.sep + 'db.sqlite')
+		db_session   = AmpacheTools.DatabaseSession(VIRIDIAN_DIR + os.sep + 'viridian.sqlite')
 		ampache_conn = AmpacheTools.AmpacheSession()
 		audio_engine = AmpacheTools.AudioEngine(ampache_conn)
 		
