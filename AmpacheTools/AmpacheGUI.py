@@ -64,9 +64,7 @@ class AmpacheGUI:
 		gobject.idle_add(self.main_gui_callback)
 		
 		### Status tray icon ####
-		self.tray_icon_to_display = self.db_session.variable_get('tray_icon_to_display')
-		if self.tray_icon_to_display == None: # default to standard
-			self.tray_icon_to_display = "standard"
+		self.tray_icon_to_display = self.db_session.variable_get('tray_icon_to_display', 'standard')
 			
 		if self.tray_icon_to_display == "standard":
 			self.tray_icon = gtk.StatusIcon()
@@ -104,7 +102,7 @@ class AmpacheGUI:
 		self.stop_all_threads()
 		size = self.window.get_size()
 		gtk.main_quit()
-		self.db_session.variable_set('current_playlist', cPickle.dumps(self.audio_engine.get_playlist()))
+		self.db_session.variable_set('current_playlist', self.audio_engine.get_playlist())
 		self.db_session.variable_set('volume', self.audio_engine.get_volume())
 		self.db_session.variable_set('window_size_width',  size[0])
 		self.db_session.variable_set('window_size_height', size[1])
@@ -124,21 +122,11 @@ class AmpacheGUI:
 		self.catalog_up_to_date = None
 		self.current_song_info = None
 		self.tree_view_dict = {}
-		
-		volume = self.db_session.variable_get('volume')
-		if volume == None:
-			volume = 100
-		volume = float(volume)
-		width = self.db_session.variable_get('window_size_width')
-		if width == None:
-			width = 1100
-		height = self.db_session.variable_get('window_size_height')
-		if height == None:
-			height = 600
-		height = int(height)
-		width  = int(width)
-		
 		dbfunctions.create_initial_tables(self.db_session)
+		
+		volume = self.db_session.variable_get('volume', float(100))
+		width  = self.db_session.variable_get('window_size_width', 1100)
+		height = self.db_session.variable_get('window_size_height', 600)
 
 		##################################
 		# Load Images
@@ -251,17 +239,14 @@ class AmpacheGUI:
 		viewm.set_submenu(view_menu)
 
 		newi = gtk.CheckMenuItem("Show Playlist")
-		show_playlist = self.db_session.variable_get('show_playlist')
-		if show_playlist == None:
-			show_playlist = True
+		show_playlist = self.db_session.variable_get('show_playlist', True)
+
 		newi.set_active(show_playlist)
 		newi.connect("activate", self.toggle_playlist_view)
 		view_menu.append(newi)
 		
 		self.show_downloads_checkbox = gtk.CheckMenuItem("Show Downloads")
-		show_downloads = self.db_session.variable_get('show_downloads')
-		if show_downloads == None:
-			show_downloads = False
+		show_downloads = self.db_session.variable_get('show_downloads', False)
 		self.show_downloads_checkbox.set_active(show_downloads)
 		self.show_downloads_checkbox.connect("activate", self.toggle_downloads_view)
 		view_menu.append(self.show_downloads_checkbox)
@@ -270,9 +255,7 @@ class AmpacheGUI:
 		view_menu.append(sep)
 
 		newi = gtk.CheckMenuItem("View Statusbar")
-		view_statusbar = self.db_session.variable_get('view_statusbar')
-		if view_statusbar == None:
-			view_statusbar = True
+		view_statusbar = self.db_session.variable_get('view_statusbar', True)
 		newi.set_active(view_statusbar)
 		newi.connect("activate", self.toggle_statusbar_view)
 		view_menu.append(newi)
@@ -710,56 +693,35 @@ class AmpacheGUI:
 		"""End Show All"""
 		
 		# check repeat songs if the user wants it
-		repeat_songs = self.db_session.variable_get('repeat_songs')
-		if repeat_songs:
+		repeat_songs = self.db_session.variable_get('repeat_songs', False)
+		if repeat_songs == True:
 			repeat_songs_checkbutton.set_active(True)
 			self.audio_engine.set_repeat_songs(True)
 		
-		self.playlist_mode = self.db_session.variable_get('playlist_mode')
-		if self.playlist_mode == None:
-			self.playlist_mode = 0
+		self.playlist_mode = self.db_session.variable_get('playlist_mode', 0)
 		combobox.set_active(self.playlist_mode)	
 		
 	def main_gui_callback(self):
 		"""Function that gets called after GUI has loaded.
 		This loads all user variables into memory."""
 		### Display Notifications ###
-		self.display_notifications = self.db_session.variable_get('display_notifications')
-		if self.display_notifications == None:
-			self.display_notifications = True
+		self.display_notifications = self.db_session.variable_get('display_notifications', True)
 		### Automatically Update Cache ###
-		self.automatically_update = self.db_session.variable_get('automatically_update')
-		if self.automatically_update == None:
-			self.automatically_update = False
+		self.automatically_update = self.db_session.variable_get('automatically_update', False)
 		### Is first time closing application (alert user it is in status bar) ###
-		self.first_time_closing = self.db_session.variable_get('first_time_closing')
-		if self.first_time_closing == None:
-			self.first_time_closing = True
+		self.first_time_closing = self.db_session.variable_get('first_time_closing', True)
 		### Status tray variables ###
-		self.quit_when_window_closed = self.db_session.variable_get('quit_when_window_closed')
-		if self.quit_when_window_closed == None:
-			self.quit_when_window_closed = False
+		self.quit_when_window_closed = self.db_session.variable_get('quit_when_window_closed', False)
 		### Downloads Directory ###
-		self.downloads_directory = self.db_session.variable_get('downloads_directory')
-		if self.downloads_directory == None:
-			self.downloads_directory = os.path.expanduser("~")
+		self.downloads_directory = self.db_session.variable_get('downloads_directory', os.path.expanduser("~"))
 			
 		### Alternate Row Colors ###
-		playlist = self.db_session.variable_get('playlist')
-		if playlist == None:
-			playlist = True
-		downloads = self.db_session.variable_get('downloads')
-		if downloads == None:
-			downloads = True
-		artists = self.db_session.variable_get('artists')
-		if artists == None:
-			artists = False
-		albums = self.db_session.variable_get('albums')
-		if albums == None:
-			albums = False
-		songs = self.db_session.variable_get('songs')
-		if songs == None:
-			songs = True
+		playlist = self.db_session.variable_get('playlist', True)
+		downloads = self.db_session.variable_get('downloads', True)
+		artists = self.db_session.variable_get('artists', False)
+		albums = self.db_session.variable_get('albums', False)
+		songs = self.db_session.variable_get('songs', True)
+
 			
 		self.tree_view_dict['playlist'].set_rules_hint(playlist)
 		self.tree_view_dict['downloads'].set_rules_hint(downloads)
@@ -776,9 +738,8 @@ class AmpacheGUI:
 		if self.ampache_conn.has_credentials():
 			self.update_statusbar("Attempting to authenticate...")
 			if self.login_and_get_artists("First"):
-				list = self.db_session.variable_get('current_playlist')
+				list = self.db_session.variable_get('current_playlist', None)
 				if list != None:
-					list = cPickle.loads(str(list))
 					self.audio_engine.set_playlist(list)
 					self.update_playlist_window()
 		else:
@@ -790,16 +751,9 @@ class AmpacheGUI:
 		if self.window.is_active():
 			self.window.hide_on_delete()
 		else:	
-			show_playlist = self.db_session.variable_get('show_playlist')
-			if show_playlist == None:
-				show_playlist = True
-			show_downloads = self.db_session.variable_get('show_downloads')
-			if show_downloads == None:
-				show_downloads = False
-				
-			view_statusbar = self.db_session.variable_get('view_statusbar')
-			if view_statusbar == None:
-				view_statusbar = True
+			show_playlist  = self.db_session.variable_get('show_playlist', True)
+			show_downloads = self.db_session.variable_get('show_downloads', False)
+			view_statusbar = self.db_session.variable_get('view_statusbar', True)
 				
 			self.window.show_all()
 			self.window.grab_focus()
@@ -1424,7 +1378,7 @@ class AmpacheGUI:
 			print "Authentication = %s" % self.ampache_conn.auth
 			print "Number of artists = %d" % self.ampache_conn.artists_num
 			
-			db_time      = int(self.db_session.variable_get('catalog_update'))
+			db_time      = int(self.db_session.variable_get('catalog_update', -1))
 			ampache_time = int(self.ampache_conn.get_last_update_time())
 			
 			if data == "changed":
@@ -1913,7 +1867,7 @@ class AmpacheGUI:
 		self.stop_all_threads()
 		dbfunctions.clear_cached_catalog(self.db_session)
 		#self.audio_engine.stop()
-		self.db_session.variable_set('current_playlist', str(self.audio_engine.get_playlist()))
+		self.db_session.variable_set('current_playlist', self.audio_engine.get_playlist())
 		self.login_and_get_artists()
 		self.button_clear_cache_locked = False	
 		

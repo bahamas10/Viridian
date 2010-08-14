@@ -16,6 +16,7 @@
 ### END LICENSE
 
 import os
+import cPickle
 
 try:
 	import sqlite3
@@ -70,48 +71,25 @@ class DatabaseSession:
 		"""
 		Save a variable in the database.
 		"""
-		var_value = self.__convert_specials_to_strings(var_value)
+		#var_value = self.__convert_specials_to_strings(var_value)
 		c = self.cursor()
 		c.execute("""DELETE FROM variable WHERE name = ?""", [var_name])
-		c.execute("""INSERT INTO variable (name, value) VALUES (?, ?)""", [var_name, var_value])
+		c.execute("""INSERT INTO variable (name, value) VALUES (?, ?)""", [var_name, str(cPickle.dumps(var_value))])
 		self.commit()
 		c.close()
 	
-	def variable_get(self, var_name):
+	def variable_get(self, var_name, default_value=None):
 		"""
 		Retrieve a variable from the database.
 		"""
 		try:
 			c = self.cursor()
 			c.execute("""SELECT value FROM variable WHERE name = ?""", [var_name])
-			result = self.__convert_strings_to_specials(c.fetchone()[0])
+			#result = self.__convert_strings_to_specials(c.fetchone()[0])
+			result = c.fetchone()[0]
 			#self.commit()
 			c.close()
 		except:
 			c.close()
-			return None
-		return result
-		
-	#######################################
-	# Private Functions
-	#######################################	
-	def __convert_specials_to_strings(self, var_value):
-		"""Helper function to convert special variables (like None, True, False) to strings."""
-		if var_value == None:
-			var_value = "None"
-		elif var_value == False:
-			var_value = "False"
-		elif var_value == True:
-			var_value = "True"
-		return var_value
-		
-	def __convert_strings_to_specials(self, var_value):
-		"""Helper function to convert strings like None, True, and False to their special object counter-parts."""
-		if var_value == "None":
-			var_value = None
-		if var_value == "False":
-			var_value = False
-		if var_value == "True":
-			var_value = True
-		return var_value
-		
+			return default_value
+		return cPickle.loads(str(result))
