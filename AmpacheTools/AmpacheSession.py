@@ -46,6 +46,8 @@ class AmpacheSession:
 		self.auth = None
 		self.last_update_time = -1
 		self.artists_num = -1
+		self.albums_num = -1
+		self.songs_num = -1
 		self.auth_current_retry = 0
 
 	def set_credentials(self, username, password, url):
@@ -110,6 +112,8 @@ class AmpacheSession:
 			dom = xml.dom.minidom.parseString(response.read())
 			self.auth        = dom.getElementsByTagName("auth")[0].childNodes[0].data
 			self.artists_num = int(dom.getElementsByTagName("artists")[0].childNodes[0].data)
+			self.albums_num  = int(dom.getElementsByTagName("albums")[0].childNodes[0].data)
+			self.songs_num   = int(dom.getElementsByTagName("songs")[0].childNodes[0].data)
 		except: # couldn't auth, try up to AUTH_MAX_RETRY times
 			self.auth = None
 			self.auth_current_retry += 1
