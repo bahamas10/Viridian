@@ -88,7 +88,7 @@ class AmpacheGUI:
 				self.main_gui_toggle_hidden()
 				self.create_dialog_alert("info", """Viridian is still running in the status bar.  If you do not want Viridian to continue running when the window is closed you can disable it in Preferences.""", True)
 				self.first_time_closing = False
-				self.db_session.variable_set('first_time_closing', 'False')
+				self.db_session.variable_set('first_time_closing', False)
 			else: 
 				self.main_gui_toggle_hidden()
 		return True
@@ -125,7 +125,7 @@ class AmpacheGUI:
 		dbfunctions.create_initial_tables(self.db_session)
 		
 		volume = self.db_session.variable_get('volume', float(100))
-		width  = self.db_session.variable_get('window_size_width', 1100)
+		width  = self.db_session.variable_get('window_size_width', 1150)
 		height = self.db_session.variable_get('window_size_height', 600)
 
 		##################################
@@ -651,7 +651,7 @@ class AmpacheGUI:
 			elif column == "Time":
 				new_column.set_fixed_width(90)
 			elif column == "Size":
-				new_column.set_fixed_width(100)
+				new_column.set_fixed_width(70)
 			tree_view.append_column(new_column)
 			i += 1
 		
@@ -1795,6 +1795,16 @@ class AmpacheGUI:
 		
 	def button_prev_clicked(self, widget, data=None):
 		"""Previous Track."""
+		time_nanoseconds = self.audio_engine.query_position()
+		if time_nanoseconds != -1:
+			time_seconds = time_nanoseconds / 1000 / 1000 / 1000
+			if time_seconds <= 5: # go back if time is less than 5 seconds
+				self.audio_engine.prev_track()
+				return True
+			else: # restart the song
+				self.audio_engine.restart()
+				return True
+		# failsafe
 		self.audio_engine.prev_track()
 		
 	def button_next_clicked(self, widget, data=None):

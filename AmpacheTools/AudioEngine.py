@@ -188,6 +188,11 @@ class AudioEngine:
 			return False
 		return True
 	
+	def restart(self):
+		"""Tells tho player to restart the song if it is playing."""
+		if self.get_state() == "playing":
+			self.play_from_list_of_songs(self.songs_list, self.song_num)
+	
 	def change_song(self, song_num):
 		"""Change song to the given song number."""
 		self.play_from_list_of_songs(self.songs_list, song_num)
