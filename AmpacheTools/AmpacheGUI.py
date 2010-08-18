@@ -268,6 +268,10 @@ class AmpacheGUI:
 		helpm = gtk.MenuItem("_Help")
 		helpm.set_submenu(help_menu)
 		
+		newi = gtk.ImageMenuItem(gtk.STOCK_HELP)
+		newi.connect("activate", self.show_help)
+		help_menu.append(newi)
+		
 		newi = gtk.ImageMenuItem(gtk.STOCK_ABOUT)
 		newi.connect("activate", self.create_about_dialog)
 		help_menu.append(newi)
@@ -1182,6 +1186,73 @@ class AmpacheGUI:
 		self.preferences_window.destroy()
 		self.preferences_window = None
 		
+	def show_help(self, widget, data=None):
+		"""The Help pane"""
+		#################################
+		# Help Window
+		#################################
+		if hasattr(self, 'help_window'):
+			if self.help_window != None:
+				self.help_window.present()
+				return True
+				
+		self.help_window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.help_window.set_transient_for(self.window)
+		self.help_window.set_title("Viridian Help")
+		self.help_window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
+		self.help_window.resize(350, 300)
+		self.help_window.set_resizable(False)
+		self.help_window.connect("delete_event", self.destroy_help)
+		self.help_window.connect("destroy", self.destroy_help)
+		
+		vbox = gtk.VBox(False, 8)
+		vbox.set_border_width(10)
+		
+		label = gtk.Label()
+		label.set_markup('<span size="14000"><b>Viridian 1.0-Alpha Help</b></span>')
+		vbox.pack_start(label, False, False, 1)
+		
+		hbox = gtk.HBox()
+		label = gtk.Label("Home Page:")
+		link  = guifunctions.hyperlink('http://viridian.daveeddy.com')
+		hbox.pack_start(label, False, False, 1)
+		hbox.pack_start(link,  False, False, 2)
+		vbox.pack_start(hbox,  False, False, 0)
+		
+		hbox = gtk.HBox()
+		label = gtk.Label("Launchpad:")
+		link  = guifunctions.hyperlink('https://launchpad.net/viridianplayer')
+		hbox.pack_start(label, False, False, 1)
+		hbox.pack_start(link,  False, False, 2)
+		vbox.pack_start(hbox,  False, False, 0)
+		
+		hbox = gtk.HBox()
+		label = gtk.Label("FAQ:")
+		link  = guifunctions.hyperlink('https://answers.launchpad.net/viridianplayer/+faqs')
+		hbox.pack_start(label, False, False, 1)
+		hbox.pack_start(link,  False, False, 2)
+		vbox.pack_start(hbox,  False, False, 0)
+		
+		hbox = gtk.HBox()
+		label = gtk.Label("Bugs:")
+		link  = guifunctions.hyperlink('https://bugs.launchpad.net/viridianplayer')
+		hbox.pack_start(label, False, False, 1)
+		hbox.pack_start(link,  False, False, 2)
+		vbox.pack_start(hbox,  False, False, 0)
+		
+		hbox = gtk.HBox()
+		label = gtk.Label("Questions:")
+		link  = guifunctions.hyperlink('https://answers.launchpad.net/viridianplayer')
+		hbox.pack_start(label, False, False, 1)
+		hbox.pack_start(link,  False, False, 2)
+		vbox.pack_start(hbox,  False, False, 0)
+		
+		self.help_window.add(vbox)
+		self.help_window.show_all()
+		
+	def destroy_help(self, widget=None, data=None):
+		self.help_window.destroy()
+		self.help_window = None
 
 	#######################################
 	# Status Icon 

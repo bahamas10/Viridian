@@ -18,6 +18,7 @@
 import pygtk
 pygtk.require("2.0")
 import gtk
+import os
 
 """
  GTK Helper functions
@@ -53,3 +54,15 @@ def create_image_pixbuf(file, width, height=None):
 		height = width
 	image = gtk.gdk.pixbuf_new_from_file(file).scale_simple(width, height, gtk.gdk.INTERP_BILINEAR)
 	return image
+	
+def hyperlink(url, text=None):
+	"""Returns a button that acts as a hyperlink."""
+	if text == None:
+		text = url
+	label = gtk.Label("<span foreground='blue' underline='low'>"+text+"</span>")
+	label.set_use_markup(True)
+	button = gtk.Button()
+	button.add(label)
+	button.set_relief(gtk.RELIEF_NONE)
+	button.connect('clicked', lambda x_: os.popen("gnome-open '%s' &" % (url)))
+	return button
