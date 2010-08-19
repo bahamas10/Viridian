@@ -138,8 +138,8 @@ class AmpacheSession:
 			
 			new_time  = max([update, add, clean])
 			self.last_update_time = new_time
-		except:
-			print "Couldn't get time catalog was updated -- assuming catalog is dirty"
+		except Exception, detail:
+			print "Couldn't get time catalog was updated -- assuming catalog is dirty -- ", detail
 			self.last_update_time = -1
 		self.auth_current_retry = 0
 		return True
@@ -151,6 +151,32 @@ class AmpacheSession:
 		if self.auth != None:
 			return True
 		return False
+	
+	def ping(self):
+		"""
+		Ping extends the current session to Ampache.
+		Returns None if it fails, or the time the session expires if it is succesful
+		"""
+		values = {'action' : 'ping',
+			  'auth'   : self.auth,
+		}
+		data = urllib.urlencode(values)
+
+		try: # attempt to get the song_url
+			response = urllib2.urlopen(self.xml_rpc, data)
+			dom = xml.dom.minidom.parseString(response.read())
+		except: # The data pulled from Ampache was invalid
+			#print "Error Extending Session"
+			return None
+		try: # try to get the song_url
+			root     = dom.getElementsByTagName('root')[0]
+			session  = root.getElementsByTagName('session_expire')[0].childNodes[0].data
+		except: # something failed, try to reauth and do it again
+			if self.authenticate():
+				return self.ping()
+			else: # couldn't authenticate
+				return None
+		return session
 			
 	#######################################
 	# Public Getter Methods

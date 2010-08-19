@@ -73,9 +73,11 @@ class AmpacheGUI:
 			self.tray_icon.connect('popup-menu', self.status_icon_popup_menu)
 			self.tray_icon.set_tooltip('Viridian')
 		
-		### Seek Bar ###
-		#thread.start_new_thread(self.query_position, (None,))
+		### Seek Bar Thread (1/4 second) ###
 		gobject.timeout_add(250, self.query_position)
+		### Keep session active when song is paused (ping every minute) ###
+		gobject.timeout_add(1000 * 60, self.keep_session_active)
+		
 		
 		gtk.main()
 
@@ -2481,6 +2483,12 @@ Message from GStreamer:
 			for signal in self.time_elapsed_signals:
 				self.time_elapsed_slider.handler_unblock(signal)
 			self.time_elapsed_label.set_text(new_time_human_readable)
+		return True
+			
+	def keep_session_active(self, data=None):
+		"""Thread to keep the session active when a song is paused (DOESN'T WORK YET)."""
+		if self.audio_engine.get_state() == 'paused':
+			self.ampache_conn.ping()
 		return True
 
 	

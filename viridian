@@ -45,7 +45,7 @@ class AmpacheService(dbus.service.Object):
 if __name__ == "__main__":
 	try: # try to see if an instance is already running, and if so don't make a second instance
 		if dbus.SessionBus().request_name("com.daveeddy.Viridian") != dbus.bus.REQUEST_NAME_REPLY_PRIMARY_OWNER:
-			print "application already running"
+			print "Application already running.. exiting."
 			method = dbus.SessionBus().get_object("com.daveeddy.Viridian", "/com/daveeddy/Viridian").get_dbus_method("show_window")
 			method()
 		else:
@@ -72,4 +72,3 @@ if __name__ == "__main__":
 		
 		# display the gui
 		gui.main()
-		
