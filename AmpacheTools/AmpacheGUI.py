@@ -76,7 +76,7 @@ class AmpacheGUI:
 		### Seek Bar Thread (1/4 second) ###
 		gobject.timeout_add(250, self.query_position)
 		### Keep session active when song is paused (ping every minute) ###
-		gobject.timeout_add(1000 * 60, self.keep_session_active)
+		#gobject.timeout_add(1000 * 60, self.keep_session_active)
 		
 		
 		gtk.main()
@@ -746,8 +746,8 @@ class AmpacheGUI:
 			if self.login_and_get_artists("First"):
 				list = self.db_session.variable_get('current_playlist', None)
 				if list != None:
-					self.audio_engine.set_playlist(list)
-					self.update_playlist_window()
+					self.load_playlist(list)
+					#self.update_playlist_window()
 		else:
 			self.update_statusbar("Set Ampache information by going to Edit -> Preferences") 
 			if self.is_first_time:
@@ -1929,10 +1929,7 @@ class AmpacheGUI:
 			if not list:
 				self.create_dialog_alert("error", "Playlist is empty.", True)
 				return False
-			self.audio_engine.stop()
-			self.audio_engine.clear_playlist()
-			self.audio_engine.set_playlist(list)
-			self.update_playlist_window()
+			self.load_playlist(list)
 			print "load playlist", filename
 		else:
 			chooser.destroy()
@@ -2376,6 +2373,22 @@ Message from GStreamer:
 			self.playlist_list_store.append(string)
 		return False
 		#self.update_statusbar('Ready.')
+		
+	def load_playlist(self, list):
+		self.audio_engine.stop()
+		self.audio_engine.clear_playlist()
+		self.audio_engine.set_playlist(list)
+		self.update_statusbar('Loading Playlist...')
+		#i = 1
+		#print list
+		#for song in list:
+			#self.update_statusbar('Querying for song %d/%d' % (i, len(list)))
+			#song = self.ampache_conn.get_song_info(song)
+			#self.check_and_populate_albums(song['artist_id'])
+			#self.check_and_populate_songs( song['album_id'])
+			#i += 1
+		self.update_playlist_window()
+		self.update_statusbar('Playlist loaded')
 			
 			
 	#######################################

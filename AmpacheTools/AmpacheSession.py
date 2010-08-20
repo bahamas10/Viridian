@@ -117,9 +117,8 @@ class AmpacheSession:
 		except: # couldn't auth, try up to AUTH_MAX_RETRY times
 			self.auth = None
 			self.auth_current_retry += 1
-			print "[Error] Authentication Failed -- Retry = %d -- Sleeping .5 seconds before retry." % self.auth_current_retry
+			print "[Error] Authentication Failed -- Retry = %d" % self.auth_current_retry
 			if ( self.auth_current_retry < AUTH_MAX_RETRY ):
-				time.sleep(.5)
 				return self.authenticate()
 			else:
 				self.auth_current_retry = 0
@@ -365,7 +364,7 @@ class AmpacheSession:
 				       }
 				list.append( dict )
 		except Exception, detail: #something failed
-			print "this artist failed", artist_id
+			print "This artist failed", artist_id
 			print detail
 			return None
 		return list
@@ -446,7 +445,7 @@ class AmpacheSession:
 					}
 				list.append( dict )
 		except Exception, detail:
-			print "this album failed", album_id
+			print "This album failed", album_id
 			print detail
 			return None
 		return list
@@ -523,9 +522,148 @@ class AmpacheSession:
 					'url'            : url,
 					}
 		except Exception, detail:
-			print "this song failed", song_id
+			print "This song failed", song_id
 			print detail
 			return None
 		return song_dict
 
-
+	def get_playlists(self, re_auth=False):
+		"""
+		Gets a list of all of the playlists on the server.
+		Example: [
+				{	 'id'      : id,
+					 'name'    : name,
+					 'items'   : items,
+					 'type'    : type,
+				},
+				{ ... },
+			 ]
+		"""
+		values = {'action' : 'playlists',
+			  'auth'   : self.auth,
+		}
+		list = []
+		data = urllib.urlencode(values)
+		try: # try to query Ampache
+			response = urllib2.urlopen(self.xml_rpc, data)
+			dom = xml.dom.minidom.parseString(response.read())
+		except: # The data pulled from Ampache was invalid
+			print "Error Pulling Data!"
+			return None
+		try: # try to get the list of albums
+			root  = dom.getElementsByTagName('root')[0]
+			nodes = root.getElementsByTagName('playlist')
+			if not nodes: # list is empty, reauth
+				if re_auth:
+					return None
+				else:
+					raise Exception('Reauthenticate')
+		except: # something failed, try to reauth and do it again
+			if self.authenticate():
+				return self.get_playlists(True)
+			else: # couldn't authenticate
+				return None
+		try:
+			for child in nodes:
+				id       = int(child.getAttribute('id'))
+				name     = child.getElementsByTagName('name')[0].childNodes[0].data
+				owner    = child.getElementsByTagName('owner')[0].childNodes[0].data
+				items    = int(child.getElementsByTagName('items')[0].childNodes[0].data)
+				type     = child.getElementsByTagName('type')[0].childNodes[0].data
+				
+				dict = { 'id'      : id,
+					 'name'    : name,
+					 'items'   : items,
+					 'type'    : type,
+				}
+				list.append( dict )
+		except Exception, detail: #something failed
+			print detail
+			return None
+		return list
+		
+	def get_playlist_songs(self, playlist_id, re_auth=False):
+		"""
+		Gets all info about a song from the song_id and returns it as a dictionary.
+		Example: [ 
+				{      	'song_id'        : song_id,
+					'song_title'     : song_title,
+					'artist_id'      : artist_id,
+					'artist_name'    : artist_name,
+					'album_id'       : album_id,
+					'album_name'     : album_name,
+					'song_track'     : song_track,
+					'song_time'      : song_time,
+					'song_size'      : song_size,
+					'precise_rating' : precise_rating,
+					'rating'         : rating,
+					'art'            : art,
+					'url'            : url,
+				 },
+				 {...}
+			]
+		
+		"""
+		values = {'action' : 'playlist_songs',
+			  'filter' : playlist_id,
+			  'auth'   : self.auth,
+		}
+		song_dict = {}
+		data = urllib.urlencode(values)
+		try: # try to query Ampache
+			response = urllib2.urlopen(self.xml_rpc, data)
+			dom = xml.dom.minidom.parseString(response.read())
+		except: # The data pulled from Ampache was invalid
+			print "Error Pulling Data! -- Check Ampache -- Playlist ID = %d" % playlist_id
+			return None
+		try: # try to get the list of albums
+			root  = dom.getElementsByTagName('root')[0]
+			songs = root.getElementsByTagName('song')
+			if not songs: # list is empty, reauth
+				if re_auth:
+					return None
+				else:
+					raise Exception('Reauthenticate')
+		except: # something failed, try to reauth and do it again
+			if self.authenticate():
+				return self.get_playlist_songs(playlist_id, True)
+			else: # couldn't authenticate
+				return None
+		try:
+			list = []
+			for song in songs:
+				song_id        = int(song.getAttribute('id'))
+				song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
+				artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
+				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
+				album_id       = int(song.getElementsByTagName('album')[0].getAttribute('id'))
+				album_name     = song.getElementsByTagName('album')[0].childNodes[0].data
+				
+				song_track     = int(song.getElementsByTagName('track')[0].childNodes[0].data)
+				song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
+				song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
+				
+				precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
+				rating         = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
+				art            = song.getElementsByTagName('art')[0].childNodes[0].data
+				url            = song.getElementsByTagName('url')[0].childNodes[0].data
+				song_dict = {   'song_id'        : song_id,
+						'song_title'     : song_title,
+						'artist_id'      : artist_id,
+						'artist_name'    : artist_name,
+						'album_id'       : album_id,
+						'album_name'     : album_name,
+						'song_track'     : song_track,
+						'song_time'      : song_time,
+						'song_size'      : song_size,
+						'precise_rating' : precise_rating,
+						'rating'         : rating,
+						'art'            : art,
+						'url'            : url,
+						}
+				list.append(song_dict)
+		except Exception, detail:
+			print "This playlist failed", playlist_id
+			print detail
+			return None
+		return list
