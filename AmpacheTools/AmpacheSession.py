@@ -532,6 +532,7 @@ class AmpacheSession:
 		Gets a list of all of the playlists on the server.
 		Example: [
 				{	 'id'      : id,
+					 'owner'   : owner,
 					 'name'    : name,
 					 'items'   : items,
 					 'type'    : type,
@@ -574,6 +575,7 @@ class AmpacheSession:
 				dict = { 'id'      : id,
 					 'name'    : name,
 					 'items'   : items,
+					 'owner'   : owner,
 					 'type'    : type,
 				}
 				list.append( dict )

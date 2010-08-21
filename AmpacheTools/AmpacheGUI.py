@@ -1256,6 +1256,85 @@ class AmpacheGUI:
 		self.help_window.destroy()
 		self.help_window = None
 
+	def show_playlist_select(self, widget=None, data=None):
+		"""The playlist pane"""
+		#################################
+		# playlist select
+		#################################
+		if hasattr(self, 'playlist_select_window'):
+			if self.playlist_select_window != None:
+				self.playlist_select_window.present()
+				return True
+				
+		self.playlist_select_window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.playlist_select_window.set_transient_for(self.window)
+		self.playlist_select_window.set_title("Load Playlist")
+		self.playlist_select_window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
+		self.playlist_select_window.resize(450, 300)
+		self.playlist_select_window.set_resizable(True)
+		self.playlist_select_window.connect("delete_event", self.destroy_playlist)
+		self.playlist_select_window.connect("destroy", self.destroy_playlist)
+		
+		vbox = gtk.VBox()
+		vbox.set_border_width(10)
+
+		vbox.pack_start(gtk.Label("Select a playlist to load..."), False, False, 2)
+		
+		scrolled_window = gtk.ScrolledWindow()
+		scrolled_window.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		
+
+		# name, items, owner, type, id
+		playlist_list_store = gtk.ListStore(str, int, str, str, int)
+		tree_view = gtk.TreeView(playlist_list_store)
+		tree_view.set_rules_hint(True)
+		
+		i = 0
+		for column in ("Name", "Songs", "Owner", "Type"):
+			new_column = guifunctions.create_column(column, i)
+			new_column.set_reorderable(True)
+			new_column.set_resizable(True)
+			new_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+			if column == "Name":
+				new_column.set_fixed_width(200)
+			elif column == "Songs":
+				new_column.set_fixed_width(70)
+			elif column == "Owner":
+				new_column.set_fixed_width(90)
+			elif column == "Type":
+				new_column.set_fixed_width(60)
+			tree_view.append_column(new_column)
+			i += 1
+
+		for playlist in self.ampache_conn.get_playlists():
+			playlist_list_store.append([playlist['name'], playlist['items'], playlist['owner'], playlist['type'], playlist['id']])
+
+			
+		scrolled_window.add(tree_view)
+
+		vbox.pack_start(scrolled_window, True, True, 5)
+
+		bottom_bar = gtk.HBox()
+		
+		close = gtk.Button(stock=gtk.STOCK_CLOSE)
+		close.connect("clicked", self.destroy_playlist)
+		
+		button = gtk.Button("Load")
+		button.connect("clicked", self.button_load_ampache_playlist, tree_view.get_selection())
+
+		bottom_bar.pack_end(button, False, False, 2)
+		bottom_bar.pack_end(close, False, False, 2)
+
+		vbox.pack_start(bottom_bar, False, False, 1)
+
+		self.playlist_select_window.add(vbox)
+		self.playlist_select_window.show_all()
+		
+	def destroy_playlist(self, widget=None, data=None):
+		self.playlist_select_window.destroy()
+		self.playlist_select_window = None
+
 	#######################################
 	# Status Icon 
 	#######################################
@@ -1912,28 +1991,45 @@ class AmpacheGUI:
 		
 	def button_load_playlist_clicked(self, widget, data=None):
 		"""The load playlist button was clicked."""
-		chooser = gtk.FileChooserDialog(title="Open a playlist",action=gtk.FILE_CHOOSER_ACTION_OPEN,
-			buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
-		response = chooser.run()
-		if response == gtk.RESPONSE_OK:
-			filename = chooser.get_filename()
-			chooser.destroy()
-			list = []
-			try:
-				f = open(filename, 'r')
-				list = cPickle.load(f)
-				f.close()
-			except:
-				self.create_dialog_alert("error", "Cannot read playlist.", True)
-				return False
-			if not list:
-				self.create_dialog_alert("error", "Playlist is empty.", True)
-				return False
-			self.load_playlist(list)
-			print "load playlist", filename
-		else:
-			chooser.destroy()
-		
+		resp = self.create_dialog_load_playlist()
+		if resp == "Locally":
+			chooser = gtk.FileChooserDialog(title="Open a playlist",action=gtk.FILE_CHOOSER_ACTION_OPEN,
+				buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+			response = chooser.run()
+			if response == gtk.RESPONSE_OK:
+				filename = chooser.get_filename()
+				chooser.destroy()
+				list = []
+				try:
+					f = open(filename, 'r')
+					list = cPickle.load(f)
+					f.close()
+				except:
+					self.create_dialog_alert("error", "Cannot read playlist.", True)
+					return False
+				if not list:
+					self.create_dialog_alert("error", "Playlist is empty.", True)
+					return False
+				self.load_playlist(list)
+				print "load playlist", filename
+			else:
+				chooser.destroy()
+		elif resp == "Ampache":
+			print self.ampache_conn.get_playlists()
+			self.show_playlist_select()
+
+	def button_load_ampache_playlist(self, widget, selection):
+		"""When the user wants to load a playlist from Ampache."""
+		playlist_list_store, iter =  selection.get_selected()
+		if iter == None: # nothing selected
+			return True
+		playlist_id = playlist_list_store[iter][4]
+		playlist = self.ampache_conn.get_playlist_songs(playlist_id)#)
+		list = []
+		for song in playlist:
+			list.append(song['song_id'])
+		self.load_playlist(list)
+
 	def button_clear_cached_artist_info_clicked(self, widget=None, data=None):
 		"""Clear local cache."""
 		try: # check to see if this function is running
@@ -2093,6 +2189,24 @@ class AmpacheGUI:
 		else:
 			return "cancel"
 		
+	def create_dialog_load_playlist(self):
+		"""Creates a generic dialog for loading the playlist, Ampache or local."""
+		md = gtk.Dialog("Load Playlist", self.window, gtk.DIALOG_DESTROY_WITH_PARENT, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, "Ampache", -5001, "Locally", -5002))
+		label = gtk.Label("Load a playlist from the Ampache server, or playlists that you have saved locally?")
+		label.set_line_wrap(True)
+		md.get_child().pack_start(label)
+		md.get_child().set_border_width(10)
+		md.set_border_width(3)
+		md.set_resizable(False)
+		md.show_all()
+		#md.set_title('Viridian')
+		resp = md.run()
+		md.destroy()
+		if resp == -5001:
+			resp = "Ampache"
+		elif resp == -5002:
+			resp = "Locally"
+		return resp
 		
 	def create_about_dialog(self, widget, data=None):
 		"""About this application."""
