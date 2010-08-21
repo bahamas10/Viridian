@@ -1185,6 +1185,7 @@ class AmpacheGUI:
 		self.preferences_window.show_all()
 		
 	def destroy_settings(self, widget=None, data=None):
+		"""Close the preferences window."""
 		self.preferences_window.destroy()
 		self.preferences_window = None
 		
@@ -1332,6 +1333,7 @@ class AmpacheGUI:
 		self.playlist_select_window.show_all()
 		
 	def destroy_playlist(self, widget=None, data=None):
+		"""Close the playlist window."""
 		self.playlist_select_window.destroy()
 		self.playlist_select_window = None
 
@@ -2015,7 +2017,6 @@ class AmpacheGUI:
 			else:
 				chooser.destroy()
 		elif resp == "Ampache":
-			print self.ampache_conn.get_playlists()
 			self.show_playlist_select()
 
 	def button_load_ampache_playlist(self, widget, selection):
@@ -2026,6 +2027,10 @@ class AmpacheGUI:
 		playlist_id = playlist_list_store[iter][4]
 		playlist = self.ampache_conn.get_playlist_songs(playlist_id)#)
 		list = []
+		if not playlist:
+			print "Error with playlist %d" % playlist_id
+			create_dialog_alert("error", "Problem loading playlist.  Playlist ID = %d" % playlist_id, True)
+			return True
 		for song in playlist:
 			list.append(song['song_id'])
 		self.load_playlist(list)
@@ -2281,9 +2286,11 @@ class AmpacheGUI:
 		album_name_html  = helperfunctions.convert_string_to_html(album_name)
 		
 		### Update EVERYTHING to say the current artist, album, and song
-		if len(song_title_html) > 40:
+		# make font size smaller if the title is long
+		length = len(song_title_html)
+		if length > 40:
 			self.current_song_label.set_markup('<span size="9000"><b>'+song_title_html+'</b></span>')
-		elif len(song_title_html) > 20:
+		elif length > 20:
 			self.current_song_label.set_markup('<span size="11000"><b>'+song_title_html+'</b></span>')
 		else:
 			self.current_song_label.set_markup('<span size="13000"><b>'+song_title_html+'</b></span>')
@@ -2486,21 +2493,21 @@ Message from GStreamer:
 		for string in list:
 			self.playlist_list_store.append(string)
 		return False
-		#self.update_statusbar('Ready.')
 		
 	def load_playlist(self, list):
-		self.audio_engine.stop()
+		"""Takes a list of song_ids and loads it into the audio engine."""
 		self.audio_engine.clear_playlist()
 		self.audio_engine.set_playlist(list)
 		self.update_statusbar('Loading Playlist...')
-		#i = 1
-		#print list
-		#for song in list:
-			#self.update_statusbar('Querying for song %d/%d' % (i, len(list)))
-			#song = self.ampache_conn.get_song_info(song)
-			#self.check_and_populate_albums(song['artist_id'])
-			#self.check_and_populate_songs( song['album_id'])
-			#i += 1
+		i = 1
+		print list
+		for song in list:
+			self.update_statusbar('Querying for song %d/%d in playlist' % (i, len(list)))
+			if not dbfunctions.song_has_info(self.db_session, song):
+				song = self.ampache_conn.get_song_info(song)
+				self.check_and_populate_albums(song['artist_id'])
+				self.check_and_populate_songs( song['album_id'])
+			i += 1
 		self.update_playlist_window()
 		self.update_statusbar('Playlist loaded')
 			
