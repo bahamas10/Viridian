@@ -345,7 +345,7 @@ def get_playlists(db_session):
 	for row in c:
 		list.append(
 			{'name' : row[0],
-			 'songs': row[1],
+			 'songs': cPickle.loads(str(row[1])),
 			}
 		)
 	c.close()

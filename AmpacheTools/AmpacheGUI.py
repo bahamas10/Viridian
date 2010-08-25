@@ -1373,7 +1373,7 @@ class AmpacheGUI:
 			playlist_list_store.append(['<i>-(None)-</i>', 0, '', '', -1])
 		else:
 			for playlist in local_playlists:
-				playlist_list_store.append([ helperfunctions.convert_string_to_html(playlist['name']), len(playlist), '--', 'Local', -2]) 
+				playlist_list_store.append([ helperfunctions.convert_string_to_html(playlist['name']), len(playlist['songs']), '--', 'Local', -2]) 
 	
 		
 	def destroy_playlist(self, widget=None, data=None):
