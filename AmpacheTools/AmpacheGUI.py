@@ -170,6 +170,11 @@ class AmpacheGUI:
 		newi = gtk.MenuItem("Reauthenticate")
 		newi.connect("activate", self.button_reauthenticate_clicked)
 		file_menu.append(newi)
+
+		self.go_to_ampache_menu_item = gtk.MenuItem("Open Ampache")
+		self.go_to_ampache_menu_item.connect("activate", lambda x: self.gnome_open(self.ampache_conn.url))
+		self.go_to_ampache_menu_item.set_sensitive(False)
+		file_menu.append(self.go_to_ampache_menu_item)
 		
 		sep = gtk.SeparatorMenuItem()
 		file_menu.append(sep)
@@ -700,9 +705,8 @@ class AmpacheGUI:
 		
 		# check repeat songs if the user wants it
 		repeat_songs = self.db_session.variable_get('repeat_songs', False)
-		if repeat_songs == True:
-			repeat_songs_checkbutton.set_active(True)
-			self.audio_engine.set_repeat_songs(True)
+		repeat_songs_checkbutton.set_active(repeat_songs)
+		self.audio_engine.set_repeat_songs(repeat_songs)
 		
 		self.playlist_mode = self.db_session.variable_get('playlist_mode', 0)
 		combobox.set_active(self.playlist_mode)	
@@ -742,6 +746,7 @@ class AmpacheGUI:
 		
 		self.ampache_conn.set_credentials(username, password, url)
 		if self.ampache_conn.has_credentials():
+			self.go_to_ampache_menu_item.set_sensitive(True)
 			self.update_statusbar("Attempting to authenticate...")
 			if self.login_and_get_artists("First"):
 				list = self.db_session.variable_get('current_playlist', None)
@@ -1257,11 +1262,13 @@ class AmpacheGUI:
 		self.help_window.destroy()
 		self.help_window = None
 
-	def show_playlist_select(self, widget=None, data=None):
+	def show_playlist_select(self, type=None):
 		"""The playlist pane"""
 		#################################
 		# playlist select
 		#################################
+		if type != "Load" and type != "Save":
+			return True
 		if hasattr(self, 'playlist_select_window'):
 			if self.playlist_select_window != None:
 				self.playlist_select_window.present()
@@ -1269,17 +1276,17 @@ class AmpacheGUI:
 				
 		self.playlist_select_window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.playlist_select_window.set_transient_for(self.window)
-		self.playlist_select_window.set_title("Load Playlist")
 		self.playlist_select_window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
-		self.playlist_select_window.resize(450, 300)
+		self.playlist_select_window.resize(490, 300)
 		self.playlist_select_window.set_resizable(True)
 		self.playlist_select_window.connect("delete_event", self.destroy_playlist)
-		self.playlist_select_window.connect("destroy", self.destroy_playlist)
+		self.playlist_select_window.connect("destroy", self.destroy_playlist)		
+		self.playlist_select_window.set_title(type + " playlist.")
 		
 		vbox = gtk.VBox()
 		vbox.set_border_width(10)
 
-		vbox.pack_start(gtk.Label("Select a playlist to load..."), False, False, 2)
+		vbox.pack_start(gtk.Label("Select a Playlist to " + type + "..."), False, False, 2)
 		
 		scrolled_window = gtk.ScrolledWindow()
 		scrolled_window.set_shadow_type(gtk.SHADOW_ETCHED_IN)
@@ -1293,7 +1300,11 @@ class AmpacheGUI:
 		
 		i = 0
 		for column in ("Name", "Songs", "Owner", "Type"):
-			new_column = guifunctions.create_column(column, i)
+			if column == "Name":
+				renderer_text = gtk.CellRendererText()
+				new_column = gtk.TreeViewColumn(column, renderer_text, markup=0)
+			else:
+				new_column = guifunctions.create_column(column, i)
 			new_column.set_reorderable(True)
 			new_column.set_resizable(True)
 			new_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
@@ -1308,29 +1319,62 @@ class AmpacheGUI:
 			tree_view.append_column(new_column)
 			i += 1
 
-		for playlist in self.ampache_conn.get_playlists():
-			playlist_list_store.append([playlist['name'], playlist['items'], playlist['owner'], playlist['type'], playlist['id']])
-
 			
 		scrolled_window.add(tree_view)
 
 		vbox.pack_start(scrolled_window, True, True, 5)
+		
+		text_entry = gtk.Entry()
+		text_entry.set_text('')
+		if type == 'Save':
+			vbox.pack_start(text_entry, False, False, 2)
 
 		bottom_bar = gtk.HBox()
+		
+		remove = gtk.Button(stock=gtk.STOCK_DELETE)
+		remove.connect("clicked", self.button_delete_playlist_clicked, tree_view.get_selection(), type)
 		
 		close = gtk.Button(stock=gtk.STOCK_CLOSE)
 		close.connect("clicked", self.destroy_playlist)
 		
-		button = gtk.Button("Load")
-		button.connect("clicked", self.button_load_ampache_playlist, tree_view.get_selection())
+		button = gtk.Button(stock=gtk.STOCK_SAVE)
+		if type == 'Load':
+			button = gtk.Button(stock=gtk.STOCK_OPEN)
+		button.connect("clicked", self.button_load_or_save_playlist_clicked, tree_view.get_selection(), text_entry, type)
 
+		bottom_bar.pack_start(remove, False, False, 2)
 		bottom_bar.pack_end(button, False, False, 2)
 		bottom_bar.pack_end(close, False, False, 2)
 
 		vbox.pack_start(bottom_bar, False, False, 1)
 
 		self.playlist_select_window.add(vbox)
+		
+		self.update_playlist_select(type, playlist_list_store)
+		
 		self.playlist_select_window.show_all()
+		
+	def update_playlist_select(self, type, playlist_list_store):
+		"""Refresh the contents of the playlist list store"""
+		playlist_list_store.clear()
+		if type == "Load": # load playlists window
+			# get playlists from Ampache
+			ampache_playlists = self.ampache_conn.get_playlists()
+			playlist_list_store.append(['<b> - Ampache Playlists - </b>', len(ampache_playlists), '----', '----', -1])
+			if len(ampache_playlists) == 0:
+				playlist_list_store.append(['<i>-(None)-</i>', 0, '', '', -1])
+			else:
+				for playlist in ampache_playlists:
+					playlist_list_store.append([ helperfunctions.convert_string_to_html(playlist['name']), playlist['items'], playlist['owner'], playlist['type'], playlist['id']])
+			# get playlists stored locally
+		local_playlists = dbfunctions.get_playlists(self.db_session)
+		playlist_list_store.append(['<b> - Local Playlists - </b>', len(local_playlists), '----', '----', -1])
+		if len(local_playlists) == 0:
+			playlist_list_store.append(['<i>-(None)-</i>', 0, '', '', -1])
+		else:
+			for playlist in local_playlists:
+				playlist_list_store.append([ helperfunctions.convert_string_to_html(playlist['name']), len(playlist), '--', 'Local', -2]) 
+	
 		
 	def destroy_playlist(self, widget=None, data=None):
 		"""Close the playlist window."""
@@ -1525,6 +1569,7 @@ class AmpacheGUI:
 		thread.start_new_thread(self.__authenticate, (None,))
 		while self.__successfully_authed == None:
 			self.refresh_gui()
+		self.go_to_ampache_menu_item.set_sensitive(True)
 		##############################################################################
 		if self.__successfully_authed: # auth successful
 			self.update_statusbar("Authentication Successful.")
@@ -1965,76 +2010,85 @@ class AmpacheGUI:
 		"""Next Track."""
 		self.audio_engine.next_track()
 		
+	#############
+	# Playlists
+	#############		
 	def button_save_playlist_clicked(self, widget, data=None):
 		"""The save playlist button was clicked."""
 		if not self.audio_engine.get_playlist():
 			self.create_dialog_alert("error", "Cannot save empty playlist.", True)
-			print "no list"
+			print "Cannot save empty playlist"
 			return False
-		chooser = gtk.FileChooserDialog(title="Save as...",action=gtk.FILE_CHOOSER_ACTION_SAVE,
-				buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK))
-		response = chooser.run()
-		if response == gtk.RESPONSE_OK:
-			filename = chooser.get_filename()
-			try:
-				f = open(filename, 'w')
-				cPickle.dump(self.audio_engine.get_playlist(), f)
-				f.close()
-				print "save playlist", filename
-				chooser.destroy()
-				self.create_dialog_alert("info", "Playlist saved to %s" % filename, True)
-			except:
-				self.create_dialog_alert("error", "Failed to save playlist!", True)
-				chooser.destroy()
-		else:
-			chooser.destroy()
-	
-	
+		self.show_playlist_select('Save')
+		return False
 		
 	def button_load_playlist_clicked(self, widget, data=None):
 		"""The load playlist button was clicked."""
-		resp = self.create_dialog_load_playlist()
-		if resp == "Locally":
-			chooser = gtk.FileChooserDialog(title="Open a playlist",action=gtk.FILE_CHOOSER_ACTION_OPEN,
-				buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
-			response = chooser.run()
-			if response == gtk.RESPONSE_OK:
-				filename = chooser.get_filename()
-				chooser.destroy()
-				list = []
-				try:
-					f = open(filename, 'r')
-					list = cPickle.load(f)
-					f.close()
-				except:
-					self.create_dialog_alert("error", "Cannot read playlist.", True)
-					return False
-				if not list:
-					self.create_dialog_alert("error", "Playlist is empty.", True)
-					return False
-				self.load_playlist(list)
-				print "load playlist", filename
-			else:
-				chooser.destroy()
-		elif resp == "Ampache":
-			self.show_playlist_select()
+		self.show_playlist_select('Load')
+		return False
 
-	def button_load_ampache_playlist(self, widget, selection):
-		"""When the user wants to load a playlist from Ampache."""
-		playlist_list_store, iter =  selection.get_selected()
-		if iter == None: # nothing selected
-			return True
-		playlist_id = playlist_list_store[iter][4]
-		playlist = self.ampache_conn.get_playlist_songs(playlist_id)#)
+
+	def button_load_or_save_playlist_clicked(self, widget, selection, text, type):
+		"""When the user wants to load or save a playlist from Ampache."""
+		playlist_list_store, iter = selection.get_selected()
+		text = text.get_text()
+		if iter == None:
+			playlist_id = -1
+			playlist_name = ''
+		else:
+			playlist_id   = playlist_list_store[iter][4]
+			playlist_name = playlist_list_store[iter][0]
 		list = []
-		if not playlist:
-			print "Error with playlist %d" % playlist_id
-			create_dialog_alert("error", "Problem loading playlist.  Playlist ID = %d" % playlist_id, True)
-			return True
-		for song in playlist:
-			list.append(song['song_id'])
-		self.load_playlist(list)
-
+		if type == 'Load': # Load playlist
+			if iter == None: # nothing selected
+				return True
+			if playlist_id == -1: # text place holders
+				return True
+			if playlist_id == -2: # Local Playlists
+				list = dbfunctions.get_playlist(self.db_session, playlist_name)
+			else:
+				playlist = self.ampache_conn.get_playlist_songs(playlist_id)
+				if not playlist:
+					print "Error with playlist %d" % playlist_id
+					self.create_dialog_alert("error", "Problem loading playlist.  Playlist ID = %d" % playlist_id, True)
+					return True
+				for song in playlist:
+					list.append(song['song_id'])
+			self.load_playlist(list)
+			self.destroy_playlist()
+		elif type == 'Save': # Save playlist
+			if not self.audio_engine.get_playlist(): # playlist is empty
+				self.create_dialog_alert("error", "Cannot save empty playlist.", True)
+				print "Cannot save empty playlist"
+				return False
+			if text == '': # no name for list was specified
+				self.create_dialog_alert("error", "Invalid Name.", True)
+				return False
+			if dbfunctions.get_playlist(self.db_session, text): # playlist exists
+				answer = self.create_dialog_ok_or_close("Overwrite Playlist?", """A playlist by the name '%s' already exists, overwrite?""" % text)
+				if answer != "ok":
+					return False
+			dbfunctions.set_playlist(self.db_session, text, self.audio_engine.get_playlist())
+			self.destroy_playlist()
+			
+	def button_delete_playlist_clicked(self, widget, selection, type):
+		playlist_list_store, iter = selection.get_selected()
+		if iter == None:
+			return False
+		playlist_id   = playlist_list_store[iter][4]
+		playlist_name = playlist_list_store[iter][0]
+		if playlist_id == -2: # Local Playlists
+			answer = self.create_dialog_ok_or_close("Delete Playlist?", """Are you sure you want to delete the playlist '%s'?""" % playlist_name)
+			if answer != "ok":
+				return False
+			dbfunctions.remove_playlist(self.db_session, playlist_name)
+			self.update_playlist_select(type, playlist_list_store)
+		elif playlist_id != -1: # Ampache playlists
+			self.create_dialog_alert('error', "Cannot delete playlists that are on the Ampache server from Viridian.")
+				
+	#############
+	# Cache
+	#############
 	def button_clear_cached_artist_info_clicked(self, widget=None, data=None):
 		"""Clear local cache."""
 		try: # check to see if this function is running
@@ -2388,7 +2442,10 @@ Message from GStreamer:
 			
 	def gnome_open(self, uri):
 		"""Open with gnome-open."""
-		os.popen("gnome-open '%s' &" % (uri))
+		if uri == None or uri == "":
+			self.create_dialog_alert("warn", "The file/URL specified is invalid.", True)
+		else:
+			os.popen("gnome-open '%s' &" % (uri))
 	
 	def update_statusbar(self, text):
 		"""Update the status bar and run pending main_iteration() events."""
@@ -2518,7 +2575,7 @@ Message from GStreamer:
 	def download_songs_clicked(self, widget, list):
 		"""The user is downloading multiple songs from the playlist."""
 		if not os.path.exists(self.downloads_directory):
-			self.create_dialog_alert("warn", "The folder %s does not exist.  You can change the folder in Preferences.", True)
+			self.create_dialog_alert("warn", "The folder %s does not exist.  You can change the folder in Preferences." % (self.downloads_directory), True)
 			return False
 		if self.show_downloads_checkbox.active == False:
 			self.side_panel.show()
@@ -2531,7 +2588,7 @@ Message from GStreamer:
 		"""The user cliked download album."""
 		# check to see if the downloads directory exists
 		if not os.path.exists(self.downloads_directory):
-			self.create_dialog_alert("warn", "The folder %s does not exist.  You can change the folder in Preferences.", True)
+			self.create_dialog_alert("warn", "The folder %s does not exist.  You can change the folder in Preferences." % (self.downloads_directory), True)
 			return False
 		if self.show_downloads_checkbox.active == False:
 			self.side_panel.show()

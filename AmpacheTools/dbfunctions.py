@@ -19,6 +19,8 @@
  Extra functions to query the database, to be used by AmpacheTools.AmpacheGUI
 """
 
+import cPickle
+
 def clear_cached_catalog(db_session):
 	"""Clear the locally cached catalog."""
 	try:
@@ -307,6 +309,48 @@ def get_playlist_song_dict(db_session, song_id):
 	c.close()
 	return song_dict
 	
+def set_playlist(db_session, name, songs):
+	"""Saves a playilst with the given name in the database, automatically pickles list."""
+	c = db_session.cursor()
+	c.execute("""DELETE FROM playlists WHERE name = ?""", [name])
+	c.execute("""INSERT INTO playlists (name, songs) VALUES (?, ?)""", [name, str(cPickle.dumps(songs))])
+	db_session.commit()
+	c.close()
+	
+def remove_playlist(db_session, name):
+	"""Removes a playlist from the database"""
+	c = db_session.cursor()
+	c.execute("""DELETE FROM playlists WHERE name = ?""", [name])
+	db_session.commit()
+	c.close()
+	
+def get_playlist(db_session, name, default_value=[]):
+	"""Retrieve a playlist from the database."""
+	try:
+		c = db_session.cursor()
+		c.execute("""SELECT songs FROM playlists WHERE name = ?""", [name])
+		result = c.fetchone()[0]
+		c.close()
+	except:
+		c.close()
+		return default_value
+	return cPickle.loads(str(result))
+	
+	
+def get_playlists(db_session):
+	"""Retrieve all playlists stored locally as a list"""
+	c = db_session.cursor()
+	c.execute("""SELECT name,songs FROM playlists""")
+	list = []
+	for row in c:
+		list.append(
+			{'name' : row[0],
+			 'songs': row[1],
+			}
+		)
+	c.close()
+	return list
+	
 def create_initial_tables(db_session):
 	"""Create the tables in the database when the program starts"""
 	c = db_session.cursor()
@@ -336,6 +380,12 @@ def create_initial_tables(db_session):
 		artist_name text NOT NULL DEFAULT '',
 		album_name text NOT NULL DEFAULT '',
 		PRIMARY KEY (song_id)
+		)
+	''')
+	c.execute('''CREATE TABLE IF NOT EXISTS playlists
+		(name text NOT NULL DEFAULT '',
+		songs text NOT NULL DEFAULT '',
+		PRIMARY KEY (name)
 		)
 	''')
 	db_session.commit()
