@@ -49,7 +49,7 @@ import guifunctions
 from XMLRPCServerSession import XMLServer
 	
 ### Contstants ###
-ALBUM_ART_SIZE = 80
+ALBUM_ART_SIZE = 90
 SCRIPT_PATH    = os.path.abspath(os.path.dirname(__file__))
 IMAGES_DIR     = SCRIPT_PATH + os.sep + 'images' + os.sep
 THREAD_LOCK    = thread.allocate_lock()
@@ -351,9 +351,35 @@ class AmpacheGUI:
 		repeat_songs_checkbutton.set_active(False)
 		repeat_songs_checkbutton.connect("toggled", self.toggle_repeat_songs)
 		
-		top_bar_left_bottom.pack_start(gtk.Label("Volume: "), False, False, 0)
-		top_bar_left_bottom.pack_start(self.volume_slider, False, False, 2)
-		top_bar_left_bottom.pack_start(repeat_songs_checkbutton, False, False, 2)
+		shuffle_songs_checkbutton = gtk.CheckButton("Shuffle")
+		shuffle_songs_checkbutton.set_active(False)
+		shuffle_songs_checkbutton.connect("toggled", self.toggle_shuffle_songs)
+		
+		hbox = gtk.HBox()
+		vbox = gtk.VBox()
+		label = gtk.Label()
+		label.set_markup('<span size="6000"><b>Volume</b></span>')
+		vbox.pack_start(label, False, False, 0)
+		vbox.pack_start(self.volume_slider, False, False, 0)
+		
+		hbox.pack_start(vbox, False, False, 0)
+		
+		vbox = gtk.VBox()
+		vbox.pack_start(repeat_songs_checkbutton, False, False, 0)
+		
+		hbox.pack_start(vbox, False, False, 0)
+		
+		vbox = gtk.VBox()
+		vbox.pack_start(shuffle_songs_checkbutton, False, False, 0)
+		
+		hbox.pack_start(vbox, False, False, 0)
+		
+		top_bar_left_bottom.pack_start(hbox, False, False, 0)
+
+		
+		#top_bar_left_bottom.pack_start(gtk.Label("Volume: "), False, False, 0)
+		#top_bar_left_bottom.pack_start(self.volume_slider, False, False, 2)
+		#top_bar_left_bottom.pack_start(repeat_songs_checkbutton, False, False, 2)
 		
 		top_bar_left.pack_start(top_bar_left_top, False, False, 0)
 		top_bar_left.pack_start(top_bar_left_bottom, False, False, 0)
@@ -713,6 +739,11 @@ class AmpacheGUI:
 		repeat_songs = self.db_session.variable_get('repeat_songs', False)
 		repeat_songs_checkbutton.set_active(repeat_songs)
 		self.audio_engine.set_repeat_songs(repeat_songs)
+		
+		# check shuffle songs_on_activated
+		shuffle_songs = self.db_session.variable_get('shuffle_songs', False)
+		shuffle_songs_checkbutton.set_active(shuffle_songs)
+		self.audio_engine.set_shuffle_songs(shuffle_songs)
 		
 		self.playlist_mode = self.db_session.variable_get('playlist_mode', 0)
 		combobox.set_active(self.playlist_mode)	
@@ -1304,7 +1335,7 @@ class AmpacheGUI:
 		vbox.set_border_width(10)
 		
 		label = gtk.Label()
-		label.set_markup('<span size="14000"><b>Viridian 1.0-Alpha Help</b></span>')
+		label.set_markup('<span size="14000"><b>Viridian Help</b></span>')
 		vbox.pack_start(label, False, False, 1)
 		
 		hbox = gtk.HBox()
@@ -1581,6 +1612,11 @@ class AmpacheGUI:
 		"""Toggle repeat songs."""
 		self.audio_engine.set_repeat_songs(widget.get_active())
 		self.db_session.variable_set('repeat_songs', widget.get_active())
+		
+	def toggle_shuffle_songs(self, widget, data=None):
+		"""Toggle repeat songs."""
+		self.audio_engine.set_shuffle_songs(widget.get_active())
+		self.db_session.variable_set('shuffle_songs', widget.get_active())
 		
 	def toggle_display_notifications(self, widget, data=None):
 		"""Toggle displaying notify OSD notifications."""

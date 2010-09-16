@@ -18,7 +18,7 @@
 import pygst
 import gst
 import time
-
+import random
 class AudioEngine:
 	"""The class that controls playing the media from Ampache."""
 	def __init__(self, ampache_conn):
@@ -28,7 +28,8 @@ class AudioEngine:
 		##################################
 		self.ampache_conn = ampache_conn
 		
-		self.repeat_songs = False
+		self.repeat_songs  = False
+		self.shuffle_songs = False
 		self.songs_list = []
 		self.song_num = -1
 		
@@ -141,6 +142,14 @@ class AudioEngine:
 	def get_repeat_songs(self):
 		"""True if songs are set to repeat."""
 		return self.repeat_songs
+		
+	def set_shuffle_songs(self, value):
+		"""Set songs to shuffle.  Takes True or False."""
+		self.shuffle_songs = value
+		
+	def get_shuffle_songs(self, value):
+		"""True if songs are set to shuffle."""
+		return self.shuffle_songs
 	
 	def set_volume(self, percent):
 		"""Sets the volume, must be 0-100."""
@@ -242,6 +251,12 @@ class AudioEngine:
 	def next_track(self, auto=False):
 		"""Tells the player to go forward a song in the playlist.
 		This function takes care of repeating songs if enabled."""
+		if self.shuffle_songs:
+			new_song_num = int( random.random() * len(self.songs_list) ) - 1
+			if new_song_num == self.song_num:
+				self.song_num = None
+			else:
+				self.song_num = new_song_num
 		if self.song_num == None: # the user clicked prev too many times
 			self.song_num = 0
 		else:
