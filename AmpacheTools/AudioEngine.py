@@ -144,10 +144,14 @@ class AudioEngine:
 	
 	def set_volume(self, percent):
 		"""Sets the volume, must be 0-100."""
-		if percent < 0 or percent > 100:
-			return False
-		volume = percent / 100.0
-		self.player.set_property('volume', volume)
+		if percent <= 0:
+			volume = 0
+		elif percent >= 100:
+			volume = 1
+		else:
+			volume = percent / 100.0
+		self.player.set_property('volume', float(volume))
+		return True
 		
 	def get_volume(self):
 		"""Gets the volume."""
@@ -192,10 +196,13 @@ class AudioEngine:
 		"""Tells tho player to restart the song if it is playing."""
 		if self.get_state() == "playing":
 			self.play_from_list_of_songs(self.songs_list, self.song_num)
+			return True
+		return False
 	
 	def change_song(self, song_num):
 		"""Change song to the given song number."""
 		self.play_from_list_of_songs(self.songs_list, song_num)
+		return True
 	
 	def remove_from_playlist(self, song_id):
 		"""Remove the song_id from the playlist."""
@@ -225,9 +232,10 @@ class AudioEngine:
 		else: # the user doesn't want the album to repeat
 			if self.song_num < 0:
 				self.song_num = 0
-				return True
+				return False
 		print "New song_num", self.song_num
 		self.play_from_list_of_songs(self.songs_list, self.song_num)
+		return True
 
 	
 	
@@ -247,12 +255,13 @@ class AudioEngine:
 					self.song_num = -1
 					self.stop()
 					self.ampache_gui.audioengine_song_changed(None)
-					return
+					return True
 				else:
 					self.song_num = len(self.songs_list) - 1
-					return
+					return False
 		print "New song_num", self.song_num
 		self.play_from_list_of_songs(self.songs_list, self.song_num)
+		return True
 
 	
 	#def next_track_gapless(self):

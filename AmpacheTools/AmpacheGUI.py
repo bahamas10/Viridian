@@ -25,6 +25,7 @@ import urllib
 import re
 import shutil
 import cPickle
+import getpass
 
 try: # check for pynotify
 	import pynotify
@@ -45,15 +46,16 @@ except:
 import dbfunctions
 import helperfunctions
 import guifunctions
+from XMLRPCServerSession import XMLServer
 	
 ### Contstants ###
 ALBUM_ART_SIZE = 80
-#SCRIPT_PATH   = os.path.dirname(sys.argv[0]) # not sure which method to get script path is better
 SCRIPT_PATH    = os.path.abspath(os.path.dirname(__file__))
 IMAGES_DIR     = SCRIPT_PATH + os.sep + 'images' + os.sep
 THREAD_LOCK    = thread.allocate_lock()
 VIRIDIAN_DIR   = os.path.expanduser("~") + os.sep + '.viridian'
 ALBUM_ART_DIR  = VIRIDIAN_DIR + os.sep + 'album_art'
+XML_RPC_PORT   = 4596
 
 class AmpacheGUI:
 	"""The Ampache GUI Class"""
@@ -103,12 +105,13 @@ class AmpacheGUI:
 				return True
 		self.stop_all_threads()
 		size = self.window.get_size()
-		gtk.main_quit()
+		self.stop_xml_server()
 		self.db_session.variable_set('current_playlist', self.audio_engine.get_playlist())
 		self.db_session.variable_set('volume', self.audio_engine.get_volume())
 		self.db_session.variable_set('window_size_width',  size[0])
 		self.db_session.variable_set('window_size_height', size[1])
-
+		gtk.main_quit()
+		
 	def __init__(self, ampache_conn, audio_engine, db_session, is_first_time):
 		"""Constructor for the AmpacheGUI Class.
 		Takes an AmpacheSession Object, an AudioEngine Object and a DatabaseSession Object."""
@@ -118,6 +121,9 @@ class AmpacheGUI:
 		self.audio_engine = audio_engine
 		self.ampache_conn = ampache_conn
 		self.db_session   = db_session
+		
+		xmlrpc_port       = self.db_session.variable_get('xmlrpc_port', XML_RPC_PORT)
+		self.xml_server   = XMLServer('', xmlrpc_port)
 		
 		self.is_first_time = is_first_time
 		
@@ -332,21 +338,21 @@ class AmpacheGUI:
 		top_bar_left_top.pack_start(event_box_next, False, False, 0)
 		
 		### Volume slider, repeat songs
-		volume_slider = gtk.HScale()
-		volume_slider.set_inverted(False)
-		volume_slider.set_range(0, 100)
-		volume_slider.set_increments(1, 10)
-		volume_slider.set_draw_value(False)
-		volume_slider.connect('change-value', self.on_volume_slider_change)
-		volume_slider.set_size_request(80, 20)
-		volume_slider.set_value(volume)
-		
+		self.volume_slider = gtk.HScale()
+		self.volume_slider.set_inverted(False)
+		self.volume_slider.set_range(0, 100)
+		self.volume_slider.set_increments(1, 10)
+		self.volume_slider.set_draw_value(False)
+		self.volume_slider.connect('change-value', self.on_volume_slider_change)
+		self.volume_slider.set_size_request(80, 20)
+		self.volume_slider.set_value(volume)
+	
 		repeat_songs_checkbutton = gtk.CheckButton("Repeat")
 		repeat_songs_checkbutton.set_active(False)
 		repeat_songs_checkbutton.connect("toggled", self.toggle_repeat_songs)
 		
 		top_bar_left_bottom.pack_start(gtk.Label("Volume: "), False, False, 0)
-		top_bar_left_bottom.pack_start(volume_slider, False, False, 2)
+		top_bar_left_bottom.pack_start(self.volume_slider, False, False, 2)
 		top_bar_left_bottom.pack_start(repeat_songs_checkbutton, False, False, 2)
 		
 		top_bar_left.pack_start(top_bar_left_top, False, False, 0)
@@ -732,7 +738,6 @@ class AmpacheGUI:
 		albums = self.db_session.variable_get('albums', False)
 		songs = self.db_session.variable_get('songs', True)
 
-			
 		self.tree_view_dict['playlist'].set_rules_hint(playlist)
 		self.tree_view_dict['downloads'].set_rules_hint(downloads)
 		self.tree_view_dict['artists'].set_rules_hint(artists)
@@ -757,7 +762,11 @@ class AmpacheGUI:
 			self.update_statusbar("Set Ampache information by going to Edit -> Preferences") 
 			if self.is_first_time:
 				self.create_dialog_alert("info", """This looks like the first time you are running Viridian.  To get started, go to Edit -> Preferences and set your account information.""", True)
-				
+		
+		if self.db_session.variable_get('enable_xmlrpc_server', False): # start the xmlrpc server
+			self.start_xml_server()
+			
+
 	def main_gui_toggle_hidden(self):
 		if self.window.is_active():
 			self.window.hide_on_delete()
@@ -1126,6 +1135,83 @@ class AmpacheGUI:
 		
 		trayicon_box.pack_start(hbox, False, False, 5)
 		"""End Tray Icon Settings"""
+		"""Start Server Settings"""
+		#################################
+		# Server Settings
+		#################################
+		server_box = gtk.VBox(False, 0)
+		server_box.set_border_width(10)
+		
+		hbox = gtk.HBox()
+		
+		label = gtk.Label()
+		label.set_markup('<b>Server Settings</b>')
+		
+		hbox.pack_start(label, False, False)
+		
+		server_box.pack_start(hbox, False, False, 3)
+		
+		hbox = gtk.HBox()
+		hbox.pack_start(gtk.Label("   "), False, False, 0)
+
+		hbox.pack_start(gtk.Label("XML RPC Server: "), False, False, 0)
+		
+		label = gtk.Label()
+		image = gtk.Image()
+		
+		if self.xml_server.is_running:
+			image.set_from_stock(gtk.STOCK_YES,gtk.ICON_SIZE_SMALL_TOOLBAR)
+			label.set_text("Running. (port %d)" % self.xml_server.port)
+		else:
+			image.set_from_stock(gtk.STOCK_NO,gtk.ICON_SIZE_SMALL_TOOLBAR)
+			label.set_text("Not Running.")
+		
+		hbox.pack_start(image, False, False, 5)
+		hbox.pack_start(label, False, False, 0)
+		
+		server_box.pack_start(hbox, False, False, 2)
+		
+		hbox = gtk.HBox()
+		hbox.pack_start(gtk.Label("      "), False, False, 0)
+		
+		port = gtk.Entry()
+
+		button = gtk.Button("Start")
+		button.connect("clicked", self.button_xml_server_clicked, 'start', label, image, port)
+		#button.set_sensitive(False)
+		hbox.pack_start(button, True, True, 0)
+		
+		button = gtk.Button("Stop")
+		button.connect("clicked", self.button_xml_server_clicked, 'stop', label, image, port)
+		#button.set_sensitive(False)
+		hbox.pack_start(button, True, True, 0)
+		
+		button = gtk.Button("Restart")
+		button.connect("clicked", self.button_xml_server_clicked, 'restart', label, image, port)
+		#button.set_sensitive(False) 
+		hbox.pack_start(button, True, True, 0)
+		
+		hbox.pack_start(gtk.Label('Port: '), False, False, 1)
+		
+		
+		port.set_text(str(self.db_session.variable_get('xmlrpc_port', XML_RPC_PORT)))
+		
+		hbox.pack_start(port)
+		
+		server_box.pack_start(hbox, False, False, 2)
+		
+		hbox = gtk.HBox()
+		hbox.pack_start(gtk.Label("      "), False, False, 0)
+
+		cb = gtk.CheckButton("Start XML RPC server when Viridan starts")
+		cb.connect("toggled", self.toggle_start_xml_rpc_server)	
+		start_xml_rpc_server = self.db_session.variable_get('enable_xmlrpc_server', False)
+		cb.set_active(start_xml_rpc_server)
+		
+		hbox.pack_start(cb, False, False, 1)
+
+		server_box.pack_start(hbox, False, False, 2)
+		"""End Server Settings"""
 		"""Start System Settings"""
 		#################################
 		# System Settings
@@ -1171,6 +1257,7 @@ class AmpacheGUI:
 		notebook.append_page(catalog_box,  gtk.Label("Catalog"))
 		notebook.append_page(download_box, gtk.Label("Downloads"))
 		notebook.append_page(trayicon_box, gtk.Label("Tray Icon"))
+		notebook.append_page(server_box,   gtk.Label("Server"))
 		notebook.append_page(system_box,   gtk.Label("System"))
 		
 		"""Start Bottom Bar"""
@@ -1213,7 +1300,7 @@ class AmpacheGUI:
 		self.help_window.connect("delete_event", self.destroy_help)
 		self.help_window.connect("destroy", self.destroy_help)
 		
-		vbox = gtk.VBox(False, 8)
+		vbox = gtk.VBox(False, 4)
 		vbox.set_border_width(10)
 		
 		label = gtk.Label()
@@ -1281,13 +1368,15 @@ class AmpacheGUI:
 		self.playlist_select_window.set_resizable(True)
 		self.playlist_select_window.connect("delete_event", self.destroy_playlist)
 		self.playlist_select_window.connect("destroy", self.destroy_playlist)		
-		self.playlist_select_window.set_title(type + " playlist.")
+		self.playlist_select_window.set_title(type + " playlist")
 		
 		vbox = gtk.VBox()
 		vbox.set_border_width(10)
 
-		vbox.pack_start(gtk.Label("Select a Playlist to " + type + "..."), False, False, 2)
-		
+		hbox = gtk.HBox()
+		hbox.pack_start(gtk.Label("Select a Playlist to " + type + "..."), False, False, 2)
+		vbox.pack_start(hbox, False, False, 2)
+
 		scrolled_window = gtk.ScrolledWindow()
 		scrolled_window.set_shadow_type(gtk.SHADOW_ETCHED_IN)
 		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
@@ -1327,7 +1416,10 @@ class AmpacheGUI:
 		text_entry = gtk.Entry()
 		text_entry.set_text('')
 		if type == 'Save':
-			vbox.pack_start(text_entry, False, False, 2)
+			hbox = gtk.HBox()
+			hbox.pack_start(gtk.Label("Playlist Name: "), False, False, 1)
+			hbox.pack_start(text_entry, False, False, 2)
+			vbox.pack_start(hbox, False, False, 2)
 
 		bottom_bar = gtk.HBox()
 		
@@ -1373,7 +1465,7 @@ class AmpacheGUI:
 			playlist_list_store.append(['<i>-(None)-</i>', 0, '', '', -1])
 		else:
 			for playlist in local_playlists:
-				playlist_list_store.append([ helperfunctions.convert_string_to_html(playlist['name']), len(playlist['songs']), '--', 'Local', -2]) 
+				playlist_list_store.append([ helperfunctions.convert_string_to_html(playlist['name']), len(playlist['songs']), getpass.getuser(), 'Local', -2]) 
 	
 		
 	def destroy_playlist(self, widget=None, data=None):
@@ -1510,6 +1602,10 @@ class AmpacheGUI:
 		self.quit_when_window_closed = widget.get_active()
 		self.db_session.variable_set('quit_when_window_closed', widget.get_active())
 		
+	def toggle_start_xml_rpc_server(self, widget, data=None):
+		"""Toggle whether to start the XML server when Viridian opes."""
+		self.db_session.variable_set('enable_xmlrpc_server', widget.get_active())
+		
 	#######################################
 	# Radio Buttons
 	#######################################
@@ -1545,7 +1641,7 @@ class AmpacheGUI:
 		index = combobox.get_active()
 		self.playlist_mode = index
 		self.db_session.variable_set('playlist_mode', self.playlist_mode)
-		return
+		return True
 		
 	#######################################
 	# Initial Authentication
@@ -1756,6 +1852,7 @@ class AmpacheGUI:
 	# Selection Methods (right-click)
 	#######################################
 	def foreach(self, model, path, iter, data):
+		"""Helper for multi-select."""
 		list = data[0]
 		column = data[1]
 		list.append(model.get_value(iter, column))
@@ -1977,38 +2074,39 @@ class AmpacheGUI:
 		"""Reauthenticate button clicked."""
 		self.login_and_get_artists(True)
 
-	def button_play_pause_clicked(self, widget, data=None):
+	def button_play_pause_clicked(self, widget=None, data=None):
 		"""The play/pause has been clicked."""
 		state = self.audio_engine.get_state()
 		if state == "stopped" or state == None:
-			return True
+			return False
 		elif state == "playing":
 			self.audio_engine.pause()
 			self.play_pause_image.set_from_pixbuf(self.images_pixbuf_play)
+			return "paused"
 			#self.set_tray_icon(None)
 		else:
 			if self.audio_engine.play():
 				self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
 				#self.set_tray_icon(self.album_art_image.get_pixbuf())
+				return "playing"
 
 		
-	def button_prev_clicked(self, widget, data=None):
+	def button_prev_clicked(self, widget=None, data=None):
 		"""Previous Track."""
 		time_nanoseconds = self.audio_engine.query_position()
 		if time_nanoseconds != -1:
 			time_seconds = time_nanoseconds / 1000 / 1000 / 1000
 			if time_seconds <= 5: # go back if time is less than 5 seconds
-				self.audio_engine.prev_track()
-				return True
+				return self.audio_engine.prev_track()
 			else: # restart the song
-				self.audio_engine.restart()
-				return True
+				return self.audio_engine.restart()
+				
 		# failsafe
-		self.audio_engine.prev_track()
+		return self.audio_engine.prev_track()
 		
-	def button_next_clicked(self, widget, data=None):
+	def button_next_clicked(self, widget=None, data=None):
 		"""Next Track."""
-		self.audio_engine.next_track()
+		return self.audio_engine.next_track()
 		
 	#############
 	# Playlists
@@ -2206,6 +2304,35 @@ class AmpacheGUI:
 		m.show_all()
 		m.popup(None, None, None, event.button, event.time, None)
 		return False 
+		
+	##################
+	# XML Server Buttons
+	##################
+	def button_xml_server_clicked(self, widget, action, label, image, port):
+		"""Start, stop or restart the xml server."""
+		if self.xml_server.is_running: # xml server is running
+			if action == "start":
+				return False
+		else:
+			if action == "stop":
+				return False
+		if port.get_text().isdigit():
+			self.db_session.variable_set('xmlrpc_port', int(port.get_text()))
+		if action == "start":
+			self.start_xml_server()
+		elif action == "stop":
+			self.stop_xml_server()
+		elif action == "restart":
+			self.restart_xml_server()
+			
+		# update the gui
+		if self.xml_server.is_running:
+			image.set_from_stock(gtk.STOCK_YES,gtk.ICON_SIZE_SMALL_TOOLBAR)
+			label.set_text("Running. (port %d)" % self.xml_server.port)
+		else:
+			image.set_from_stock(gtk.STOCK_NO,gtk.ICON_SIZE_SMALL_TOOLBAR)
+			label.set_text("Not Running.")
+		
 	
 	#######################################
 	# Dialogs
@@ -2247,25 +2374,6 @@ class AmpacheGUI:
 			return "ok"
 		else:
 			return "cancel"
-		
-	def create_dialog_load_playlist(self):
-		"""Creates a generic dialog for loading the playlist, Ampache or local."""
-		md = gtk.Dialog("Load Playlist", self.window, gtk.DIALOG_DESTROY_WITH_PARENT, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, "Ampache", -5001, "Locally", -5002))
-		label = gtk.Label("Load a playlist from the Ampache server, or playlists that you have saved locally?")
-		label.set_line_wrap(True)
-		md.get_child().pack_start(label)
-		md.get_child().set_border_width(10)
-		md.set_border_width(3)
-		md.set_resizable(False)
-		md.show_all()
-		#md.set_title('Viridian')
-		resp = md.run()
-		md.destroy()
-		if resp == -5001:
-			resp = "Ampache"
-		elif resp == -5002:
-			resp = "Locally"
-		return resp
 		
 	def create_about_dialog(self, widget, data=None):
 		"""About this application."""
@@ -2408,6 +2516,10 @@ Message from GStreamer:
 	#######################################
 	# Convenience Functions
 	#######################################
+	
+	############
+	# check database for info
+	############
 	def check_and_populate_artists(self):
 		"""Returns an artist list by either grabbing from the DB or from Ampache."""
 		if self.db_session.table_is_empty('artists'):
@@ -2440,6 +2552,10 @@ Message from GStreamer:
 				list.append([album_id, song['song_id'], song['song_title'], song['song_track'], song['song_time'], song['song_size'], song['artist_name'], song['album_name']])
 			dbfunctions.populate_songs_table(self.db_session, album_id, list)
 			
+			
+	################
+	# Random Helpers
+	################
 	def gnome_open(self, uri):
 		"""Open with gnome-open."""
 		if uri == None or uri == "":
@@ -2482,36 +2598,6 @@ Message from GStreamer:
 			return True
 		return False
 			
-	def add_album_to_playlist(self, widget):
-		"""Adds every song in the visible list store and adds it to the playlist."""
-		for song in self.song_list_store:
-			self.audio_engine.insert_into_playlist(song[6])
-		self.update_playlist_window()
-		return True
-			
-	def add_songs_to_playlist(self, widget, list):
-		for song_id in list:
-			self.add_song_to_playlist(widget, song_id)
-		
-	def add_song_to_playlist(self, widget, song_id):
-		"""Takes a song_id and adds it to the playlist."""
-		self.audio_engine.insert_into_playlist(song_id)
-		self.update_playlist_window()
-		return True
-	
-				
-	def remove_from_playlist(self, widget, song_id, treeview, list=None):
-		"""Remove a song from the current playlist."""
-		if list != None:
-			for song_id in list:
-				self.remove_from_playlist(widget, song_id, treeview, None)
-				#print self.audio_engine.get_current_song()
-			return True
-		else:
-			if self.audio_engine.remove_from_playlist(song_id):
-				self.update_playlist_window()
-				return True
-		return False
 
 	def stop_all_threads(self):
 		"""Stops all running threads."""
@@ -2521,7 +2607,10 @@ Message from GStreamer:
 		"""Refresh the GUI by calling gtk.main_iteration(). """
 		while gtk.events_pending():
 			gtk.main_iteration()
-			
+	
+	####################
+	# Playlist Functions
+	####################			
 	def update_playlist_window(self):
 		"""Updates the playlist window with the current playing songs."""
 		gobject.idle_add(self.__update_playlist_window)		
@@ -2567,7 +2656,90 @@ Message from GStreamer:
 			i += 1
 		self.update_playlist_window()
 		self.update_statusbar('Playlist loaded')
+		
+	def add_album_to_playlist(self, widget):
+		"""Adds every song in the visible list store and adds it to the playlist."""
+		for song in self.song_list_store:
+			self.audio_engine.insert_into_playlist(song[6])
+		self.update_playlist_window()
+		return True
 			
+	def add_songs_to_playlist(self, widget, list):
+		for song_id in list:
+			self.add_song_to_playlist(widget, song_id)
+		
+	def add_song_to_playlist(self, widget, song_id):
+		"""Takes a song_id and adds it to the playlist."""
+		self.audio_engine.insert_into_playlist(song_id)
+		self.update_playlist_window()
+		return True
+	
+				
+	def remove_from_playlist(self, widget, song_id, treeview, list=None):
+		"""Remove a song from the current playlist."""
+		if list != None:
+			for song_id in list:
+				self.remove_from_playlist(widget, song_id, treeview, None)
+				#print self.audio_engine.get_current_song()
+			return True
+		else:
+			if self.audio_engine.remove_from_playlist(song_id):
+				self.update_playlist_window()
+				return True
+		return False
+		
+	##################
+	# XML Server
+	##################
+	def start_xml_server(self):
+		"""Start the XML Server."""
+		self.restart_xml_server()
+	
+	def restart_xml_server(self):
+		"""Restart the XML server."""
+		self.stop_xml_server()
+		time.sleep(1)
+		xmlrpc_port = self.db_session.variable_get('xmlrpc_port', XML_RPC_PORT)
+		self.current_xmlrpc_port = xmlrpc_port
+		self.xml_server = XMLServer('', xmlrpc_port)
+		
+		### Load the functions ###
+		self.xml_server.register_function(self.button_next_clicked, 'next')
+		self.xml_server.register_function(self.button_prev_clicked, 'prev')
+		self.xml_server.register_function(self.button_play_pause_clicked, 'play_pause')
+		self.xml_server.register_function(self.increment_volume, 'volume_up')
+		self.xml_server.register_function(self.decrement_volume, 'volume_down')
+		self.xml_server.register_function(self.set_volume, 'set_volume')
+		self.xml_server.serve_forever()
+		
+	def stop_xml_server(self):
+		"""Stop the XML Server."""
+		try: self.xml_server.shutdown()
+		except: pass
+		
+	###################
+	# Volume modifiers
+	###################
+	def increment_volume(self):
+		"""Increment the volume by 5%."""
+		cur_vol = self.audio_engine.get_volume()
+		vol = cur_vol + 5
+		return self.set_volume(vol)
+		
+	def decrement_volume(self):
+		"""Decrement the volume by 5%."""
+		cur_vol = self.audio_engine.get_volume()
+		vol = cur_vol - 5
+		return self.set_volume(vol)
+
+	def set_volume(self, vol):
+		"""Set the volume, assumes the value is 0<vol<100."""
+		if vol >= 100:
+			vol = 100
+		elif vol <= 0:
+			vol = 0
+		self.volume_slider.set_value(vol)
+		return self.audio_engine.set_volume(vol)
 			
 	#######################################
 	# Download Songs / Albums
