@@ -28,6 +28,8 @@ class AudioEngine:
 		##################################
 		self.ampache_conn = ampache_conn
 		
+		self.ampache_gui  = None
+
 		self.repeat_songs  = False
 		self.shuffle_songs = False
 		self.songs_list = []
@@ -58,10 +60,12 @@ class AudioEngine:
 			self.player.set_state(gst.STATE_NULL)
 			self.player.set_property('uri', song_url)
 			self.player.set_state(gst.STATE_PLAYING)
-			self.ampache_gui.audioengine_song_changed(songs_list[song_num]) # hook into GUI
+			if self.ampache_gui != None:
+				self.ampache_gui.audioengine_song_changed(songs_list[song_num]) # hook into GUI
 		except: # out of songs
 			self.stop()
-			self.ampache_gui.audioengine_song_changed(None) # hook into GUI
+			if self.ampache_gui != None:
+				self.ampache_gui.audioengine_song_changed(None) # hook into GUI
 			print "No more songs"
 
 
@@ -78,11 +82,11 @@ class AudioEngine:
 			err, debug = message.parse_error()
 			result =  "Gstreamer Error: %s %s" % (err, debug)
 			print result
-			self.ampache_gui.audioengine_error_callback(result)
-			
+			if self.ampache_gui != None:
+				self.ampache_gui.audioengine_error_callback(result)
 	def on_about_to_finish(self, player):
-		print "almost..."
 		#self.next_track_gapless()
+		return
 			
 	def query_position(self):
 		"""Returns position in nanoseconds"""
@@ -96,7 +100,7 @@ class AudioEngine:
 		#       duration = gst.CLOCK_TIME_NONE
 		return position
 
-	def get_state(self):
+	def get_state(self, *args):
 		"""Returns a string that tells the current state of the player."""
 		state = self.player.get_state()
 
@@ -117,41 +121,41 @@ class AudioEngine:
 		"""Sets the current playlist to list."""
 		self.songs_list = list
 		
-	def get_playlist(self):
+	def get_playlist(self, *args):
 		"""Returns the current playlist in a list of song_ids."""
 		return self.songs_list
 	
-	def set_current_song(self, song_num):
+	def set_current_song(self, song_num, *args):
 		"""Sets the current song num (doesn't affect what is currently playing)."""
 		self.song_num = song_num
 		
-	def get_current_song(self):
+	def get_current_song(self, *args):
 		"""Returns the current playing songs position in the list."""
 		return self.song_num
 	
-	def get_current_song_id(self):
+	def get_current_song_id(self, *args):
 		"""Returns the current playing song_id or None."""
 		if self.song_num == -1:
 			return None
 		return self.songs_list[self.song_num]
 		
-	def set_repeat_songs(self, value): # must be True or False
+	def set_repeat_songs(self, value, *args): # must be True or False
 		"""Set songs to repeat.  Takes True or False."""
 		self.repeat_songs = value
 		
-	def get_repeat_songs(self):
+	def get_repeat_songs(self, *args):
 		"""True if songs are set to repeat."""
 		return self.repeat_songs
 		
-	def set_shuffle_songs(self, value):
+	def set_shuffle_songs(self, value, *args):
 		"""Set songs to shuffle.  Takes True or False."""
 		self.shuffle_songs = value
 		
-	def get_shuffle_songs(self, value):
+	def get_shuffle_songs(self, value, *args):
 		"""True if songs are set to shuffle."""
 		return self.shuffle_songs
 	
-	def set_volume(self, percent):
+	def set_volume(self, percent, *args):
 		"""Sets the volume, must be 0-100."""
 		if percent <= 0:
 			volume = 0
@@ -162,22 +166,23 @@ class AudioEngine:
 		self.player.set_property('volume', float(volume))
 		return True
 		
-	def get_volume(self):
+	def get_volume(self, *args):
 		"""Gets the volume."""
 		return self.player.get_property('volume')*100
 	
-	def clear_playlist(self, data=None):
+	def clear_playlist(self, *args):
 		"""Clear the current playlist and stop the song."""
 		self.stop()
 		self.songs_list = []
 		self.song_num = -1
-		self.ampache_gui.audioengine_song_changed(None)
+		if self.ampache_gui != None:
+			self.ampache_gui.audioengine_song_changed(None)
 	
 	def seek(self, seek_time_secs):
 		"""Seek function, doesn't work on some distros."""
 		return self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_KEY_UNIT, int(seek_time_secs) * gst.SECOND)
 		
-	def stop(self): 
+	def stop(self, *args): 
 		"""Tells the player to stop."""
 		try:
 			self.player.set_state(gst.STATE_NULL)
@@ -185,7 +190,7 @@ class AudioEngine:
 			return False
 		return True
 
-	def pause(self):
+	def pause(self, *args):
 		"""Tells the player to pause."""
 		try:
 			self.player.set_state(gst.STATE_PAUSED)
@@ -193,7 +198,7 @@ class AudioEngine:
 			return False
 		return True
 		
-	def play(self):
+	def play(self, *args):
 		"""Tells the player to play."""
 		try:
 			self.player.set_state(gst.STATE_PLAYING)
@@ -201,19 +206,19 @@ class AudioEngine:
 			return False
 		return True
 	
-	def restart(self):
+	def restart(self, *args):
 		"""Tells tho player to restart the song if it is playing."""
 		if self.get_state() == "playing":
 			self.play_from_list_of_songs(self.songs_list, self.song_num)
 			return True
 		return False
 	
-	def change_song(self, song_num):
+	def change_song(self, song_num, *args):
 		"""Change song to the given song number."""
 		self.play_from_list_of_songs(self.songs_list, song_num)
 		return True
 	
-	def remove_from_playlist(self, song_id):
+	def remove_from_playlist(self, song_id, *args):
 		"""Remove the song_id from the playlist."""
 		try:
 			song_num = self.songs_list.index(song_id)
@@ -231,7 +236,7 @@ class AudioEngine:
 		else:
 			self.songs_list.insert(song_num, song_id)
 	
-	def prev_track(self):
+	def prev_track(self, *args):
 		"""Tells the player to go back a song in the playlist.
 		This function takes care of repeating songs if enabled."""
 
@@ -242,7 +247,6 @@ class AudioEngine:
 			if self.song_num < 0:
 				self.song_num = 0
 				return False
-		print "New song_num", self.song_num
 		self.play_from_list_of_songs(self.songs_list, self.song_num)
 		return True
 
@@ -269,12 +273,12 @@ class AudioEngine:
 				if auto:
 					self.song_num = -1
 					self.stop()
-					self.ampache_gui.audioengine_song_changed(None)
+					if self.ampache_gui != None:
+						self.ampache_gui.audioengine_song_changed(None)
 					return True
 				else:
 					self.song_num = len(self.songs_list) - 1
 					return False
-		print "New song_num", self.song_num
 		self.play_from_list_of_songs(self.songs_list, self.song_num)
 		return True
 

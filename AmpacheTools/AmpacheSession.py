@@ -217,6 +217,8 @@ class AmpacheSession:
 		"""
 		Takes an album_id and returns the url to the artwork (with the current authentication).
 		"""
+		if album_id == None:
+			return False
 		values = {'action' : 'album',
 			  'filter' : album_id,
 			  'auth'   : self.auth,

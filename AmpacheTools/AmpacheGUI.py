@@ -2746,6 +2746,10 @@ Message from GStreamer:
 		self.xml_server.register_function(self.increment_volume, 'volume_up')
 		self.xml_server.register_function(self.decrement_volume, 'volume_down')
 		self.xml_server.register_function(self.set_volume, 'set_volume')
+		self.xml_server.register_function(self.get_current_song, 'get_current_song')
+		self.xml_server.register_function(self.audio_engine.get_state, 'get_state')
+		self.xml_server.register_function(self.audio_engine.get_volume, 'get_volume')
+		#self.xml_server.register_function(lambda : self.ampache_conn.get_album_art(self.current_song_info['album_id']), 'get_album_art')
 		self.xml_server.serve_forever()
 		
 	def stop_xml_server(self):
@@ -2754,29 +2758,38 @@ Message from GStreamer:
 		except: pass
 		
 	###################
+	# Func for XML
+	###################
+	def get_current_song(self, *args):
+		"""Get the current song info."""
+		return self.current_song_info
+		
+	
+	###################
 	# Volume modifiers
 	###################
-	def increment_volume(self):
+	def increment_volume(self, *args):
 		"""Increment the volume by 5%."""
 		cur_vol = self.audio_engine.get_volume()
 		vol = cur_vol + 5
 		return self.set_volume(vol)
 		
-	def decrement_volume(self):
+	def decrement_volume(self, *args):
 		"""Decrement the volume by 5%."""
 		cur_vol = self.audio_engine.get_volume()
 		vol = cur_vol - 5
 		return self.set_volume(vol)
 
-	def set_volume(self, vol):
+	def set_volume(self, vol, *args):
 		"""Set the volume, assumes the value is 0<vol<100."""
 		if vol >= 100:
 			vol = 100
 		elif vol <= 0:
 			vol = 0
 		self.volume_slider.set_value(vol)
-		return self.audio_engine.set_volume(vol)
-			
+		self.audio_engine.set_volume(vol)
+		return self.audio_engine.get_volume()
+		
 	#######################################
 	# Download Songs / Albums
 	#######################################
