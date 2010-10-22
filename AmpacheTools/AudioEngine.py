@@ -37,6 +37,10 @@ class AudioEngine:
 		
 		# create a playbin (plays media form an uri)
 		self.player = gst.element_factory_make("playbin2", "player")
+	#	source = gst.element_factory_make("souphttpsrc", "source")
+	#	source.set_property('user-agent', 'Viridian 1.0 (http://viridian.daveeddy.com)')
+	#	self.player.add(source)
+		
 		bus = self.player.get_bus()
 		bus.add_signal_watch()
 		bus.enable_sync_message_emission()

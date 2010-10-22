@@ -18,10 +18,10 @@
 __program__    = "Viridian-cli"
 __author__     = "David Eddy"
 __license__    = "GPLv3"
-__version__    = "1.0"
+__version__    = "1.1"
 __maintainer__ = "David Eddy"
 __email__      = "dave@daveeddy.com"
-__status__     = "Alpha"
+__status__     = "Release"
 
 import AmpacheTools
 from AmpacheTools import AmpacheSession, DatabaseSession, AudioEngine

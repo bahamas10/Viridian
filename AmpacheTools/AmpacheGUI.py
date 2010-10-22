@@ -70,7 +70,7 @@ class AmpacheGUI:
 			
 		if self.tray_icon_to_display == "standard":
 			self.tray_icon = gtk.StatusIcon()
-			self.tray_icon.set_from_stock(gtk.STOCK_ABOUT)
+			self.tray_icon.set_from_pixbuf(self.images_pixbuf_viridian_app)
 			self.tray_icon.connect('activate', self.status_icon_activate)
 			self.tray_icon.connect('popup-menu', self.status_icon_popup_menu)
 			self.tray_icon.set_tooltip('Viridian')
@@ -148,6 +148,9 @@ class AmpacheGUI:
 		self.images_pixbuf_playing = guifunctions.create_image_pixbuf(IMAGES_DIR + 'playing.png', 15)
 		self.images_pixbuf_empty   = guifunctions.create_image_pixbuf(IMAGES_DIR + 'empty.png', 1)
 
+		self.images_pixbuf_viridian_simple = guifunctions.create_image_pixbuf(IMAGES_DIR + 'ViridianSimple.png', 20)
+		self.images_pixbuf_viridian_app    = guifunctions.create_image_pixbuf(IMAGES_DIR + 'ViridianApp.png', 70)
+
 		##################################
 		# Main Window
 		##################################
@@ -157,6 +160,7 @@ class AmpacheGUI:
 		self.window.connect("destroy", self.destroy)
 		self.window.set_title("Viridian")
 		self.window.resize(width, height)
+		self.window.set_icon(self.images_pixbuf_viridian_simple)
 
 		main_box = gtk.VBox()
 		
@@ -831,11 +835,13 @@ class AmpacheGUI:
 				return True
 				
 		self.preferences_window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.preferences_window.set_icon(self.images_pixbuf_viridian_simple)
 		self.preferences_window.set_transient_for(self.window)
 		self.preferences_window.set_title("Viridian Settings")
 		self.preferences_window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 		self.preferences_window.resize(450, 300)
 		self.preferences_window.set_resizable(False)
+		self.preferences_window.set_icon(self.images_pixbuf_viridian_simple)
 		self.preferences_window.connect("delete_event", self.destroy_settings)
 		self.preferences_window.connect("destroy", self.destroy_settings)
 		
@@ -1325,6 +1331,7 @@ class AmpacheGUI:
 		self.help_window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.help_window.set_transient_for(self.window)
 		self.help_window.set_title("Viridian Help")
+		self.help_window.set_icon(self.images_pixbuf_viridian_simple)
 		self.help_window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 		self.help_window.resize(350, 300)
 		self.help_window.set_resizable(False)
@@ -1397,6 +1404,7 @@ class AmpacheGUI:
 		self.playlist_select_window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 		self.playlist_select_window.resize(490, 300)
 		self.playlist_select_window.set_resizable(True)
+		self.playlist_select_window.set_icon(self.images_pixbuf_viridian_simple)
 		self.playlist_select_window.connect("delete_event", self.destroy_playlist)
 		self.playlist_select_window.connect("destroy", self.destroy_playlist)		
 		self.playlist_select_window.set_title(type + " playlist")
@@ -2390,6 +2398,7 @@ class AmpacheGUI:
 		else: # display Close button
 			md = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT, dialog_type, gtk.BUTTONS_CLOSE, message)
 		md.set_title('Viridian')
+		md.set_icon(self.images_pixbuf_viridian_simple)
 		md.run()
 		md.destroy()
 	
@@ -2402,6 +2411,7 @@ class AmpacheGUI:
 		md.get_child().set_border_width(10)
 		md.set_border_width(3)
 		md.set_resizable(False)
+		md.set_icon(self.images_pixbuf_viridian_simple)
 		md.show_all()
 		#md.set_title('Viridian')
 		resp = md.run()
@@ -2415,14 +2425,15 @@ class AmpacheGUI:
 		"""About this application."""
 		about = gtk.AboutDialog()
 		about.set_name("Viridian")
-		about.set_version("1.0-alpha")
+		about.set_icon(self.images_pixbuf_viridian_simple)
+		about.set_version("1.1")
 		about.set_copyright("(c) Dave Eddy <dave@daveeddy.com>")
 		about.set_comments("Viridian is a front-end for an Ampache Server (see http://ampache.org)")
 		about.set_website("http://viridian.daveeddy.com")
 		about.set_authors(["Author:", "Dave Eddy <dave@daveeddy.com>", "http://www.daveeddy.com", "", "AudioEngine by:", "Michael Zeller <link@conquerthesound.com>", "http://conquerthesound.com"])
 		about.set_artists(["Skye Sawyer <skyelauren.s@gmail.com>", "http://www.skyeillustration.com", "", "Media Icons by:", "http://mysitemyway.com", "http://ampache.org"])
 		try: # try to set the logo
-			about.set_logo(gtk.gdk.pixbuf_new_from_file(IMAGES_DIR + "logo.png"))
+			about.set_logo(self.images_pixbuf_viridian_app)
 		except:
 			pass
 		gpl = ""
@@ -2613,7 +2624,10 @@ Message from GStreamer:
 		if PYNOTIFY_INSTALLED and self.display_notifications:
 			if message == None:
 				message = title
-				title = 'Ampache'
+				title = 'Viridian'
+			if image == None:
+				image = IMAGES_DIR + 'ViridianApp.png'
+			print image
 			pynotify_object.update(title, message, image)
 			pynotify_object.show()
 			
@@ -2628,7 +2642,7 @@ Message from GStreamer:
 		"""Set the tray icon to a pixbuf."""
 		if hasattr(self, 'tray_icon'):
 			if pixbuf == None:
-				self.tray_icon.set_from_stock(gtk.STOCK_ABOUT)
+				self.tray_icon.set_from_pixbuf(self.images_pixbuf_viridian_app)
 			else:
 				self.tray_icon.set_from_pixbuf(pixbuf)
 			return True

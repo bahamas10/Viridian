@@ -253,9 +253,7 @@ class AmpacheSession:
 			 ]
 		"""
 		if offset == None:
-			if self.artists_num <= 5000: # no offset needed
-				print "Less than 5000 artists"
-			else:
+			if self.artists_num > 5000: # offset needed
 				print "More than 5000 artists"
 				list = []
 				for i in range(0, self.artists_num, 5000):

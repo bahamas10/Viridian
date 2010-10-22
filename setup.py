@@ -17,12 +17,12 @@
 from distutils.core import setup
 
 setup(name='Viridian',
-	version='1.0',
+	version='1.1',
 	description='Viridian Media Player',
 	author='Dave Eddy',
 	author_email='dave@daveeddy.com',
 	url='http://www.daveeddy.com',
-	scripts=['viridian'],
+	scripts=['viridian', 'viridian-cli'],
 	packages=['AmpacheTools'],
 	package_data={'AmpacheTools' : ['images/*', 'doc/*']}
 )
