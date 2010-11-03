@@ -205,6 +205,14 @@ class AmpacheGUI:
 		newi.connect("activate", self.button_load_playlist_clicked)
 		file_menu.append(newi)
 		
+		newi = gtk.ImageMenuItem("Export Playlist...")#, agr)
+		img = gtk.image_new_from_stock(gtk.STOCK_SAVE_AS, gtk.ICON_SIZE_MENU)
+		newi.set_image(img)
+		#key, mod = gtk.accelerator_parse("<Control>E")
+		#newi.add_accelerator("activate", agr, key, mod, gtk.ACCEL_VISIBLE)
+		newi.connect("activate", self.button_export_playlist_clicked)
+		file_menu.append(newi)
+		
 		sep = gtk.SeparatorMenuItem()
 		file_menu.append(sep)
 		
@@ -1392,7 +1400,7 @@ class AmpacheGUI:
 		#################################
 		# playlist select
 		#################################
-		if type != "Load" and type != "Save":
+		if type != "Load" and type != "Save" and type != "Export":
 			return True
 		if hasattr(self, 'playlist_select_window'):
 			if self.playlist_select_window != None:
@@ -1462,6 +1470,7 @@ class AmpacheGUI:
 
 		bottom_bar = gtk.HBox()
 		
+		
 		remove = gtk.Button(stock=gtk.STOCK_DELETE)
 		remove.connect("clicked", self.button_delete_playlist_clicked, tree_view.get_selection(), type)
 		
@@ -1471,6 +1480,8 @@ class AmpacheGUI:
 		button = gtk.Button(stock=gtk.STOCK_SAVE)
 		if type == 'Load':
 			button = gtk.Button(stock=gtk.STOCK_OPEN)
+		elif type == 'Export':
+			button = gtk.Button("Export as M3U...")
 		button.connect("clicked", self.button_load_or_save_playlist_clicked, tree_view.get_selection(), text_entry, type)
 
 		bottom_bar.pack_start(remove, False, False, 2)
@@ -2168,6 +2179,10 @@ class AmpacheGUI:
 		"""The load playlist button was clicked."""
 		self.show_playlist_select('Load')
 		return False
+		
+	def button_export_playlist_clicked(self, widget, data=None):
+		self.show_playlist_select('Export')
+		return False
 
 
 	def button_load_or_save_playlist_clicked(self, widget, selection, text, type):
@@ -2212,6 +2227,41 @@ class AmpacheGUI:
 					return False
 			dbfunctions.set_playlist(self.db_session, text, self.audio_engine.get_playlist())
 			self.destroy_playlist()
+		elif type == 'Export': # Export Playlist
+			if iter == None: # nothing selected
+				return True
+			if playlist_id == -1: # placeholders
+				return True
+			if playlist_id != -2: # not local playlists
+				self.create_dialog_alert("error", "Only exporting of local playlists is supported.", True)
+				return False
+			else: # ready to export
+				list = dbfunctions.get_playlist(self.db_session, playlist_name)
+				if not list:
+					self.create_dialog_alert("error", "Cannot export empty playlist.", True)
+					return False
+				chooser = gtk.FileChooserDialog(title="Save as...",action=gtk.FILE_CHOOSER_ACTION_SAVE,
+					buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK))
+				response = chooser.run()
+				if response == gtk.RESPONSE_OK:
+					filename = chooser.get_filename()
+					if os.path.isfile(filename):
+						self.create_dialog_alert("error", "File already exists.", True)
+						chooser.destroy()
+						return False
+						
+					f = open(filename, 'w')
+					f.write("Playlist '%s' export from Viridian - %s\n\n" % (playlist_name, time.strftime("%A, %B %d, %Y at %I:%M%p")))
+					for song_id in list:
+						f.write(helperfunctions.convert_html_to_string(self.ampache_conn.get_song_url(song_id).rpartition('.')[0]))
+						f.write("\n")
+					f.close()
+					print "Exported playlist to %s" % (filename)
+					self.create_dialog_alert("info", "Playlist %s written to %s." % (playlist_name, filename), True)
+				
+				chooser.destroy()
+			self.destroy_playlist()
+					
 			
 	def button_delete_playlist_clicked(self, widget, selection, type):
 		playlist_list_store, iter = selection.get_selected()
@@ -2627,7 +2677,6 @@ Message from GStreamer:
 				title = 'Viridian'
 			if image == None:
 				image = IMAGES_DIR + 'ViridianApp.png'
-			print image
 			pynotify_object.update(title, message, image)
 			pynotify_object.show()
 			
@@ -2844,7 +2893,7 @@ Message from GStreamer:
 			self.show_downloads_checkbox.set_active(True)
 		song_url = self.ampache_conn.get_song_url(song_id)
 		m = re.search('name=.*\.[a-zA-Z0-9]+', song_url)
-		song_string = m.group(0).replace('name=/','').replace('%20',' ').replace('%27', "'")
+		song_string = helperfunctions.convert_html_to_string(m.group(0).replace('name=/',''))
 		full_file = self.downloads_directory + os.sep + song_string
 		self.downloads_list_store.append([song_string, 0, full_file])
 		iter1 = self.downloads_list_store.get_iter(len(self.downloads_list_store) - 1)
