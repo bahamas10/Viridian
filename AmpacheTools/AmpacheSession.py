@@ -29,6 +29,13 @@ import socket
 ### Constants ###
 AUTH_MAX_RETRY = 3 # how many times to try and reauth before failure
 DEFAULT_TIMEOUT = 5
+__ILLEGAL_XML = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
+		 u'|' + \
+		 u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
+		 (unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
+		  unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
+		  unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff))
+ILLEGAL_XML_RE = re.compile(__ILLEGAL_XML)
 socket.setdefaulttimeout(DEFAULT_TIMEOUT)
 
 class AmpacheSession:
@@ -272,9 +279,11 @@ class AmpacheSession:
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
 			response = urllib2.urlopen(self.xml_rpc, data)
-			dom = xml.dom.minidom.parseString(response.read())
-		except: # The data pulled from Ampache was invalid
+			x = self.__sanatize(response.read()) 
+			dom = xml.dom.minidom.parseString(x)
+		except Exception as e: # The data pulled from Ampache was invalid
 			print "Error Pulling Data! -- Check Ampache"
+			print e
 			return None
 		try: # try to get the list of artists
 			root  = dom.getElementsByTagName('root')[0]
@@ -323,7 +332,8 @@ class AmpacheSession:
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
 			response = urllib2.urlopen(self.xml_rpc, data)
-			dom = xml.dom.minidom.parseString(response.read())
+			x = self.__sanatize(response.read()) 
+			dom = xml.dom.minidom.parseString(x)
 		except: # The data pulled from Ampache was invalid
 			print "Error Pulling Data! -- Check Ampache -- Artist ID = %d" % artist_id
 			return None
@@ -398,7 +408,8 @@ class AmpacheSession:
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
 			response = urllib2.urlopen(self.xml_rpc, data)
-			dom = xml.dom.minidom.parseString(response.read())
+			x = self.__sanatize(response.read()) 
+			dom = xml.dom.minidom.parseString(x)
 		except: # The data pulled from Ampache was invalid
 			print "Error Pulling Data! -- Check Ampache -- Album ID = %d" % album_id
 			return None
@@ -477,7 +488,8 @@ class AmpacheSession:
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
 			response = urllib2.urlopen(self.xml_rpc, data)
-			dom = xml.dom.minidom.parseString(response.read())
+			x = self.__sanatize(response.read()) 
+			dom = xml.dom.minidom.parseString(x)
 		except: # The data pulled from Ampache was invalid
 			print "Error Pulling Data! -- Check Ampache -- Song ID = %d" % song_id
 			return None
@@ -547,7 +559,8 @@ class AmpacheSession:
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
 			response = urllib2.urlopen(self.xml_rpc, data)
-			dom = xml.dom.minidom.parseString(response.read())
+			x = self.__sanatize(response.read()) 
+			dom = xml.dom.minidom.parseString(x)
 		except: # The data pulled from Ampache was invalid
 			print "Error Pulling Data!"
 			return None
@@ -614,7 +627,8 @@ class AmpacheSession:
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
 			response = urllib2.urlopen(self.xml_rpc, data)
-			dom = xml.dom.minidom.parseString(response.read())
+			x = self.__sanatize(response.read()) 
+			dom = xml.dom.minidom.parseString(x)
 		except: # The data pulled from Ampache was invalid
 			print "Error Pulling Data! -- Check Ampache -- Playlist ID = %d" % playlist_id
 			return None
@@ -669,3 +683,10 @@ class AmpacheSession:
 			print detail
 			return None
 		return list
+
+	def __sanatize(self, string):
+		"""Sanatize the given string to remove bad characters."""
+		# from http://boodebr.org/main/python/all-about-python-and-unicode#UNI_XML</span> 
+		for match in ILLEGAL_XML_RE.finditer(string):
+			string = string[:match.start()] + "?" + string[match.end():]
+		return string.encode("utf-8")
