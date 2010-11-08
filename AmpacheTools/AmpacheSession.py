@@ -114,9 +114,10 @@ class AmpacheSession:
 		# now send the authentication request to Ampache
 		try:
 			socket.setdefaulttimeout(3) # lower timeout
-			response = urllib2.urlopen(self.xml_rpc, data)
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			socket.setdefaulttimeout(DEFAULT_TIMEOUT) # reset timeout
-			dom = xml.dom.minidom.parseString(response.read())
+			xml_string = response.read()
+			dom = xml.dom.minidom.parseString(xml_string)
 			self.auth        = dom.getElementsByTagName("auth")[0].childNodes[0].data
 			self.artists_num = int(dom.getElementsByTagName("artists")[0].childNodes[0].data)
 			self.albums_num  = int(dom.getElementsByTagName("albums")[0].childNodes[0].data)
@@ -169,7 +170,7 @@ class AmpacheSession:
 		data = urllib.urlencode(values)
 
 		try: # attempt to get the song_url
-			response = urllib2.urlopen(self.xml_rpc, data)
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			dom = xml.dom.minidom.parseString(response.read())
 		except: # The data pulled from Ampache was invalid
 			#print "Error Extending Session"
@@ -204,7 +205,7 @@ class AmpacheSession:
 		data = urllib.urlencode(values)
 
 		try: # attempt to get the song_url
-			response = urllib2.urlopen(self.xml_rpc, data)
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			dom = xml.dom.minidom.parseString(response.read())
 		except: # The data pulled from Ampache was invalid
 			print "Error Pulling Data! -- Check Ampache -- song_id = %d" % song_id
@@ -233,7 +234,7 @@ class AmpacheSession:
 		data = urllib.urlencode(values)
 
 		try: # attempt to get the album art
-			response = urllib2.urlopen(self.xml_rpc, data)
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			dom = xml.dom.minidom.parseString(response.read())
 		except: # The data pulled from Ampache was invalid
 			print "Error Pulling Data! -- Check Ampache"
@@ -278,7 +279,7 @@ class AmpacheSession:
 		list = []
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc, data)
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			x = self.__sanatize(response.read()) 
 			dom = xml.dom.minidom.parseString(x)
 		except Exception as e: # The data pulled from Ampache was invalid
@@ -331,7 +332,7 @@ class AmpacheSession:
 		list = []
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc, data)
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			x = self.__sanatize(response.read()) 
 			dom = xml.dom.minidom.parseString(x)
 		except: # The data pulled from Ampache was invalid
@@ -356,7 +357,10 @@ class AmpacheSession:
 				album_year     = child.getElementsByTagName('year')[0].childNodes[0].data
 				album_tracks   = int(child.getElementsByTagName('tracks')[0].childNodes[0].data)
 				album_disk     = int(child.getElementsByTagName('disk')[0].childNodes[0].data)
-				precise_rating = int(child.getElementsByTagName('preciserating')[0].childNodes[0].data)
+				try: # new version doesn't put data in the middle... 
+					precise_rating = int(child.getElementsByTagName('preciserating')[0].childNodes[0].data)
+				except:
+					precise_rating = 0
 				album_rating   = child.getElementsByTagName('rating')[0].childNodes[0].data
 				if album_year == "N/A":
 					album_year = 0
@@ -407,7 +411,7 @@ class AmpacheSession:
 		list = []
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc, data)
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			x = self.__sanatize(response.read()) 
 			dom = xml.dom.minidom.parseString(x)
 		except: # The data pulled from Ampache was invalid
@@ -436,7 +440,10 @@ class AmpacheSession:
 				song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
 				song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
 				
-				precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
+				try: # New version doesn't initialize this...
+					precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
+				except: 
+					precise_rating = 0
 				rating         = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
 				art            = song.getElementsByTagName('art')[0].childNodes[0].data
 				url            = song.getElementsByTagName('url')[0].childNodes[0].data
@@ -487,7 +494,7 @@ class AmpacheSession:
 		song_dict = {}
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc, data)
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			x = self.__sanatize(response.read()) 
 			dom = xml.dom.minidom.parseString(x)
 		except: # The data pulled from Ampache was invalid
@@ -515,7 +522,10 @@ class AmpacheSession:
 			song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
 			song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
 			
-			precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
+			try: # New version doesn't set this...
+				precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
+			except:
+				precise_rating = 0
 			rating         = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
 			art            = song.getElementsByTagName('art')[0].childNodes[0].data
 			url            = song.getElementsByTagName('url')[0].childNodes[0].data
@@ -558,7 +568,7 @@ class AmpacheSession:
 		list = []
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc, data)
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			x = self.__sanatize(response.read()) 
 			dom = xml.dom.minidom.parseString(x)
 		except: # The data pulled from Ampache was invalid
@@ -626,7 +636,7 @@ class AmpacheSession:
 		song_dict = {}
 		data = urllib.urlencode(values)
 		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc, data)
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			x = self.__sanatize(response.read()) 
 			dom = xml.dom.minidom.parseString(x)
 		except: # The data pulled from Ampache was invalid
@@ -659,7 +669,10 @@ class AmpacheSession:
 				song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
 				song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
 				
-				precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
+				try: # New Ampache puts nothing here...
+					precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
+				except:
+					precise_rating = 0
 				rating         = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
 				art            = song.getElementsByTagName('art')[0].childNodes[0].data
 				url            = song.getElementsByTagName('url')[0].childNodes[0].data

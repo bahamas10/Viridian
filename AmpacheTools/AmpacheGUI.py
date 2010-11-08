@@ -638,11 +638,15 @@ class AmpacheGUI:
 		albums_scrolled_window.set_shadow_type(gtk.SHADOW_ETCHED_IN)
 		albums_scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 	
-		albums_column = guifunctions.create_column("Albums", 0)
+
+		#albums_column = guifunctions.create_column("Albums", 0)
+		renderer_text = gtk.CellRendererText()
+		albums_column = gtk.TreeViewColumn("Albums", renderer_text, markup=0)
+		albums_column.set_resizable(False)
+		albums_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
 	
 		# name, id, year, stars
 		self.album_list_store = gtk.ListStore(str, int, int, int)
-		#self.album_list_store.set_default_sort_func(helperfunctions.sort_albums_by_year)
 		self.album_list_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
 		self.album_list_store.set_sort_func(0, helperfunctions.sort_albums_by_year, albums_column ) # sort albums by year!
 		
@@ -1798,10 +1802,10 @@ class AmpacheGUI:
 		# now display the albums
 		model = self.album_list_store
 		model.clear()
-		model.append(["All Albums", -1, -1, 0])
 		self.check_and_populate_albums(self.artist_id)
 		albums = dbfunctions.get_album_dict(self.db_session, self.artist_id)
-		# alphabetize the list
+
+		model.append(["<b>All Albums (%d)</b>" % (len(albums)), -1, -1, 0])
 		for album in albums:
 			album_name    = albums[album]['name']
 			album_year    = albums[album]['year']
@@ -1811,7 +1815,7 @@ class AmpacheGUI:
 			album_string = album_name + ' (' + str(album_year) + ')'
 			if album_year == 0:
 				album_string = album_name
-			model.append([album_string, album_id, album_year, precise_rating])
+			model.append([helperfunctions.convert_string_to_html(album_string), album_id, album_year, precise_rating])
 		self.update_statusbar(self.artist_name)
 		
 
@@ -1844,7 +1848,7 @@ class AmpacheGUI:
 				if album_id != -1:
 					if self.__add_songs_to_list_store(album_id):
 						self.update_statusbar("Fetching Album id: " + str(album_id))
-			self.update_statusbar(album_name + " - " + self.artist_name)
+			self.update_statusbar(album_name.replace('<b>', '').replace('</b>', '') + " - " + self.artist_name)
 		else: # single album
 			if self.__add_songs_to_list_store(album_id):
 				self.update_statusbar(album_name + " - " + self.artist_name)
