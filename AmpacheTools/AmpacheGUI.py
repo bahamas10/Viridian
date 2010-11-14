@@ -1506,6 +1506,9 @@ class AmpacheGUI:
 		if type == "Load": # load playlists window
 			# get playlists from Ampache
 			ampache_playlists = self.ampache_conn.get_playlists()
+			if ampache_playlists == None:
+				ampache_playlists = []
+			print ampache_playlists
 			playlist_list_store.append(['<b> - Ampache Playlists - </b>', len(ampache_playlists), '----', '----', -1])
 			if len(ampache_playlists) == 0:
 				playlist_list_store.append(['<i>-(None)-</i>', 0, '', '', -1])

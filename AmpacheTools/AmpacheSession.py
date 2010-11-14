@@ -594,7 +594,7 @@ class AmpacheSession:
 				owner    = child.getElementsByTagName('owner')[0].childNodes[0].data
 				items    = int(child.getElementsByTagName('items')[0].childNodes[0].data)
 				type     = child.getElementsByTagName('type')[0].childNodes[0].data
-				
+					
 				dict = { 'id'      : id,
 					 'name'    : name,
 					 'items'   : items,
@@ -604,7 +604,7 @@ class AmpacheSession:
 				list.append( dict )
 		except Exception, detail: #something failed
 			print detail
-			return None
+			return []
 		return list
 		
 	def get_playlist_songs(self, playlist_id, re_auth=False):
