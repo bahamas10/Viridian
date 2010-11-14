@@ -776,7 +776,11 @@ class AmpacheGUI:
 		### Status tray variables ###
 		self.quit_when_window_closed = self.db_session.variable_get('quit_when_window_closed', False)
 		### Downloads Directory ###
-		self.downloads_directory = self.db_session.variable_get('downloads_directory', os.path.expanduser("~"))
+		# first check if ~/Downloads exist, then fallback to ~ (only if the user hasn't set one)
+		download_dir = os.path.expanduser("~")
+		if os.path.exists(download_dir + os.sep + 'Downloads'):
+			download_dir = download_dir + os.sep + 'Downloads'
+		self.downloads_directory = self.db_session.variable_get('downloads_directory', download_dir)
 			
 		### Alternate Row Colors ###
 		playlist = self.db_session.variable_get('playlist', True)
@@ -2124,6 +2128,7 @@ class AmpacheGUI:
 						gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
 						(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
 						gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+		dialog.set_current_folder(os.path.expanduser("~"))
 		dialog.set_default_response(gtk.RESPONSE_OK)
 		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
@@ -2249,6 +2254,7 @@ class AmpacheGUI:
 					return False
 				chooser = gtk.FileChooserDialog(title="Save as...",action=gtk.FILE_CHOOSER_ACTION_SAVE,
 					buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK))
+				chooser.set_current_folder(os.path.expanduser("~"))
 				response = chooser.run()
 				if response == gtk.RESPONSE_OK:
 					filename = chooser.get_filename()
