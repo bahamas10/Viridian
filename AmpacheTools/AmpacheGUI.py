@@ -27,6 +27,12 @@ import shutil
 import cPickle
 import getpass
 
+try:
+	import dbus
+	DBUS_AVAILABLE = True
+except ImportError:
+	DBUS_AVAILABLE = False
+
 try: # check for pynotify
 	import pynotify
 	pynotify.init('Viridian')
@@ -763,6 +769,25 @@ class AmpacheGUI:
 		
 		self.playlist_mode = self.db_session.variable_get('playlist_mode', 0)
 		combobox.set_active(self.playlist_mode)	
+		
+		if DBUS_AVAILABLE:
+			try:
+				session_bus = dbus.SessionBus()
+				gnome_settings_daemon = session_bus.get_object("org.gnome.SettingsDaemon", "/org/gnome/SettingsDaemon/MediaKeys")
+				media_keys = dbus.Interface(gnome_settings_daemon, "org.gnome.SettingsDaemon.MediaKeys")
+				media_keys.connect_to_signal("MediaPlayerKeyPressed", self.media_key_pressed)
+			except:
+				pass
+				
+	def media_key_pressed(self, *args):
+		"""Support Media Key Presses -- Merged from Andrew Barr"""
+
+		key = args[1]
+		op_function = { "Previous" : self.button_prev_clicked,
+			"Next" : self.button_next_clicked ,
+			"Stop" : self.audio_engine.stop ,
+			"Play" : self.button_play_pause_clicked	}
+		op_function[key]()
 		
 	def main_gui_callback(self):
 		"""Function that gets called after GUI has loaded.
