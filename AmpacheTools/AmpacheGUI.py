@@ -891,9 +891,8 @@ class AmpacheGUI:
 	
 		"""Start Notebook"""
 		notebook = gtk.Notebook()
-		notebook.set_tab_pos(gtk.POS_TOP)
-		#self.show_tabs = True
-		#self.show_border = True
+		#notebook.set_tab_pos(gtk.POS_TOP)
+		notebook.set_tab_pos(gtk.POS_LEFT)
 		
 		#################################
 		# Account Settings

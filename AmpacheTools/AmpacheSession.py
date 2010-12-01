@@ -361,7 +361,10 @@ class AmpacheSession:
 					precise_rating = int(child.getElementsByTagName('preciserating')[0].childNodes[0].data)
 				except:
 					precise_rating = 0
-				album_rating   = child.getElementsByTagName('rating')[0].childNodes[0].data
+				try: 
+					album_rating = child.getElementsByTagName('rating')[0].childNodes[0].data
+				except:
+					album_rating = 0
 				if album_year == "N/A":
 					album_year = 0
 				album_year = int(album_year)
@@ -377,9 +380,9 @@ class AmpacheSession:
 					 'precise_rating' : precise_rating,
 				       }
 				list.append( dict )
-		except Exception, detail: #something failed
+		except: #something failed
 			print "This artist failed", artist_id
-			print detail
+			traceback.print_exc()
 			return None
 		return list
 
@@ -444,7 +447,11 @@ class AmpacheSession:
 					precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
 				except: 
 					precise_rating = 0
-				rating         = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
+				try:
+					rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
+				except:
+					rating = 0
+
 				art            = song.getElementsByTagName('art')[0].childNodes[0].data
 				url            = song.getElementsByTagName('url')[0].childNodes[0].data
 				dict = {   'song_id'        : song_id,
@@ -462,9 +469,9 @@ class AmpacheSession:
 						'url'            : url,
 					}
 				list.append( dict )
-		except Exception, detail:
+		except:
 			print "This album failed", album_id
-			print detail
+			traceback.print_exc()
 			return None
 		return list
 		
@@ -526,7 +533,10 @@ class AmpacheSession:
 				precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
 			except:
 				precise_rating = 0
-			rating         = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
+			try:
+				rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
+			except:
+				rating = 0
 			art            = song.getElementsByTagName('art')[0].childNodes[0].data
 			url            = song.getElementsByTagName('url')[0].childNodes[0].data
 			song_dict = {   'song_id'        : song_id,
@@ -543,9 +553,9 @@ class AmpacheSession:
 					'art'            : art,
 					'url'            : url,
 					}
-		except Exception, detail:
+		except:
 			print "This song failed", song_id
-			print detail
+			traceback.print_exc()
 			return None
 		return song_dict
 
@@ -602,8 +612,8 @@ class AmpacheSession:
 					 'type'    : type,
 				}
 				list.append( dict )
-		except Exception, detail: #something failed
-			print detail
+		except: #something failed
+			traceback.print_exc()
 			return []
 		return list
 		
@@ -673,7 +683,10 @@ class AmpacheSession:
 					precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
 				except:
 					precise_rating = 0
-				rating         = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
+				try:
+					rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
+				except:
+					rating = 0
 				art            = song.getElementsByTagName('art')[0].childNodes[0].data
 				url            = song.getElementsByTagName('url')[0].childNodes[0].data
 				song_dict = {   'song_id'        : song_id,
@@ -691,15 +704,15 @@ class AmpacheSession:
 						'url'            : url,
 						}
 				list.append(song_dict)
-		except Exception, detail:
+		except:
 			print "This playlist failed", playlist_id
-			print detail
+			traceback.print_exc()
 			return None
 		return list
 
 	def __sanatize(self, string):
 		"""Sanatize the given string to remove bad characters."""
-		# from http://boodebr.org/main/python/all-about-python-and-unicode#UNI_XML</span> 
+		# from http://boodebr.org/main/python/all-about-python-and-unicode#UNI_XML 
 		for match in ILLEGAL_XML_RE.finditer(string):
 			string = string[:match.start()] + "?" + string[match.end():]
 		return string.encode("utf-8")
