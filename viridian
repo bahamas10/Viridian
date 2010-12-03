@@ -64,10 +64,10 @@ if __name__ == "__main__":
 		# create the gui and attach it to the session
 		gui = AmpacheTools.AmpacheGUI(ampache_conn, audio_engine, db_session, is_first_time)
 		
-		# this is for dbus
+		# this is for dbus and single instance
 		service = AmpacheService(gui)
 		
-		# allow the audioengine and ampachesession to callback to the GUI (for messages like End Of Song)
+		# allow the audioengine to callback to the GUI (for messages like End Of Song)
 		audio_engine.set_ampache_gui_hook(gui)
 		
 		# display the gui
