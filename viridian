@@ -26,11 +26,13 @@ __status__     = "Release"
 
 import AmpacheTools
 
+import gettext
 import gobject
 import dbus, dbus.service, dbus.glib
 import os
 
 VIRIDIAN_DIR = os.path.expanduser("~") + os.sep + '.viridian'
+LOCALES_DIR = os.path.abspath(os.path.dirname(__file__)) + os.sep + 'locales' + os.sep
 
 class AmpacheService(dbus.service.Object):
 	def __init__(self, app):
@@ -43,9 +45,12 @@ class AmpacheService(dbus.service.Object):
 		self.app.window.present()
 
 if __name__ == "__main__":
+	#initialize gettext
+	gettext.install("viridian", LOCALES_DIR)
+	
 	try: # try to see if an instance is already running, and if so don't make a second instance
 		if dbus.SessionBus().request_name("com.daveeddy.Viridian") != dbus.bus.REQUEST_NAME_REPLY_PRIMARY_OWNER:
-			print "Application already running.. exiting."
+			print _("Application already running.. exiting.")
 			method = dbus.SessionBus().get_object("com.daveeddy.Viridian", "/com/daveeddy/Viridian").get_dbus_method("show_window")
 			method()
 		else:

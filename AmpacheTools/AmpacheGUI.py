@@ -96,7 +96,7 @@ class AmpacheGUI:
 		else: # don't quit, just hide
 			if self.first_time_closing:
 				self.main_gui_toggle_hidden()
-				self.create_dialog_alert("info", """Viridian is still running in the status bar.  If you do not want Viridian to continue running when the window is closed you can disable it in Preferences.""", True)
+				self.create_dialog_alert("info", _("Viridian is still running in the status bar.  If you do not want Viridian to continue running when the window is closed you can disable it in Preferences."), True)
 				self.first_time_closing = False
 				self.db_session.variable_set('first_time_closing', False)
 			else: 
@@ -106,7 +106,7 @@ class AmpacheGUI:
 	def destroy(self, widget=None, data=None):
 		"""The function when the program exits."""
 		if THREAD_LOCK.locked():
-			result = self.create_dialog_ok_or_close("Downloads in progress..", "There are unfinished downloads, are you sure you want to quit?")
+			result = self.create_dialog_ok_or_close(_("Downloads in progress.."), _("There are unfinished downloads, are you sure you want to quit?"))
 			if result != "ok":
 				return True
 		self.stop_all_threads()
@@ -183,11 +183,11 @@ class AmpacheGUI:
 		filem = gtk.MenuItem("_File")
 		filem.set_submenu(file_menu)
 
-		newi = gtk.MenuItem("Reauthenticate")
+		newi = gtk.MenuItem(_("Reauthenticate"))
 		newi.connect("activate", self.button_reauthenticate_clicked)
 		file_menu.append(newi)
 
-		self.go_to_ampache_menu_item = gtk.MenuItem("Open Ampache")
+		self.go_to_ampache_menu_item = gtk.MenuItem(_("Open Ampache"))
 		self.go_to_ampache_menu_item.connect("activate", lambda x: self.gnome_open(self.ampache_conn.url))
 		self.go_to_ampache_menu_item.set_sensitive(False)
 		file_menu.append(self.go_to_ampache_menu_item)
@@ -195,7 +195,7 @@ class AmpacheGUI:
 		sep = gtk.SeparatorMenuItem()
 		file_menu.append(sep)
 		
-		newi = gtk.ImageMenuItem("Save Playlist", agr)
+		newi = gtk.ImageMenuItem(_("Save Playlist"), agr)
 		img = gtk.image_new_from_stock(gtk.STOCK_SAVE, gtk.ICON_SIZE_MENU)
 		newi.set_image(img)
 		key, mod = gtk.accelerator_parse("<Control>S")
@@ -203,7 +203,7 @@ class AmpacheGUI:
 		newi.connect("activate", self.button_save_playlist_clicked)
 		file_menu.append(newi)
 		
-		newi = gtk.ImageMenuItem("Load Playlist", agr)
+		newi = gtk.ImageMenuItem(_("Load Playlist"), agr)
 		img = gtk.image_new_from_stock(gtk.STOCK_OPEN, gtk.ICON_SIZE_MENU)
 		newi.set_image(img)
 		key, mod = gtk.accelerator_parse("<Control>O")
@@ -211,7 +211,7 @@ class AmpacheGUI:
 		newi.connect("activate", self.button_load_playlist_clicked)
 		file_menu.append(newi)
 		
-		newi = gtk.ImageMenuItem("Export Playlist...")#, agr)
+		newi = gtk.ImageMenuItem(_("Export Playlist..."))#, agr)
 		img = gtk.image_new_from_stock(gtk.STOCK_SAVE_AS, gtk.ICON_SIZE_MENU)
 		newi.set_image(img)
 		#key, mod = gtk.accelerator_parse("<Control>E")
@@ -222,15 +222,15 @@ class AmpacheGUI:
 		sep = gtk.SeparatorMenuItem()
 		file_menu.append(sep)
 		
-		newi = gtk.MenuItem("Clear Album Art")
+		newi = gtk.MenuItem(_("Clear Album Art"))
 		newi.connect("activate", self.button_clear_album_art_clicked)
 		file_menu.append(newi)
 		
-		newi = gtk.MenuItem("Clear Local Cache")
+		newi = gtk.MenuItem(_("Clear Local Cache"))
 		newi.connect("activate", self.button_clear_cached_artist_info_clicked)
 		file_menu.append(newi)
 		
-		newi = gtk.MenuItem("Pre-Cache")
+		newi = gtk.MenuItem(_("Pre-Cache"))
 		newi.connect("activate", self.button_pre_cache_info_clicked)
 		file_menu.append(newi)
 		
@@ -250,7 +250,7 @@ class AmpacheGUI:
 		
 		"""Start Edit Menu"""
 		edit_menu = gtk.Menu()
-		editm = gtk.MenuItem("_Edit")
+		editm = gtk.MenuItem(_("_Edit"))
 		editm.set_submenu(edit_menu)
 
 		newi = gtk.ImageMenuItem(gtk.STOCK_PREFERENCES, agr)
@@ -266,17 +266,17 @@ class AmpacheGUI:
 
 		"""Start View Menu"""
 		view_menu = gtk.Menu()
-		viewm = gtk.MenuItem("_View")
+		viewm = gtk.MenuItem(_("_View"))
 		viewm.set_submenu(view_menu)
 
-		newi = gtk.CheckMenuItem("Show Playlist")
+		newi = gtk.CheckMenuItem(_("Show Playlist"))
 		show_playlist = self.db_session.variable_get('show_playlist', True)
 
 		newi.set_active(show_playlist)
 		newi.connect("activate", self.toggle_playlist_view)
 		view_menu.append(newi)
 		
-		self.show_downloads_checkbox = gtk.CheckMenuItem("Show Downloads")
+		self.show_downloads_checkbox = gtk.CheckMenuItem(_("Show Downloads"))
 		show_downloads = self.db_session.variable_get('show_downloads', False)
 		self.show_downloads_checkbox.set_active(show_downloads)
 		self.show_downloads_checkbox.connect("activate", self.toggle_downloads_view)
@@ -285,7 +285,7 @@ class AmpacheGUI:
 		sep = gtk.SeparatorMenuItem()
 		view_menu.append(sep)
 
-		newi = gtk.CheckMenuItem("View Statusbar")
+		newi = gtk.CheckMenuItem(_("View Statusbar"))
 		view_statusbar = self.db_session.variable_get('view_statusbar', True)
 		newi.set_active(view_statusbar)
 		newi.connect("activate", self.toggle_statusbar_view)
@@ -365,18 +365,18 @@ class AmpacheGUI:
 		self.volume_slider.set_size_request(80, 20)
 		self.volume_slider.set_value(volume)
 	
-		repeat_songs_checkbutton = gtk.CheckButton("Repeat")
+		repeat_songs_checkbutton = gtk.CheckButton(_("Repeat"))
 		repeat_songs_checkbutton.set_active(False)
 		repeat_songs_checkbutton.connect("toggled", self.toggle_repeat_songs)
 		
-		shuffle_songs_checkbutton = gtk.CheckButton("Shuffle")
+		shuffle_songs_checkbutton = gtk.CheckButton(_("Shuffle"))
 		shuffle_songs_checkbutton.set_active(False)
 		shuffle_songs_checkbutton.connect("toggled", self.toggle_shuffle_songs)
 		
 		hbox = gtk.HBox()
 		vbox = gtk.VBox()
 		label = gtk.Label()
-		label.set_markup('<span size="6000"><b>Volume</b></span>')
+		label.set_markup(_('<span size="6000"><b>Volume</b></span>'))
 		vbox.pack_start(label, False, False, 0)
 		vbox.pack_start(self.volume_slider, False, False, 0)
 		
@@ -525,7 +525,7 @@ class AmpacheGUI:
 		tree_view.append_column(new_column)
 		
 		renderer_text = gtk.CellRendererText()
-		new_column = gtk.TreeViewColumn("Current Playlist", renderer_text, markup=1)
+		new_column = gtk.TreeViewColumn(_("Current Playlist"), renderer_text, markup=1)
 		#new_column = guifunctions.create_column("Current Playlist", 1)
 		new_column.set_reorderable(False)
 		new_column.set_resizable(False)
@@ -539,14 +539,14 @@ class AmpacheGUI:
 		
 		hbox = gtk.HBox()
 		
-		button = gtk.Button("Clear Playlist")
+		button = gtk.Button(_("Clear Playlist"))
 		button.connect('clicked', self.audio_engine.clear_playlist)
 		
 		hbox.pack_start(button, False, False, 2)
 		
 		combobox = gtk.combo_box_new_text()
-		combobox.append_text('Replace Mode')
-		combobox.append_text('Add Mode')
+		combobox.append_text(_('Replace Mode'))
+		combobox.append_text(_('Add Mode'))
 		combobox.connect('changed', self.playlist_mode_changed)
 		
 		
@@ -572,7 +572,7 @@ class AmpacheGUI:
 		tree_view.connect("row-activated", self.downloads_on_activated)
 		tree_view.connect("button_press_event", self.downloads_on_right_click)
 		tree_view.set_rules_hint(True)
-		column = gtk.TreeViewColumn("File", gtk.CellRendererText(), text=0)
+		column = gtk.TreeViewColumn(_("File"), gtk.CellRendererText(), text=0)
 		column.set_reorderable(False)
 		column.set_resizable(True)
 		column.set_clickable(False)
@@ -582,7 +582,7 @@ class AmpacheGUI:
 		tree_view.append_column(column)
 		
 		rendererprogress = gtk.CellRendererProgress()
-		column = gtk.TreeViewColumn("Progress")
+		column = gtk.TreeViewColumn(_("Progress"))
 		column.pack_start(rendererprogress, True)
 		column.add_attribute(rendererprogress, "value", 1)
 		column.set_reorderable(False)
@@ -647,7 +647,7 @@ class AmpacheGUI:
 
 		#albums_column = guifunctions.create_column("Albums", 0)
 		renderer_text = gtk.CellRendererText()
-		albums_column = gtk.TreeViewColumn("Albums", renderer_text, markup=0)
+		albums_column = gtk.TreeViewColumn(_("Albums"), renderer_text, markup=0)
 		albums_column.set_resizable(False)
 		albums_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
 	
@@ -700,22 +700,22 @@ class AmpacheGUI:
 		tree_view.set_search_column(1)
 		
 		i = 0
-		for column in ("Track", "Title", "Artist", "Album", "Time", "Size"):
+		for column in (_("Track"), _("Title"), _("Artist"), _("Album"), _("Time"), _("Size")):
 			new_column = guifunctions.create_column(column, i)
 			new_column.set_reorderable(True)
 			new_column.set_resizable(True)
 			new_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
-			if column == "Track":
+			if column == _("Track"):
 				new_column.set_fixed_width(60)
-			elif column == "Title":
+			elif column == _("Title"):
 				new_column.set_fixed_width(230)
-			elif column == "Artist":
+			elif column == _("Artist"):
 				new_column.set_fixed_width(170)
-			elif column == "Album":
+			elif column == _("Album"):
 				new_column.set_fixed_width(190)
-			elif column == "Time":
+			elif column == _("Time"):
 				new_column.set_fixed_width(90)
-			elif column == "Size":
+			elif column == _("Size"):
 				new_column.set_fixed_width(70)
 			tree_view.append_column(new_column)
 			i += 1
@@ -738,7 +738,7 @@ class AmpacheGUI:
 		#################################
 		self.statusbar = gtk.Statusbar()
 		self.statusbar.set_has_resize_grip(True)
-		self.update_statusbar("Ready")
+		self.update_statusbar(_("Ready"))
 
 		
 		main_box.pack_start(self.statusbar, False, False, 0)
@@ -828,14 +828,14 @@ class AmpacheGUI:
 		self.ampache_conn.set_credentials(username, password, url)
 		if self.ampache_conn.has_credentials():
 			self.go_to_ampache_menu_item.set_sensitive(True)
-			self.update_statusbar("Attempting to authenticate...")
+			self.update_statusbar(_("Attempting to authenticate..."))
 			if self.login_and_get_artists("First"):
 				list = self.db_session.variable_get('current_playlist', None)
 				if list != None:
 					self.load_playlist(list)
 					#self.update_playlist_window()
 		else:
-			self.update_statusbar("Set Ampache information by going to Edit -> Preferences") 
+			self.update_statusbar(_("Set Ampache information by going to Edit -> Preferences")) 
 			if self.is_first_time:
 				self.create_dialog_alert("info", """This looks like the first time you are running Viridian.  To get started, go to Edit -> Preferences and set your account information.""", True)
 		
@@ -878,7 +878,7 @@ class AmpacheGUI:
 		self.preferences_window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.preferences_window.set_icon(self.images_pixbuf_viridian_simple)
 		self.preferences_window.set_transient_for(self.window)
-		self.preferences_window.set_title("Viridian Settings")
+		self.preferences_window.set_title(_("Viridian Settings"))
 		self.preferences_window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 		self.preferences_window.resize(450, 300)
 		self.preferences_window.set_resizable(False)
@@ -902,7 +902,7 @@ class AmpacheGUI:
 		
 		hbox = gtk.HBox()
 		label = gtk.Label()
-		label.set_markup('<b>Account Settings</b>')
+		label.set_markup(_('<b>Account Settings</b>'))
 		hbox.pack_start(label, False, False)
 		
 		account_box.pack_start(hbox, False, False, 3)
@@ -910,7 +910,7 @@ class AmpacheGUI:
 		### Ampache URL ###
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
-		ampache_label = gtk.Label("Ampache URL:")
+		ampache_label = gtk.Label(_("Ampache URL:"))
 		hbox.pack_start(ampache_label, False, False, 2)
 
 		self.ampache_text_entry = gtk.Entry()
@@ -925,14 +925,14 @@ class AmpacheGUI:
 
 		hbox = gtk.HBox()
 		label = gtk.Label("")
-		label.set_markup('<span size="8000"><b>Example: </b>http://example.com/ampache</span>')
+		label.set_markup(_('<span size="8000"><b>Example: </b>http://example.com/ampache</span>'))
 		hbox.pack_end(label, False, False, 2)
 		
 		account_box.pack_start(hbox, False, False, 2)
 		### Ampache Username ###
 		hbox = gtk.HBox()	
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
-		username_label = gtk.Label("Username:")
+		username_label = gtk.Label(_("Username:"))
 		hbox.pack_start(username_label, False, False, 2)
 
 		self.username_text_entry = gtk.Entry()
@@ -948,7 +948,7 @@ class AmpacheGUI:
 		### Ampache Password ###
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
-		password_label = gtk.Label("Password:")
+		password_label = gtk.Label(_("Password:"))
 		hbox.pack_start(password_label, False, False, 2)
 
 		self.password_text_entry = gtk.Entry()
@@ -981,7 +981,7 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		
 		label = gtk.Label()
-		label.set_markup('<b>Notifications</b>')
+		label.set_markup(_('<b>Notifications</b>'))
 		hbox.pack_start(label, False, False)
 		
 		display_box.pack_start(hbox, False, False, 3)
@@ -990,7 +990,7 @@ class AmpacheGUI:
 
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		
-		display_notifications_checkbutton = gtk.CheckButton("Display OSD Notifications")
+		display_notifications_checkbutton = gtk.CheckButton(_("Display OSD Notifications"))
 		if PYNOTIFY_INSTALLED:
 			display_notifications_checkbutton.set_active(self.display_notifications)
 		else:
@@ -1004,14 +1004,14 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		
 		label = gtk.Label()
-		label.set_markup('<b>Alternate Row Colors</b>')
+		label.set_markup(_('<b>Alternate Row Colors</b>'))
 		hbox.pack_start(label, False, False)
 		
 		display_box.pack_start(hbox, False, False, 3)
 
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
-		cb = gtk.CheckButton("Artists Column")
+		cb = gtk.CheckButton(_("Artists Column"))
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'artists')
 		cb.set_active(self.tree_view_dict['artists'].get_rules_hint())
 		hbox.pack_start(cb)
@@ -1019,7 +1019,7 @@ class AmpacheGUI:
 
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
-		cb = gtk.CheckButton("Albums Column")
+		cb = gtk.CheckButton(_("Albums Column"))
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'albums')
 		cb.set_active(self.tree_view_dict['albums'].get_rules_hint())
 		hbox.pack_start(cb)
@@ -1027,7 +1027,7 @@ class AmpacheGUI:
 
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
-		cb = gtk.CheckButton("Songs Column")
+		cb = gtk.CheckButton(_("Songs Column"))
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'songs')
 		cb.set_active(self.tree_view_dict['songs'].get_rules_hint())
 		hbox.pack_start(cb)
@@ -1035,7 +1035,7 @@ class AmpacheGUI:
 
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
-		cb = gtk.CheckButton("Playlist Column")
+		cb = gtk.CheckButton(_("Playlist Column"))
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'playlist')
 		cb.set_active(self.tree_view_dict['playlist'].get_rules_hint())
 		hbox.pack_start(cb)
@@ -1043,7 +1043,7 @@ class AmpacheGUI:
 
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
-		cb = gtk.CheckButton("Downloads Column")
+		cb = gtk.CheckButton(_("Downloads Column"))
 		cb.connect("toggled", self.toggle_alternate_row_colors, 'downloads')
 		cb.set_active(self.tree_view_dict['downloads'].get_rules_hint())
 		hbox.pack_start(cb)
@@ -1060,7 +1060,7 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		
 		label = gtk.Label()
-		label.set_markup('<b>Catalog Cache</b>')
+		label.set_markup(_('<b>Catalog Cache</b>'))
 		
 		hbox.pack_start(label, False, False)
 		
@@ -1071,7 +1071,7 @@ class AmpacheGUI:
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		
 		
-		cb = gtk.CheckButton("Automatically clear local catalog when Ampache is updated")
+		cb = gtk.CheckButton(_("Automatically clear local catalog when Ampache is updated"))
 		cb.set_active(self.automatically_update)
 		cb.connect("toggled", self.toggle_automatically_update)
 		
@@ -1089,10 +1089,10 @@ class AmpacheGUI:
 		if self.ampache_conn.has_credentials() and self.ampache_conn.is_authenticated():
 			if self.catalog_up_to_date:
 				image.set_from_stock(gtk.STOCK_YES,gtk.ICON_SIZE_SMALL_TOOLBAR)
-				label.set_text("Local catalog is up-to-date.")
+				label.set_text(_("Local catalog is up-to-date."))
 			else:
 				image.set_from_stock(gtk.STOCK_NO,gtk.ICON_SIZE_SMALL_TOOLBAR)
-				label.set_text("Local catalog is older than Ampache catalog! To update the local catalog go to File -> Clear Local Cache.")
+				label.set_text(_("Local catalog is older than Ampache catalog! To update the local catalog go to File -> Clear Local Cache."))
 		
 			hbox.pack_start(image, False, False, 5)
 			hbox.pack_start(label, False, False, 0)
@@ -1110,7 +1110,7 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		
 		label = gtk.Label()
-		label.set_markup('<b>Local Downloads</b>')
+		label.set_markup(_('<b>Local Downloads</b>'))
 		
 		hbox.pack_start(label, False, False)
 		
@@ -1118,7 +1118,7 @@ class AmpacheGUI:
 		
 		hbox = gtk.HBox()
 		
-		label = gtk.Label("    Select where downloaded files should go.")
+		label = gtk.Label(_("    Select where downloaded files should go."))
 				
 		hbox.pack_start(label, False, False, 4)
 		
@@ -1151,20 +1151,20 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		
 		label = gtk.Label()
-		label.set_markup('<b>Status Tray Icon</b>')
+		label.set_markup(_('<b>Status Tray Icon</b>'))
 		
 		hbox.pack_start(label, False, False)
 		
 		trayicon_box.pack_start(hbox, False, False, 3)
 		
-		cb = gtk.CheckButton("Quit Viridian when window is closed")
+		cb = gtk.CheckButton(_("Quit Viridian when window is closed"))
 		cb.connect("toggled", self.toggle_quit_when_window_closed)
 		cb.set_active(self.quit_when_window_closed)
 		
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 
-		button = gtk.RadioButton(None, "Standard Tray Icon")
+		button = gtk.RadioButton(None, _("Standard Tray Icon"))
 		button.connect("toggled", self.trayicon_settings_toggled, "standard", cb)
 		if self.tray_icon_to_display == 'standard':
 			button.set_active(True)
@@ -1187,7 +1187,7 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 
-		button = gtk.RadioButton(button, "Disabled")
+		button = gtk.RadioButton(button, _("Disabled"))
 		button.connect("toggled", self.trayicon_settings_toggled, "disabled", cb)
 		if self.tray_icon_to_display == 'disabled':
 			button.set_active(True)
@@ -1205,7 +1205,7 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("      "), False, False, 0)
 		
-		label = gtk.Label("Note: changes to the type of icon will take effect the next time this program is opened.")
+		label = gtk.Label(_("Note: changes to the type of icon will take effect the next time this program is opened."))
 		label.set_line_wrap(True)
 		
 		hbox.pack_start(label, False, False, 4)
@@ -1222,7 +1222,7 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		
 		label = gtk.Label()
-		label.set_markup('<b>Server Settings</b>')
+		label.set_markup(_('<b>Server Settings</b>'))
 		
 		hbox.pack_start(label, False, False)
 		
@@ -1231,17 +1231,17 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 
-		hbox.pack_start(gtk.Label("XML RPC Server: "), False, False, 0)
+		hbox.pack_start(gtk.Label(_("XML RPC Server: ")), False, False, 0)
 		
 		label = gtk.Label()
 		image = gtk.Image()
 		
 		if self.xml_server.is_running:
 			image.set_from_stock(gtk.STOCK_YES,gtk.ICON_SIZE_SMALL_TOOLBAR)
-			label.set_text("Running. (port %d)" % self.xml_server.port)
+			label.set_text(_("Running. (port %d)") % self.xml_server.port)
 		else:
 			image.set_from_stock(gtk.STOCK_NO,gtk.ICON_SIZE_SMALL_TOOLBAR)
-			label.set_text("Not Running.")
+			label.set_text(_("Not Running."))
 		
 		hbox.pack_start(image, False, False, 5)
 		hbox.pack_start(label, False, False, 0)
@@ -1253,22 +1253,22 @@ class AmpacheGUI:
 		
 		port = gtk.Entry()
 
-		button = gtk.Button("Start")
+		button = gtk.Button(_("Start"))
 		button.connect("clicked", self.button_xml_server_clicked, 'start', label, image, port)
 		#button.set_sensitive(False)
 		hbox.pack_start(button, True, True, 0)
 		
-		button = gtk.Button("Stop")
+		button = gtk.Button(_("Stop"))
 		button.connect("clicked", self.button_xml_server_clicked, 'stop', label, image, port)
 		#button.set_sensitive(False)
 		hbox.pack_start(button, True, True, 0)
 		
-		button = gtk.Button("Restart")
+		button = gtk.Button(_("Restart"))
 		button.connect("clicked", self.button_xml_server_clicked, 'restart', label, image, port)
 		#button.set_sensitive(False) 
 		hbox.pack_start(button, True, True, 0)
 		
-		hbox.pack_start(gtk.Label('Port: '), False, False, 1)
+		hbox.pack_start(gtk.Label(_('Port: ')), False, False, 1)
 		
 		
 		port.set_text(str(self.db_session.variable_get('xmlrpc_port', XML_RPC_PORT)))
@@ -1280,7 +1280,7 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("      "), False, False, 0)
 
-		cb = gtk.CheckButton("Start XML RPC server when Viridan starts")
+		cb = gtk.CheckButton(_("Start XML RPC server when Viridan starts"))
 		cb.connect("toggled", self.toggle_start_xml_rpc_server)	
 		start_xml_rpc_server = self.db_session.variable_get('enable_xmlrpc_server', False)
 		cb.set_active(start_xml_rpc_server)
@@ -1299,7 +1299,7 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		
 		label = gtk.Label()
-		label.set_markup('<b>System</b>')
+		label.set_markup(_('<b>System</b>'))
 		
 		hbox.pack_start(label, False, False)
 		
@@ -1309,7 +1309,7 @@ class AmpacheGUI:
 		
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 		
-		label = gtk.Label("To delete all personal information (including your username, password, album-art, cached information, etc.) press this button. NOTE: This will delete all personal settings stored on this computer and Viridian will close itself.  When you reopen, it will be as though it is the first time you are running Viridian.")
+		label = gtk.Label(_("To delete all personal information (including your username, password, album-art, cached information, etc.) press this button. NOTE: This will delete all personal settings stored on this computer and Viridian will close itself.  When you reopen, it will be as though it is the first time you are running Viridian."))
 		label.set_line_wrap(True)
 		
 		hbox.pack_start(label, False, False)
@@ -1320,7 +1320,7 @@ class AmpacheGUI:
 		
 		hbox.pack_start(gtk.Label("       "), False, False, 0)
 		
-		cb = gtk.Button("Reset Everything")
+		cb = gtk.Button(_("Reset Everything"))
 		cb.connect("clicked", self.button_reset_everything_clicked)
 		
 		hbox.pack_start(cb, False, False, 2)
@@ -1329,13 +1329,13 @@ class AmpacheGUI:
 		"""End System Settings"""
 		
 		"""End Notebook"""
-		notebook.append_page(account_box,  gtk.Label("Account"))
-		notebook.append_page(display_box,  gtk.Label("Display"))
-		notebook.append_page(catalog_box,  gtk.Label("Catalog"))
-		notebook.append_page(download_box, gtk.Label("Downloads"))
-		notebook.append_page(trayicon_box, gtk.Label("Tray Icon"))
-		notebook.append_page(server_box,   gtk.Label("Server"))
-		notebook.append_page(system_box,   gtk.Label("System"))
+		notebook.append_page(account_box,  gtk.Label(_("Account")))
+		notebook.append_page(display_box,  gtk.Label(_("Display")))
+		notebook.append_page(catalog_box,  gtk.Label(_("Catalog")))
+		notebook.append_page(download_box, gtk.Label(_("Downloads")))
+		notebook.append_page(trayicon_box, gtk.Label(_("Tray Icon")))
+		notebook.append_page(server_box,   gtk.Label(_("Server")))
+		notebook.append_page(system_box,   gtk.Label(_("System")))
 		
 		"""Start Bottom Bar"""
 		bottom_bar = gtk.HBox()
@@ -1370,7 +1370,7 @@ class AmpacheGUI:
 				
 		self.help_window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.help_window.set_transient_for(self.window)
-		self.help_window.set_title("Viridian Help")
+		self.help_window.set_title(_("Viridian Help"))
 		self.help_window.set_icon(self.images_pixbuf_viridian_simple)
 		self.help_window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
 		self.help_window.resize(350, 300)
@@ -1382,39 +1382,39 @@ class AmpacheGUI:
 		vbox.set_border_width(10)
 		
 		label = gtk.Label()
-		label.set_markup('<span size="14000"><b>Viridian Help</b></span>')
+		label.set_markup(_('<span size="14000"><b>Viridian Help</b></span>'))
 		vbox.pack_start(label, False, False, 1)
 		
 		hbox = gtk.HBox()
-		label = gtk.Label("Home Page:")
+		label = gtk.Label(_("Home Page:"))
 		link  = guifunctions.hyperlink('http://viridian.daveeddy.com')
 		hbox.pack_start(label, False, False, 1)
 		hbox.pack_start(link,  False, False, 2)
 		vbox.pack_start(hbox,  False, False, 0)
 		
 		hbox = gtk.HBox()
-		label = gtk.Label("Launchpad:")
+		label = gtk.Label(_("Launchpad:"))
 		link  = guifunctions.hyperlink('https://launchpad.net/viridianplayer')
 		hbox.pack_start(label, False, False, 1)
 		hbox.pack_start(link,  False, False, 2)
 		vbox.pack_start(hbox,  False, False, 0)
 		
 		hbox = gtk.HBox()
-		label = gtk.Label("FAQ:")
+		label = gtk.Label(_("FAQ:"))
 		link  = guifunctions.hyperlink('https://answers.launchpad.net/viridianplayer/+faqs')
 		hbox.pack_start(label, False, False, 1)
 		hbox.pack_start(link,  False, False, 2)
 		vbox.pack_start(hbox,  False, False, 0)
 		
 		hbox = gtk.HBox()
-		label = gtk.Label("Bugs:")
+		label = gtk.Label(_("Bugs:"))
 		link  = guifunctions.hyperlink('https://bugs.launchpad.net/viridianplayer')
 		hbox.pack_start(label, False, False, 1)
 		hbox.pack_start(link,  False, False, 2)
 		vbox.pack_start(hbox,  False, False, 0)
 		
 		hbox = gtk.HBox()
-		label = gtk.Label("Questions:")
+		label = gtk.Label(_("Questions:"))
 		link  = guifunctions.hyperlink('https://answers.launchpad.net/viridianplayer')
 		hbox.pack_start(label, False, False, 1)
 		hbox.pack_start(link,  False, False, 2)
@@ -1467,8 +1467,8 @@ class AmpacheGUI:
 		tree_view.set_rules_hint(True)
 		
 		i = 0
-		for column in ("Name", "Songs", "Owner", "Type"):
-			if column == "Name":
+		for column in (_("Name"), _("Songs"), _("Owner"), _("Type")):
+			if column == _("Name"):
 				renderer_text = gtk.CellRendererText()
 				new_column = gtk.TreeViewColumn(column, renderer_text, markup=0)
 			else:
@@ -1476,13 +1476,13 @@ class AmpacheGUI:
 			new_column.set_reorderable(True)
 			new_column.set_resizable(True)
 			new_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
-			if column == "Name":
+			if column == _("Name"):
 				new_column.set_fixed_width(200)
-			elif column == "Songs":
+			elif column == _("Songs"):
 				new_column.set_fixed_width(70)
-			elif column == "Owner":
+			elif column == _("Owner"):
 				new_column.set_fixed_width(90)
-			elif column == "Type":
+			elif column == _("Type"):
 				new_column.set_fixed_width(60)
 			tree_view.append_column(new_column)
 			i += 1
@@ -1496,7 +1496,7 @@ class AmpacheGUI:
 		text_entry.set_text('')
 		if type == 'Save':
 			hbox = gtk.HBox()
-			hbox.pack_start(gtk.Label("Playlist Name: "), False, False, 1)
+			hbox.pack_start(gtk.Label(_("Playlist Name: ")), False, False, 1)
 			hbox.pack_start(text_entry, False, False, 2)
 			vbox.pack_start(hbox, False, False, 2)
 
@@ -1513,7 +1513,7 @@ class AmpacheGUI:
 		if type == 'Load':
 			button = gtk.Button(stock=gtk.STOCK_OPEN)
 		elif type == 'Export':
-			button = gtk.Button("Export as M3U...")
+			button = gtk.Button(_("Export as M3U..."))
 		button.connect("clicked", self.button_load_or_save_playlist_clicked, tree_view.get_selection(), text_entry, type)
 
 		bottom_bar.pack_start(remove, False, False, 2)
@@ -1570,16 +1570,16 @@ class AmpacheGUI:
 		"""Create a menu when the user right clicks the sys tray icon."""
 		menu = gtk.Menu()
 		
-		show_window = gtk.MenuItem("Show Window")
+		show_window = gtk.MenuItem(_("Show Window"))
 		show_window.connect('activate', self.status_icon_activate)
 		menu.append(show_window)
 		
 		### Display Song Info is song is playing ###
 		if self.audio_engine.get_state() != "stopped" and self.audio_engine.get_state() != None:
 			menu.append(gtk.SeparatorMenuItem())
-			np = gtk.MenuItem("- Now Playing -")
+			np = gtk.MenuItem(_("- Now Playing -"))
 			if self.audio_engine.get_state() == "paused":
-				np = gtk.MenuItem("- Now Playing (paused) -")
+				np = gtk.MenuItem(_("- Now Playing (paused) -"))
 			np.set_sensitive(False)
 			menu.append(np)
 
@@ -1792,7 +1792,7 @@ class AmpacheGUI:
 				#else: #do nothing, pull from cache
 							
 			# load the artists window with, you guessed it, artists
-			self.update_statusbar("Pulling Artists...")
+			self.update_statusbar(_("Pulling Artists..."))
 			self.check_and_populate_artists()
 			artists = dbfunctions.get_artist_dict(self.db_session)
 			model = self.artist_list_store
@@ -1800,10 +1800,10 @@ class AmpacheGUI:
 				artist_name = artists[artist_id]['name']
 				custom_name = artists[artist_id]['custom_name']
 				model.append([artist_name, artist_id, custom_name])
-			self.update_statusbar("Ready.")
+			self.update_statusbar(_("Ready."))
 			return True
 		else: # auth failed
-			self.update_statusbar("Authentication Failed.")
+			self.update_statusbar(_("Authentication Failed."))
 			return False
 		
 				
@@ -1836,13 +1836,13 @@ class AmpacheGUI:
 		self.check_and_populate_albums(self.artist_id)
 		albums = dbfunctions.get_album_dict(self.db_session, self.artist_id)
 
-		model.append(["<b>All Albums (%d)</b>" % (len(albums)), -1, -1, 0])
+		model.append([_("<b>All Albums (%d)</b>") % (len(albums)), -1, -1, 0])
 		for album in albums:
 			album_name    = albums[album]['name']
 			album_year    = albums[album]['year']
 			precise_rating = albums[album]['precise_rating']
 			album_id    = album
-			self.update_statusbar("Fetching Album: " + album_name)
+			self.update_statusbar(_("Fetching Album: ") + album_name)
 			album_string = album_name + ' (' + str(album_year) + ')'
 			if album_year == 0:
 				album_string = album_name
@@ -1878,7 +1878,7 @@ class AmpacheGUI:
 			for album_id in list:
 				if album_id != -1:
 					if self.__add_songs_to_list_store(album_id):
-						self.update_statusbar("Fetching Album id: " + str(album_id))
+						self.update_statusbar(_("Fetching Album id: ") + str(album_id))
 			self.update_statusbar(album_name.replace('<b>', '').replace('</b>', '') + " - " + self.artist_name)
 		else: # single album
 			if self.__add_songs_to_list_store(album_id):
@@ -1962,10 +1962,10 @@ class AmpacheGUI:
 					# create popup
 					song_id = treeview.get_model()[path][2]
 					m = gtk.Menu()
-					i = gtk.MenuItem("Remove From Playlist")
+					i = gtk.MenuItem(_("Remove From Playlist"))
 					i.connect('activate', self.remove_from_playlist, song_id, treeview, list)
 					m.append(i)
-					i = gtk.MenuItem("Download Songs")
+					i = gtk.MenuItem(_("Download Songs"))
 					i.connect('activate', self.download_songs_clicked, list)
 					m.append(i)
 					m.show_all()
@@ -1977,10 +1977,10 @@ class AmpacheGUI:
 					# create popup
 					song_id = treeview.get_model()[path][2]
 					m = gtk.Menu()
-					i = gtk.MenuItem("Remove From Playlist")
+					i = gtk.MenuItem(_("Remove From Playlist"))
 					i.connect('activate', self.remove_from_playlist, song_id, treeview)
 					m.append(i)
-					i = gtk.MenuItem("Download Song")
+					i = gtk.MenuItem(_("Download Song"))
 					i.connect('activate', self.download_song_clicked, song_id)
 					m.append(i)
 					m.show_all()
@@ -1996,10 +1996,10 @@ class AmpacheGUI:
 				# create popup
 				full_path = treeview.get_model()[path][2]
 				m = gtk.Menu()
-				i = gtk.MenuItem("Open Song")
+				i = gtk.MenuItem(_("Open Song"))
 				i.connect('activate', lambda _: self.gnome_open(full_path))
 				m.append(i)
-				i = gtk.MenuItem("Open Containing Folder")
+				i = gtk.MenuItem(_("Open Containing Folder"))
 				i.connect('activate', lambda _: self.gnome_open(os.path.dirname(full_path)))
 				m.append(i)
 				m.show_all()
@@ -2015,10 +2015,10 @@ class AmpacheGUI:
 				# create popup
 				album_id = treeview.get_model()[path][1]
 				m = gtk.Menu()
-				i = gtk.MenuItem("Add Album to Playlist")
+				i = gtk.MenuItem(_("Add Album to Playlist"))
 				i.connect('activate', self.add_album_to_playlist)
 				m.append(i)
-				i = gtk.MenuItem("Download Album")
+				i = gtk.MenuItem(_("Download Album"))
 				i.connect('activate', self.download_album_clicked)
 				m.append(i)
 				m.show_all()
@@ -2037,10 +2037,10 @@ class AmpacheGUI:
 					path, col, cellx, celly = pthinfo
 					# create popup
 					m = gtk.Menu()
-					i = gtk.MenuItem("Add Songs to Playlist")
+					i = gtk.MenuItem(_("Add Songs to Playlist"))
 					i.connect('activate', self.add_songs_to_playlist, list)
 					m.append(i)
-					i = gtk.MenuItem("Download Songs")
+					i = gtk.MenuItem(_("Download Songs"))
 					i.connect('activate', self.download_songs_clicked, list)
 					m.append(i)
 					m.show_all()
@@ -2052,10 +2052,10 @@ class AmpacheGUI:
 					# create popup
 					song_id = treeview.get_model()[path][6]
 					m = gtk.Menu()
-					i = gtk.MenuItem("Add Song to Playlist")
+					i = gtk.MenuItem(_("Add Song to Playlist"))
 					i.connect('activate', self.add_song_to_playlist, song_id)
 					m.append(i)
-					i = gtk.MenuItem("Download Song")
+					i = gtk.MenuItem(_("Download Song"))
 					i.connect('activate', self.download_song_clicked, song_id)
 					m.append(i)
 					m.show_all()
@@ -2130,13 +2130,13 @@ class AmpacheGUI:
 			self.db_session.variable_set('credentials_username', username)
 			self.db_session.variable_set('credentials_password', password)
 			self.db_session.variable_set('credentials_url', url)
-			self.update_statusbar("Saved Credentials")
-			print "Credentials Saved"
+			self.update_statusbar(_("Saved Credentials"))
+			print _("Credentials Saved")
 			self.destroy_settings(window)
 			self.login_and_get_artists("changed")
 		else:
-			self.update_statusbar("Couldn't save credentials!")
-			print "[Error] Couldn't save credentials!"
+			self.update_statusbar(_("Couldn't save credentials!"))
+			print _("[Error] Couldn't save credentials!")
 			return False
 		return True
 
@@ -2147,7 +2147,7 @@ class AmpacheGUI:
 		
 	def button_open_downloads_file_chooser_clicked(self, widget, data=None):
 		"""Open file chooser for the downloads directory."""
-		dialog = gtk.FileChooserDialog("Choose Folder...",
+		dialog = gtk.FileChooserDialog(_("Choose Folder..."),
 						None,
 						gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
 						(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
@@ -2205,8 +2205,8 @@ class AmpacheGUI:
 	def button_save_playlist_clicked(self, widget, data=None):
 		"""The save playlist button was clicked."""
 		if not self.audio_engine.get_playlist():
-			self.create_dialog_alert("error", "Cannot save empty playlist.", True)
-			print "Cannot save empty playlist"
+			self.create_dialog_alert("error", _("Cannot save empty playlist."), True)
+			print _("Cannot save empty playlist")
 			return False
 		self.show_playlist_select('Save')
 		return False
@@ -2350,7 +2350,7 @@ class AmpacheGUI:
 	def button_pre_cache_info_clicked(self, widget=None, data=None):
 		"""Pre-cache all album and song info."""
 		if self.ampache_conn.is_authenticated() == False:
-			self.create_dialog_alert("warn", "Not Authenticated", True)
+			self.create_dialog_alert("warn", _("Not Authenticated"), True)
 			return False
 		try: # check to see if this function is running
 			if self.button_pre_cache_locked == True:
@@ -2426,10 +2426,10 @@ class AmpacheGUI:
 		"""Right click on album art."""
 		# create popup
 		m = gtk.Menu()
-		i = gtk.MenuItem("Open Image")
+		i = gtk.MenuItem(_("Open Image"))
 		i.connect('activate', lambda x: self.gnome_open(self.current_album_art_file))
 		m.append(i)
-		i = gtk.MenuItem("Refresh Album Art")
+		i = gtk.MenuItem(_("Refresh Album Art"))
 		i.connect('activate', self.__re_fetch_album_art)
 		m.append(i)
 		m.show_all()
@@ -2515,7 +2515,7 @@ class AmpacheGUI:
 		about.set_icon(self.images_pixbuf_viridian_simple)
 		about.set_version("1.1")
 		about.set_copyright("(c) Dave Eddy <dave@daveeddy.com>")
-		about.set_comments("Viridian is a front-end for an Ampache Server (see http://ampache.org)")
+		about.set_comments(_("Viridian is a front-end for an Ampache Server (see http://ampache.org)"))
 		about.set_website("http://viridian.daveeddy.com")
 		about.set_authors(["Author:", "Dave Eddy <dave@daveeddy.com>", "http://www.daveeddy.com", "", "AudioEngine by:", "Michael Zeller <link@conquerthesound.com>", "http://conquerthesound.com"])
 		about.set_artists(["Skye Sawyer <skyelauren.s@gmail.com>", "http://www.skyeillustration.com", "", "Media Icons by:", "http://mysitemyway.com", "http://ampache.org"])
@@ -2622,7 +2622,7 @@ class AmpacheGUI:
 		self.refresh_gui()
 		
 		### Send notifications OSD ###
-		self.notification("Now Playing", song_title + ' - ' + artist_name + ' - ' + album_name, self.current_album_art_file)
+		self.notification(_("Now Playing"), song_title + ' - ' + artist_name + ' - ' + album_name, self.current_album_art_file)
 		# rating stars
 		stars = self.current_song_info['precise_rating']
 		i = 0
@@ -2636,7 +2636,7 @@ class AmpacheGUI:
 			
 	def audioengine_error_callback(self, error_message):
 		"""Display the gstreamer error in the notification label."""
-		self.update_statusbar("An error has occured.")
+		self.update_statusbar(_("An error has occured."))
 		self.create_dialog_alert('warn', """GStreamer has encountered an error, this is most likely caused by:
 - gstreamer-plugins not being installed.
 - Ampache not transcoding the file correctly.
@@ -2780,18 +2780,18 @@ Message from GStreamer:
 		"""Takes a list of song_ids and loads it into the audio engine."""
 		self.audio_engine.clear_playlist()
 		self.audio_engine.set_playlist(list)
-		self.update_statusbar('Loading Playlist...')
+		self.update_statusbar(_('Loading Playlist...'))
 		i = 1
 		print list
 		for song in list:
-			self.update_statusbar('Querying for song %d/%d in playlist' % (i, len(list)))
+			self.update_statusbar(_('Querying for song %d/%d in playlist') % (i, len(list)))
 			if not dbfunctions.song_has_info(self.db_session, song):
 				song = self.ampache_conn.get_song_info(song)
 				self.check_and_populate_albums(song['artist_id'])
 				self.check_and_populate_songs( song['album_id'])
 			i += 1
 		self.update_playlist_window()
-		self.update_statusbar('Playlist loaded')
+		self.update_statusbar(_('Playlist loaded'))
 		
 	def add_album_to_playlist(self, widget):
 		"""Adds every song in the visible list store and adds it to the playlist."""
@@ -2896,7 +2896,7 @@ Message from GStreamer:
 	def download_songs_clicked(self, widget, list):
 		"""The user is downloading multiple songs from the playlist."""
 		if not os.path.exists(self.downloads_directory):
-			self.create_dialog_alert("warn", "The folder %s does not exist.  You can change the folder in Preferences." % (self.downloads_directory), True)
+			self.create_dialog_alert("warn", _("The folder %s does not exist.  You can change the folder in Preferences.") % (self.downloads_directory), True)
 			return False
 		if self.show_downloads_checkbox.active == False:
 			self.side_panel.show()
@@ -2909,7 +2909,7 @@ Message from GStreamer:
 		"""The user cliked download album."""
 		# check to see if the downloads directory exists
 		if not os.path.exists(self.downloads_directory):
-			self.create_dialog_alert("warn", "The folder %s does not exist.  You can change the folder in Preferences." % (self.downloads_directory), True)
+			self.create_dialog_alert("warn", _("The folder %s does not exist.  You can change the folder in Preferences.") % (self.downloads_directory), True)
 			return False
 		if self.show_downloads_checkbox.active == False:
 			self.side_panel.show()
@@ -2922,7 +2922,7 @@ Message from GStreamer:
 		"""The user clicked download song."""
 		# check to see if the downloads directory exists
 		if not os.path.exists(self.downloads_directory):
-			self.create_dialog_alert("warn", "The folder %s does not exist.  You can change the folder in Preferences." % (self.downloads_directory), True)
+			self.create_dialog_alert("warn", _("The folder %s does not exist.  You can change the folder in Preferences.") % (self.downloads_directory), True)
 			return False
 		if show_panel and self.show_downloads_checkbox.active == False:
 			self.side_panel.show()
@@ -2941,7 +2941,7 @@ Message from GStreamer:
 		print "get url '%s' to '%s'" % (url, dst)
 		urllib.urlretrieve(url, dst,
 				lambda nb, bs, fs, url=url: self._reporthook(nb,bs,fs,url,iter1))
-		self.notification("Download Complete", os.path.basename(url).replace('%20',' ').replace('%27', "'"))
+		self.notification(_("Download Complete"), os.path.basename(url).replace('%20',' ').replace('%27', "'"))
 		THREAD_LOCK.release()
 		#urllib.urlretrieve(url, dst, self._reporthook, iter1)
 			
