@@ -30,9 +30,10 @@ import gobject
 import dbus, dbus.service, dbus.glib
 import os
 
-VIRIDIAN_DIR = os.path.expanduser("~") + os.sep + '.viridian'
+VIRIDIAN_DIR = os.path.join(os.path.expanduser('~'), '.viridian')
 
 class AmpacheService(dbus.service.Object):
+	"""Used for single instance"""
 	def __init__(self, app):
 		self.app = app
 		bus_name = dbus.service.BusName('com.daveeddy.Viridian', bus = dbus.SessionBus())
@@ -40,6 +41,7 @@ class AmpacheService(dbus.service.Object):
 
 	@dbus.service.method(dbus_interface='com.daveeddy.Viridian')
 	def show_window(self):
+		"""Used to bring the current window to the front"""
 		self.app.window.present()
 
 if __name__ == "__main__":
@@ -57,12 +59,12 @@ if __name__ == "__main__":
 			os.mkdir(VIRIDIAN_DIR)
 			os.chmod(VIRIDIAN_DIR, 0700)
 				
-		db_session   = AmpacheTools.DatabaseSession(VIRIDIAN_DIR + os.sep + 'viridian.sqlite')
+		db_session   = AmpacheTools.DatabaseSession(os.path.join(VIRIDIAN_DIR, 'viridian.sqlite'))
 		ampache_conn = AmpacheTools.AmpacheSession()
 		audio_engine = AmpacheTools.AudioEngine(ampache_conn)
 		
-		# create the gui and attach it to the session
-		gui = AmpacheTools.AmpacheGUI(ampache_conn, audio_engine, db_session, is_first_time)
+		# create the gui and give it access to all of the components it needs
+		gui = AmpacheTools.AmpacheGUI(ampache_conn, audio_engine, db_session, is_first_time, __version__)
 		
 		# this is for dbus and single instance
 		service = AmpacheService(gui)
