@@ -27,7 +27,15 @@ import shutil
 import cPickle
 import getpass
 
-try:
+try: # require pygtk
+ 	import pygtk
+  	pygtk.require("2.0")
+	import gtk
+except:
+  	print "pygtk required!"
+	sys.exit(1);
+
+try: # check for dbus
 	import dbus
 	DBUS_AVAILABLE = True
 except ImportError:
@@ -40,13 +48,7 @@ try: # check for pynotify
 	PYNOTIFY_INSTALLED = True
 except:
 	PYNOTIFY_INSTALLED = False
-try: # require pygtk
- 	import pygtk
-  	pygtk.require("2.0")
-	import gtk
-except:
-  	print "pygtk required!"
-	sys.exit(1);
+
 	
 # personal helper functions
 import dbfunctions
@@ -57,11 +59,12 @@ from XMLRPCServerSession import XMLServer
 ### Contstants ###
 ALBUM_ART_SIZE = 90
 SCRIPT_PATH    = os.path.abspath(os.path.dirname(__file__))
-IMAGES_DIR     = SCRIPT_PATH + os.sep + 'images' + os.sep
+IMAGES_DIR     = os.path.join(SCRIPT_PATH, 'images/')
 THREAD_LOCK    = thread.allocate_lock()
-VIRIDIAN_DIR   = os.path.expanduser("~") + os.sep + '.viridian'
-ALBUM_ART_DIR  = VIRIDIAN_DIR + os.sep + 'album_art'
+VIRIDIAN_DIR   = os.path.join(os.path.expanduser("~"), '.viridian')
+ALBUM_ART_DIR  = os.path.join(VIRIDIAN_DIR, 'album_art')
 XML_RPC_PORT   = 4596
+VERSION_NUMBER = ""
 
 class AmpacheGUI:
 	"""The Ampache GUI Class"""
@@ -118,12 +121,14 @@ class AmpacheGUI:
 		self.db_session.variable_set('window_size_height', size[1])
 		gtk.main_quit()
 		
-	def __init__(self, ampache_conn, audio_engine, db_session, is_first_time):
+	def __init__(self, ampache_conn, audio_engine, db_session, is_first_time, version):
 		"""Constructor for the AmpacheGUI Class.
 		Takes an AmpacheSession Object, an AudioEngine Object and a DatabaseSession Object."""
 		#################################
 		# Set Variables
 		#################################
+		global VERSION_NUMBER
+		VERSION_NUMBER    = version
 		self.audio_engine = audio_engine
 		self.ampache_conn = ampache_conn
 		self.db_session   = db_session
@@ -803,8 +808,8 @@ class AmpacheGUI:
 		### Downloads Directory ###
 		# first check if ~/Downloads exist, then fallback to ~ (only if the user hasn't set one)
 		download_dir = os.path.expanduser("~")
-		if os.path.exists(download_dir + os.sep + 'Downloads'):
-			download_dir = download_dir + os.sep + 'Downloads'
+		if os.path.exists(os.path.join(download_dir, 'Downloads')):
+			download_dir = os.path.join(download_dir, 'Downloads')
 		self.downloads_directory = self.db_session.variable_get('downloads_directory', download_dir)
 			
 		### Alternate Row Colors ###
@@ -2513,7 +2518,7 @@ class AmpacheGUI:
 		about = gtk.AboutDialog()
 		about.set_name("Viridian")
 		about.set_icon(self.images_pixbuf_viridian_simple)
-		about.set_version("1.1")
+		about.set_version(VERSION_NUMBER)
 		about.set_copyright("(c) Dave Eddy <dave@daveeddy.com>")
 		about.set_comments(_("Viridian is a front-end for an Ampache Server (see http://ampache.org)"))
 		about.set_website("http://viridian.daveeddy.com")
@@ -2525,7 +2530,7 @@ class AmpacheGUI:
 			pass
 		gpl = ""
 		try: # try to read the GPL, if not, just paste the link
-			h = open(SCRIPT_PATH + os.sep + 'doc' + os.sep + 'gpl.txt')
+			h = open(os.path.join(SCRIPT_PATH, 'doc' + os.sep + 'gpl.txt'))
 			s = h.readlines()
 			for line in s:
 				gpl += line
@@ -2600,10 +2605,9 @@ class AmpacheGUI:
 		
 		### Get the album Art ###
 		album_id   = self.current_song_info['album_id']
-		art_folder = ALBUM_ART_DIR
 		if not os.path.exists(ALBUM_ART_DIR):
 			os.mkdir(ALBUM_ART_DIR)
-		self.current_album_art_file = art_folder + os.sep + str(album_id)
+		self.current_album_art_file = os.path.join(ALBUM_ART_DIR,  str(album_id))
 		if os.path.isfile(self.current_album_art_file):
 			print "Album art exists locally"
 		else:
@@ -2931,7 +2935,7 @@ Message from GStreamer:
 		song_url = self.ampache_conn.get_song_url(song_id)
 		m = re.search('name=.*\.[a-zA-Z0-9]+', song_url)
 		song_string = helperfunctions.convert_html_to_string(m.group(0).replace('name=/',''))
-		full_file = self.downloads_directory + os.sep + song_string
+		full_file = os.path.join(self.downloads_directory, song_string)
 		self.downloads_list_store.append([song_string, 0, full_file])
 		iter1 = self.downloads_list_store.get_iter(len(self.downloads_list_store) - 1)
 		thread.start_new_thread(self.download_song, (song_url, full_file, iter1))
@@ -3035,8 +3039,7 @@ Message from GStreamer:
 			os.mkdir(ALBUM_ART_DIR)
 		try: # attempt to get the current playing songs album art
 			album_id   = self.current_song_info['album_id']
-			art_folder = ALBUM_ART_DIR
-			art_file   = art_folder + os.sep + str(album_id)
+			art_file   = os.path.join(ALBUM_ART_DIR, str(album_id))
 			album_art  = self.ampache_conn.get_album_art(album_id)
 			response   = urllib2.urlopen(album_art)
 			f = open(art_file, 'w')
