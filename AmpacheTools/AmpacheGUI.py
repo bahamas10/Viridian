@@ -185,7 +185,7 @@ class AmpacheGUI:
 		
 		"""Start File Menu"""
 		file_menu = gtk.Menu()
-		filem = gtk.MenuItem("_File")
+		filem = gtk.MenuItem(_("_File"))
 		filem.set_submenu(file_menu)
 
 		newi = gtk.MenuItem(_("Reauthenticate"))
@@ -301,7 +301,7 @@ class AmpacheGUI:
 		
 		"""Start Help Menu"""
 		help_menu = gtk.Menu()
-		helpm = gtk.MenuItem("_Help")
+		helpm = gtk.MenuItem(_("_Help"))
 		helpm.set_submenu(help_menu)
 		
 		newi = gtk.ImageMenuItem(gtk.STOCK_HELP)
@@ -632,7 +632,7 @@ class AmpacheGUI:
 		self.artist_list_store.set_sort_func(0, helperfunctions.sort_artists_by_custom_name)
 		#self.artist_list_store.set_default_sort_func(helperfunctions.sort_artists_by_custom_name)
 		self.artist_list_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
-		tree_view = guifunctions.create_single_column_tree_view("Artist", self.artist_list_store)
+		tree_view = guifunctions.create_single_column_tree_view(_("Artists"), self.artist_list_store)
 		self.tree_view_dict['artists'] = tree_view
 		tree_view.set_rules_hint(False)
 		tree_view.connect("cursor-changed", self.artists_cursor_changed)
@@ -711,7 +711,7 @@ class AmpacheGUI:
 			new_column.set_resizable(True)
 			new_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
 			if column == _("Track"):
-				new_column.set_fixed_width(60)
+				new_column.set_fixed_width(65)
 			elif column == _("Title"):
 				new_column.set_fixed_width(230)
 			elif column == _("Artist"):
@@ -842,7 +842,7 @@ class AmpacheGUI:
 		else:
 			self.update_statusbar(_("Set Ampache information by going to Edit -> Preferences")) 
 			if self.is_first_time:
-				self.create_dialog_alert("info", """This looks like the first time you are running Viridian.  To get started, go to Edit -> Preferences and set your account information.""", True)
+				self.create_dialog_alert("info", _("""This looks like the first time you are running Viridian.  To get started, go to Edit -> Preferences and set your account information."""), True)
 		
 		if self.db_session.variable_get('enable_xmlrpc_server', False): # start the xmlrpc server
 			self.start_xml_server()
@@ -896,7 +896,6 @@ class AmpacheGUI:
 	
 		"""Start Notebook"""
 		notebook = gtk.Notebook()
-		#notebook.set_tab_pos(gtk.POS_TOP)
 		notebook.set_tab_pos(gtk.POS_LEFT)
 		
 		#################################
@@ -1180,7 +1179,7 @@ class AmpacheGUI:
 		hbox = gtk.HBox()
 		hbox.pack_start(gtk.Label("   "), False, False, 0)
 
-		button = gtk.RadioButton(button, "Unified Sound Icon ( Ubuntu 10.10 or higher )")
+		button = gtk.RadioButton(button, _("Unified Sound Icon ( Ubuntu 10.10 or higher )"))
 		button.connect("toggled", self.trayicon_settings_toggled, "unified", cb)
 		button.set_sensitive(False) # Ubuntu unified sound
 		if self.tray_icon_to_display == 'unified':
@@ -1745,7 +1744,7 @@ class AmpacheGUI:
 		"""Authenticate and populate the artists."""
 		self.stop_all_threads()
 		self.__clear_all_list_stores()
-		self.update_statusbar("Authenticating...")
+		self.update_statusbar(_("Authenticating..."))
 		# get the user inforamiton
 		ampache  = self.ampache_conn.url
 		username = self.ampache_conn.username
@@ -2231,7 +2230,7 @@ class AmpacheGUI:
 		playlist_list_store, iter = selection.get_selected()
 		text = text.get_text()
 		if iter == None:
-			playlist_id = -1
+			playlist_id   = -1
 			playlist_name = ''
 		else:
 			playlist_id   = playlist_list_store[iter][4]
@@ -2248,7 +2247,7 @@ class AmpacheGUI:
 				playlist = self.ampache_conn.get_playlist_songs(playlist_id)
 				if not playlist:
 					print "Error with playlist %d" % playlist_id
-					self.create_dialog_alert("error", "Problem loading playlist.  Playlist ID = %d" % playlist_id, True)
+					self.create_dialog_alert("error", _("Problem loading playlist.  Playlist ID = %d" % playlist_id), True)
 					return True
 				for song in playlist:
 					list.append(song['song_id'])
@@ -2256,14 +2255,14 @@ class AmpacheGUI:
 			self.destroy_playlist()
 		elif type == 'Save': # Save playlist
 			if not self.audio_engine.get_playlist(): # playlist is empty
-				self.create_dialog_alert("error", "Cannot save empty playlist.", True)
-				print "Cannot save empty playlist"
+				self.create_dialog_alert("error", _("Cannot save empty playlist."), True)
+				print _("Cannot save empty playlist.")
 				return False
 			if text == '': # no name for list was specified
-				self.create_dialog_alert("error", "Invalid Name.", True)
+				self.create_dialog_alert("error", _("Invalid Name."), True)
 				return False
 			if dbfunctions.get_playlist(self.db_session, text): # playlist exists
-				answer = self.create_dialog_ok_or_close("Overwrite Playlist?", """A playlist by the name '%s' already exists, overwrite?""" % text)
+				answer = self.create_dialog_ok_or_close(_("Overwrite Playlist?"), _("A playlist by the name '%s' already exists, overwrite?" % text))
 				if answer != "ok":
 					return False
 			dbfunctions.set_playlist(self.db_session, text, self.audio_engine.get_playlist())
@@ -2274,12 +2273,12 @@ class AmpacheGUI:
 			if playlist_id == -1: # placeholders
 				return True
 			if playlist_id != -2: # not local playlists
-				self.create_dialog_alert("error", "Only exporting of local playlists is supported.", True)
+				self.create_dialog_alert("error", _("Only exporting of local playlists is supported."), True)
 				return False
 			else: # ready to export
 				list = dbfunctions.get_playlist(self.db_session, playlist_name)
 				if not list:
-					self.create_dialog_alert("error", "Cannot export empty playlist.", True)
+					self.create_dialog_alert("error", _("Cannot export empty playlist."), True)
 					return False
 				chooser = gtk.FileChooserDialog(title="Save as...",action=gtk.FILE_CHOOSER_ACTION_SAVE,
 					buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK))
@@ -2288,7 +2287,7 @@ class AmpacheGUI:
 				if response == gtk.RESPONSE_OK:
 					filename = chooser.get_filename()
 					if os.path.isfile(filename):
-						self.create_dialog_alert("error", "File already exists.", True)
+						self.create_dialog_alert("error", _("File already exists."), True)
 						chooser.destroy()
 						return False
 						
@@ -2299,7 +2298,7 @@ class AmpacheGUI:
 						f.write("\n")
 					f.close()
 					print "Exported playlist to %s" % (filename)
-					self.create_dialog_alert("info", "Playlist %s written to %s." % (playlist_name, filename), True)
+					self.create_dialog_alert("info", _("Playlist %s written to %s." % (playlist_name, filename)), True)
 				
 				chooser.destroy()
 			self.destroy_playlist()
@@ -2312,13 +2311,13 @@ class AmpacheGUI:
 		playlist_id   = playlist_list_store[iter][4]
 		playlist_name = playlist_list_store[iter][0]
 		if playlist_id == -2: # Local Playlists
-			answer = self.create_dialog_ok_or_close("Delete Playlist?", """Are you sure you want to delete the playlist '%s'?""" % playlist_name)
+			answer = self.create_dialog_ok_or_close(_("Delete Playlist?"), _("Are you sure you want to delete the playlist '%s'?" % playlist_name))
 			if answer != "ok":
 				return False
 			dbfunctions.remove_playlist(self.db_session, playlist_name)
 			self.update_playlist_select(type, playlist_list_store)
 		elif playlist_id != -1: # Ampache playlists
-			self.create_dialog_alert('error', "Cannot delete playlists that are on the Ampache server from Viridian.")
+			self.create_dialog_alert('error', _("Cannot delete playlists that are on the Ampache server from Viridian."))
 				
 	#############
 	# Cache
@@ -2343,11 +2342,11 @@ class AmpacheGUI:
 	def button_clear_album_art_clicked(self, widget=None, data=None):
 		"""Clear local album art."""
 		self.clear_album_art()
-		self.update_statusbar("Album Art Cleared")
+		self.update_statusbar(_("Album Art Cleared"))
 		
 	def button_reset_everything_clicked(self, widget=None, data=None):
 		"""Reset everything."""
-		answer = self.create_dialog_ok_or_close("Reset Viridian", """Are you sure you want to delete all personal information stored with Viridian?""")
+		answer = self.create_dialog_ok_or_close(_("Reset Viridian"), _("Are you sure you want to delete all personal information stored with Viridian?"))
 		if answer == "ok":
 			self.reset_everything()
 			gtk.main_quit()
@@ -2360,11 +2359,11 @@ class AmpacheGUI:
 		try: # check to see if this function is running
 			if self.button_pre_cache_locked == True:
 				print "Already Running"
-				self.create_dialog_alert("info", "Pre-Cache already in progress.")
+				self.create_dialog_alert("info", _("Pre-Cache already in progress."))
 				return False
 		except:
 			pass
-		answer = self.create_dialog_ok_or_close("Pre-Cache", "This will cache all of the artist, album, and song information (not the songs themselves) locally to make Viridian respond faster.\n\nThis process can take a long time depending on the size of your catalog.  Proceed?")
+		answer = self.create_dialog_ok_or_close(_("Pre-Cache"), _("This will cache all of the artist, album, and song information (not the songs themselves) locally to make Viridian respond faster.\n\nThis process can take a long time depending on the size of your catalog.  Proceed?"))
 		if answer != "ok":
 			return False
 		self.button_pre_cache_locked = True
@@ -2384,9 +2383,9 @@ class AmpacheGUI:
 					self.button_pre_cache_locked = False
 					return False
 				self.check_and_populate_albums(artist_id)
-				self.update_statusbar("Pulling all albums from artists: %d/%d" % (i, num_artists) )
+				self.update_statusbar(_("Pulling all albums from artists: %d/%d" % (i, num_artists) ))
 				#gobject.idle_add(self.update_statusbar, 1, "Pulling all albums from artists: %d/%d" % (i, num_artists) )
-			self.update_statusbar("Finished pulling albums")
+			self.update_statusbar(_("Finished pulling albums"))
 			
 			albums = dbfunctions.get_album_ids(self.db_session)
 			i = 0
@@ -2397,19 +2396,19 @@ class AmpacheGUI:
 					self.button_pre_cache_locked = False
 					return False
 				self.check_and_populate_songs(album_id)
-				self.update_statusbar("Pulling all songs from albums: %d/%d" % (i, num_albums) )
+				self.update_statusbar(_("Pulling all songs from albums: %d/%d" % (i, num_albums) ) )
 				
 			end_time = int(time.time())
 			time_taken = end_time - start_time
 			time_taken = helperfunctions.convert_seconds_to_human_readable(time_taken)
 			
-			self.update_statusbar("Finished Pre Cache -- Time Taken: " + str(time_taken))
+			self.update_statusbar(_("Finished Pre Cache -- Time Taken: " + str(time_taken)))
 			print "Finished Pre Cache -- Time Taken: " + str(time_taken)
 		except Exception, detail:
 			print "Error with pre-cache!", detail
-			self.update_statusbar("Error with pre-cache!")
+			self.update_statusbar(_("Error with pre-cache!"))
 			self.button_pre_cache_locked = False
-			self.create_dialog_alert("error", "Error with pre-cache!\n\n"+str(detail) )
+			self.create_dialog_alert("error", _("Error with pre-cache!\n\n"+str(detail) ) )
 			return False
 		self.button_pre_cache_locked = False
 		return False
@@ -2464,10 +2463,10 @@ class AmpacheGUI:
 		# update the gui
 		if self.xml_server.is_running:
 			image.set_from_stock(gtk.STOCK_YES,gtk.ICON_SIZE_SMALL_TOOLBAR)
-			label.set_text("Running. (port %d)" % self.xml_server.port)
+			label.set_text(_("Running. (port %d)" % self.xml_server.port))
 		else:
 			image.set_from_stock(gtk.STOCK_NO,gtk.ICON_SIZE_SMALL_TOOLBAR)
-			label.set_text("Not Running.")
+			label.set_text(_("Not Running."))
 		
 	
 	#######################################
@@ -2542,7 +2541,7 @@ class AmpacheGUI:
 		
 	def create_catalog_updated_dialog(self):
 		"""Create a dialog to tell the user the cache has been updated."""
-		answer = self.create_dialog_ok_or_close("Ampache Catalog Updated", "The Ampache catalog on the server is newer than the locally cached catalog on this computer.\nWould you like to update the local catalog by clearing the local cache?\n\n(You can also do this at anytime by going to File -> Clear Local Cache).")
+		answer = self.create_dialog_ok_or_close(_("Ampache Catalog Updated"), _("The Ampache catalog on the server is newer than the locally cached catalog on this computer.\nWould you like to update the local catalog by clearing the local cache?\n\n(You can also do this at anytime by going to File -> Clear Local Cache)."))
 		if answer == "ok":
 			return True
 		return False
@@ -2641,13 +2640,13 @@ class AmpacheGUI:
 	def audioengine_error_callback(self, error_message):
 		"""Display the gstreamer error in the notification label."""
 		self.update_statusbar(_("An error has occured."))
-		self.create_dialog_alert('warn', """GStreamer has encountered an error, this is most likely caused by:
+		self.create_dialog_alert('warn', _("""GStreamer has encountered an error, this is most likely caused by:
 - gstreamer-plugins not being installed.
 - Ampache not transcoding the file correctly.
 - A lost or dropped connection to the server.
 		
 Message from GStreamer:
-%s""" % error_message)
+%s""" % error_message))
 			
 
 			
@@ -2697,7 +2696,7 @@ Message from GStreamer:
 	def gnome_open(self, uri):
 		"""Open with gnome-open."""
 		if uri == None or uri == "":
-			self.create_dialog_alert("warn", "The file/URL specified is invalid.", True)
+			self.create_dialog_alert("warn", _("The file/URL specified is invalid."), True)
 		else:
 			os.popen("gnome-open '%s' &" % (uri))
 	
@@ -3034,7 +3033,7 @@ Message from GStreamer:
 			pass
 		self.button_album_art_locked = True
 		print "Re-Fetching album art... ",
-		self.update_statusbar("Re-Fetching album art...")
+		self.update_statusbar(_("Re-Fetching album art..."))
 		if not os.path.exists(ALBUM_ART_DIR):
 			os.mkdir(ALBUM_ART_DIR)
 		try: # attempt to get the current playing songs album art
@@ -3046,7 +3045,7 @@ Message from GStreamer:
 			f.write(response.read())
 			f.close()
 		except: # cache was cleared or something and it fails...
-			self.update_statusbar("Re-Fetching album art... Failed!")
+			self.update_statusbar(_("Re-Fetching album art... Failed!"))
 			print "Failed!"
 			self.button_album_art_locked = False
 			return False
@@ -3054,7 +3053,7 @@ Message from GStreamer:
 		self.album_art_image.set_from_pixbuf(image_pixbuf)
 		self.set_tray_icon(image_pixbuf)
 		print "Done!"
-		self.update_statusbar("Re-Fetching album art... Success!")
+		self.update_statusbar(_("Re-Fetching album art... Success!"))
 		self.button_album_art_locked = False
 		return True
 
@@ -3066,7 +3065,7 @@ Message from GStreamer:
 		
 		if not songs:
 			print "Error pulling ", album_id
-			self.update_statusbar("Error with album -- Check Ampache -- Album ID = %d" % album_id)
+			self.update_statusbar(_("Error with album -- Check Ampache -- Album ID = %d" % album_id))
 			return False
 		
 		for song in songs:
