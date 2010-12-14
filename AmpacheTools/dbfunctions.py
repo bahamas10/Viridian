@@ -80,6 +80,20 @@ def populate_artists_table(db_session, list):
 	db_session.commit()
 	c.close()
 	return True
+
+def populate_full_albums_table(db_session, list):
+	"""Save all albums to the albums table"""
+	if not list: 
+		return False
+	c = db_session.cursor()
+	c.execute("""DELETE FROM albums""")
+	for album_list in list:
+		c.execute("""INSERT INTO albums (artist_id, album_id, name, year, precise_rating)
+			VALUES (?,?,?,?,?)""", album_list)
+	db_session.commit()
+	c.close()
+	return True
+
 	
 def populate_albums_table(db_session, artist_id, list):
 	"""Save the list of albums in the albums table."""
@@ -91,6 +105,21 @@ def populate_albums_table(db_session, artist_id, list):
 	for album_list in list:
 		c.execute("""INSERT INTO albums (artist_id, album_id, name, year, precise_rating)
 			VALUES (?,?,?,?,?)""", album_list)
+	db_session.commit()
+	c.close()
+	return True
+
+
+def populate_full_songs_table(db_session, list):
+	"""Save the list of songs in the songs table."""
+	if not list: # list is empty
+		return False
+	c = db_session.cursor()
+	c.execute("""DELETE FROM songs""")
+	for song_list in list:
+		c.execute("""INSERT INTO songs (album_id, song_id, title,
+				track, time, size, artist_name, album_name)
+				VALUES (?,?,?,?,?,?,?,?)""", song_list)
 	db_session.commit()
 	c.close()
 	return True
@@ -202,27 +231,45 @@ def get_artist_dict(db_session):
 	c.close()
 	return artist_dict
 	
-def get_album_dict(db_session, artist_id):
+def get_album_dict(db_session, artist_id=None):
 	"""Returns a dictionary of all the albums from an artist from the database
 	This will check to see if the info exists locally before querying Ampache."""
 	album_dict = {}
-	try:
-		c = db_session.cursor()
-		c.execute("""SELECT album_id, name, year, precise_rating FROM albums
-			WHERE artist_id = ? order by year""", [artist_id])
-		for row in c:
-			album_id      = row[0]
-			album_name    = row[1]
-			album_year    = row[2]
-			precise_rating = row[3]
-			album_dict[album_id] = {'name'          : album_name,
-						'year'          : album_year,
-						'precise_rating' : precise_rating,
-						}
-	except:
-		album_dict = None
-	#db_session.commit()
-	c.close()
+	if artist_id == None:
+		try:
+			c = db_session.cursor()
+			c.execute("""SELECT album_id, name, year, precise_rating FROM albums""")
+			for row in c:
+				album_id       = row[0]
+				album_name     = row[1]
+				album_year     = row[2]
+				precise_rating = row[3]
+				album_dict[album_id] = {'name'          : album_name,
+							'year'          : album_year,
+							'precise_rating' : precise_rating,
+							}
+		except:
+			album_dict = None
+		#db_session.commit()
+		c.close()
+	else:
+		try:
+			c = db_session.cursor()
+			c.execute("""SELECT album_id, name, year, precise_rating FROM albums
+				WHERE artist_id = ? order by year""", [artist_id])
+			for row in c:
+				album_id       = row[0]
+				album_name     = row[1]
+				album_year     = row[2]
+				precise_rating = row[3]
+				album_dict[album_id] = {'name'          : album_name,
+							'year'          : album_year,
+							'precise_rating' : precise_rating,
+							}
+		except:
+			album_dict = None
+		#db_session.commit()
+		c.close()
 	return album_dict
 	
 def get_song_dict(db_session, album_id):

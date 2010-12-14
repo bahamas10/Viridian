@@ -61,11 +61,26 @@ def convert_html_to_string(html):
 #################
 # Sort Functions
 #################
-def sort_artists_by_custom_name(model, iter1, iter2, data=None):
+def sort_artists_by_custom_name(model, iter1, iter2, column):
 	"""Custom Function to sort artists by extracting words like "the" and "a"."""
+	id1   = model[iter1][1]
+	id2   = model[iter2][1]
 	band1 = model[iter1][2]
 	band2 = model[iter2][2]
+	order = column.get_sort_order()
+	# First check for -1 artist (always top row)
+	if id1 == -1:
+		if order == gtk.SORT_DESCENDING:
+			return 1
+		else:
+			return -1
+	elif id2 == -1:
+		if order == gtk.SORT_DESCENDING:
+			return -1
+		else:
+			return 1
 
+	# sort alphabetically
 	if band1 < band2:
 		return -1
 	elif band1 > band2:

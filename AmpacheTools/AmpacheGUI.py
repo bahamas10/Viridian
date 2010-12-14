@@ -627,17 +627,29 @@ class AmpacheGUI:
 		artists_scrolled_window.set_shadow_type(gtk.SHADOW_ETCHED_IN)
 		artists_scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		
+		renderer_text = gtk.CellRendererText()
+		artists_column = gtk.TreeViewColumn(_("Artists"), renderer_text, markup=0)
+		artists_column.set_resizable(False)
+		artists_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+		artists_column.set_sort_column_id(0)
+
+
 		# name, id, custom_name
 		self.artist_list_store = gtk.ListStore(str, int, str)
-		self.artist_list_store.set_sort_func(0, helperfunctions.sort_artists_by_custom_name)
-		#self.artist_list_store.set_default_sort_func(helperfunctions.sort_artists_by_custom_name)
+		self.artist_list_store.set_sort_func(0, helperfunctions.sort_artists_by_custom_name, artists_column)
 		self.artist_list_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
-		tree_view = guifunctions.create_single_column_tree_view(_("Artists"), self.artist_list_store)
+
+		tree_view = gtk.TreeView(self.artist_list_store)
 		self.tree_view_dict['artists'] = tree_view
 		tree_view.set_rules_hint(False)
+		artists_column.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+		tree_view.append_column(artists_column)
+
+
 		tree_view.connect("cursor-changed", self.artists_cursor_changed)
 		#tree_view.connect("popup-menu", self.artists_cursor_changed)
 		tree_view.set_search_column(0)
+		
 		artists_scrolled_window.add(tree_view)
 		"""End Middle Top Left"""
 		
@@ -655,6 +667,7 @@ class AmpacheGUI:
 		albums_column = gtk.TreeViewColumn(_("Albums"), renderer_text, markup=0)
 		albums_column.set_resizable(False)
 		albums_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+		albums_column.set_sort_column_id(0)
 	
 		# name, id, year, stars
 		self.album_list_store = gtk.ListStore(str, int, int, int)
@@ -1800,10 +1813,15 @@ class AmpacheGUI:
 			self.check_and_populate_artists()
 			artists = dbfunctions.get_artist_dict(self.db_session)
 			model = self.artist_list_store
+			model.append([_("<b>All Artists (%d)</b>" % len(artists)), -1, ''])
 			for artist_id in artists:
 				artist_name = artists[artist_id]['name']
 				custom_name = artists[artist_id]['custom_name']
-				model.append([artist_name, artist_id, custom_name])
+				model.append([helperfunctions.convert_string_to_html(artist_name), artist_id, custom_name])
+			# now pull all the albums.. this should cut down on precache time
+			self.update_statusbar(_("Pulling Albums..."))
+			self.check_and_populate_albums()
+			self.albums = dbfunctions.get_album_dict(self.db_session)
 			self.update_statusbar(_("Ready."))
 			return True
 		else: # auth failed
@@ -1838,20 +1856,24 @@ class AmpacheGUI:
 		model = self.album_list_store
 		model.clear()
 		self.check_and_populate_albums(self.artist_id)
-		albums = dbfunctions.get_album_dict(self.db_session, self.artist_id)
+		if self.artist_id == -1: # all artists
+			albums = self.albums
+		else:
+			albums = dbfunctions.get_album_dict(self.db_session, self.artist_id)
 
+		self.update_statusbar("Loading: " + self.artist_name.replace('<b>', '').replace('</b>', ''))
 		model.append([_("<b>All Albums (%d)</b>") % (len(albums)), -1, -1, 0])
 		for album in albums:
-			album_name    = albums[album]['name']
-			album_year    = albums[album]['year']
+			album_name     = albums[album]['name']
+			album_year     = albums[album]['year']
 			precise_rating = albums[album]['precise_rating']
-			album_id    = album
-			self.update_statusbar(_("Fetching Album: ") + album_name)
+			album_id       = album
+			#self.update_statusbar(_("Fetching Album: ") + album_name)
 			album_string = album_name + ' (' + str(album_year) + ')'
 			if album_year == 0:
 				album_string = album_name
 			model.append([helperfunctions.convert_string_to_html(album_string), album_id, album_year, precise_rating])
-		self.update_statusbar(self.artist_name)
+		self.update_statusbar(self.artist_name.replace('<b>', '').replace('</b>', ''))
 		
 
 	def albums_cursor_changed(self, widget, data=None):
@@ -1868,6 +1890,8 @@ class AmpacheGUI:
 				return True # don't refresh if the user reclicks the album
 		except:
 			pass
+
+		self.continue_load_songs = False
 		
 		self.album_name = album_name
 		self.album_id   = album_id
@@ -1876,17 +1900,20 @@ class AmpacheGUI:
 		song_list_store.clear()
 		
 		if album_id == -1: # all albums
+			self.continue_load_songs = True
 			list = []
 			for album in model:
 				list.append(album[1])
 			for album_id in list:
 				if album_id != -1:
+					if self.continue_load_songs == False:
+						return False
 					if self.__add_songs_to_list_store(album_id):
 						self.update_statusbar(_("Fetching Album id: ") + str(album_id))
-			self.update_statusbar(album_name.replace('<b>', '').replace('</b>', '') + " - " + self.artist_name)
+			self.update_statusbar(album_name.replace('<b>', '').replace('</b>', '') + " - " + self.artist_name.replace('<b>', '').replace('</b>', ''))
 		else: # single album
 			if self.__add_songs_to_list_store(album_id):
-				self.update_statusbar(album_name + " - " + self.artist_name)
+				self.update_statusbar(album_name + " - " + self.artist_name.replace('<b>', '').replace('</b>', ''))
 				
 	#######################################
 	# Selection Methods (Double Click)
@@ -1969,13 +1996,14 @@ class AmpacheGUI:
 					i = gtk.MenuItem(_("Remove From Playlist"))
 					i.connect('activate', self.remove_from_playlist, song_id, treeview, list)
 					m.append(i)
+					m.append(gtk.SeparatorMenuItem())
 					i = gtk.MenuItem(_("Download Songs"))
 					i.connect('activate', self.download_songs_clicked, list)
 					m.append(i)
 					m.show_all()
 					m.popup(None, None, None, event.button, event.time, None)
 				return True
-			else:
+			else: # single selected
 				if pthinfo != None:
 					path, col, cellx, celly = pthinfo
 					# create popup
@@ -1984,8 +2012,12 @@ class AmpacheGUI:
 					i = gtk.MenuItem(_("Remove From Playlist"))
 					i.connect('activate', self.remove_from_playlist, song_id, treeview)
 					m.append(i)
+					m.append(gtk.SeparatorMenuItem())
 					i = gtk.MenuItem(_("Download Song"))
 					i.connect('activate', self.download_song_clicked, song_id)
+					m.append(i)
+					i = gtk.MenuItem(_("Copy URL to Clipboard"))
+					i.connect('activate', lambda y: self.copy_song_url_to_clipboard(song_id))
 					m.append(i)
 					m.show_all()
 					m.popup(None, None, None, event.button, event.time, None)
@@ -2022,6 +2054,7 @@ class AmpacheGUI:
 				i = gtk.MenuItem(_("Add Album to Playlist"))
 				i.connect('activate', self.add_album_to_playlist)
 				m.append(i)
+				m.append(gtk.SeparatorMenuItem())
 				i = gtk.MenuItem(_("Download Album"))
 				i.connect('activate', self.download_album_clicked)
 				m.append(i)
@@ -2044,13 +2077,14 @@ class AmpacheGUI:
 					i = gtk.MenuItem(_("Add Songs to Playlist"))
 					i.connect('activate', self.add_songs_to_playlist, list)
 					m.append(i)
+					m.append(gtk.SeparatorMenuItem())
 					i = gtk.MenuItem(_("Download Songs"))
 					i.connect('activate', self.download_songs_clicked, list)
 					m.append(i)
 					m.show_all()
 					m.popup(None, None, None, event.button, event.time, None)
 				return True
-			else:
+			else: # single song
 				if pthinfo != None:
 					path, col, cellx, celly = pthinfo
 					# create popup
@@ -2059,8 +2093,12 @@ class AmpacheGUI:
 					i = gtk.MenuItem(_("Add Song to Playlist"))
 					i.connect('activate', self.add_song_to_playlist, song_id)
 					m.append(i)
+					m.append(gtk.SeparatorMenuItem())
 					i = gtk.MenuItem(_("Download Song"))
 					i.connect('activate', self.download_song_clicked, song_id)
+					m.append(i)
+					i = gtk.MenuItem(_("Copy URL to Clipboard"))
+					i.connect('activate', lambda y: self.copy_song_url_to_clipboard(song_id))
 					m.append(i)
 					m.show_all()
 					m.popup(None, None, None, event.button, event.time, None)
@@ -2669,15 +2707,26 @@ Message from GStreamer:
 				list.append([artist['artist_id'], artist['artist_name'], custom_artist_name])
 			dbfunctions.populate_artists_table(self.db_session, list)
 		
-	def check_and_populate_albums(self, artist_id):
-		if dbfunctions.table_is_empty(self.db_session, 'albums', artist_id):
-			albums = self.ampache_conn.get_albums_by_artist(artist_id)
-			if albums == None:
-				return False
-			list = []
-			for album in albums:
-				list.append([artist_id, album['album_id'], album['album_name'], album['album_year'] , album['precise_rating']])
-			dbfunctions.populate_albums_table(self.db_session, artist_id, list)
+	def check_and_populate_albums(self, artist_id=None):
+		if artist_id == None:
+			if self.db_session.table_is_empty('albums'):
+				print "getting albums"
+				albums = self.ampache_conn.get_albums()
+				if albums == None:
+					return False
+				list = []
+				for album in albums:
+					list.append([album['artist_id'], album['album_id'], album['album_name'], album['album_year'], album['precise_rating']])
+				dbfunctions.populate_full_albums_table(self.db_session, list)
+		else:
+			if dbfunctions.table_is_empty(self.db_session, 'albums', artist_id):
+				albums = self.ampache_conn.get_albums_by_artist(artist_id)
+				if albums == None:
+					return False
+				list = []
+				for album in albums:
+					list.append([artist_id, album['album_id'], album['album_name'], album['album_year'] , album['precise_rating']])
+				dbfunctions.populate_albums_table(self.db_session, artist_id, list)
 	
 	def check_and_populate_songs(self, album_id):
 		if dbfunctions.table_is_empty(self.db_session, 'songs', album_id):
@@ -2740,13 +2789,23 @@ Message from GStreamer:
 
 	def stop_all_threads(self):
 		"""Stops all running threads."""
-		self.pre_cache_continue = False
+		self.pre_cache_continue  = False
+		self.continue_load_songs = False
 		
 	def refresh_gui(self):
 		"""Refresh the GUI by calling gtk.main_iteration(). """
 		while gtk.events_pending():
 			gtk.main_iteration()
+
+	def copy_text_to_clipboard(self, text):
+		"""Copies the content of 'text' to the clipboard"""
+		c = gtk.Clipboard()
+		c.set_text(text)
 	
+	def copy_song_url_to_clipboard(self, song_id):
+		"""Copies the song_id's URL to the clipboard"""
+		self.copy_text_to_clipboard(self.ampache_conn.get_song_url(song_id))
+
 	####################
 	# Playlist Functions
 	####################			

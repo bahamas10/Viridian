@@ -29,7 +29,7 @@ import sys, traceback
 
 ### Constants ###
 AUTH_MAX_RETRY = 3 # how many times to try and reauth before failure
-DEFAULT_TIMEOUT = 5
+DEFAULT_TIMEOUT = 10
 __ILLEGAL_XML = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
 		 u'|' + \
 		 u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
@@ -74,7 +74,6 @@ class AmpacheSession:
 			self.xml_rpc = self.url + "/server/xml.server.php"
 		except:
 			pass
-		return True
 
 	def get_credentials(self):
 		"""
@@ -119,7 +118,7 @@ class AmpacheSession:
 			socket.setdefaulttimeout(DEFAULT_TIMEOUT) # reset timeout
 			xml_string = response.read()
 			dom = xml.dom.minidom.parseString(xml_string)
-			self.auth        = dom.getElementsByTagName("auth")[0].childNodes[0].data
+			self.auth	= dom.getElementsByTagName("auth")[0].childNodes[0].data
 			self.artists_num = int(dom.getElementsByTagName("artists")[0].childNodes[0].data)
 			self.albums_num  = int(dom.getElementsByTagName("albums")[0].childNodes[0].data)
 			self.songs_num   = int(dom.getElementsByTagName("songs")[0].childNodes[0].data)
@@ -168,22 +167,10 @@ class AmpacheSession:
 		values = {'action' : 'ping',
 			  'auth'   : self.auth,
 		}
-		data = urllib.urlencode(values)
-
-		try: # attempt to get the song_url
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			dom = xml.dom.minidom.parseString(response.read())
-		except: # The data pulled from Ampache was invalid
-			#print "Error Extending Session"
+		root = self.__call_api(values)
+		if not root:
 			return None
-		try: # try to get the song_url
-			root     = dom.getElementsByTagName('root')[0]
-			session  = root.getElementsByTagName('session_expire')[0].childNodes[0].data
-		except: # something failed, try to reauth and do it again
-			if self.authenticate():
-				return self.ping()
-			else: # couldn't authenticate
-				return None
+		session  = root.getElementsByTagName('session_expire')[0].childNodes[0].data
 		return session
 			
 	#######################################
@@ -203,23 +190,11 @@ class AmpacheSession:
 			  'filter' : song_id,
 			  'auth'   : self.auth,
 		}
-		data = urllib.urlencode(values)
-
-		try: # attempt to get the song_url
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			dom = xml.dom.minidom.parseString(response.read())
-		except: # The data pulled from Ampache was invalid
-			print "Error Pulling Data! -- Check Ampache -- song_id = %d" % song_id
+		root = self.__call_api(values)
+		if not root:
 			return None
-		try: # try to get the song_url
-			root     = dom.getElementsByTagName('root')[0]
-			song     = root.getElementsByTagName('song')[0]
-			song_url = song.getElementsByTagName('url')[0].childNodes[0].data
-		except: # something failed, try to reauth and do it again
-			if self.authenticate():
-				return self.get_song_url(song_id)
-			else: # couldn't authenticate
-				return None
+		song     = root.getElementsByTagName('song')[0]
+		song_url = song.getElementsByTagName('url')[0].childNodes[0].data
 		return song_url
 		
 	def get_album_art(self, album_id):
@@ -227,28 +202,17 @@ class AmpacheSession:
 		Takes an album_id and returns the url to the artwork (with the current authentication).
 		"""
 		if album_id == None:
-			return False
+			return None
 		values = {'action' : 'album',
 			  'filter' : album_id,
 			  'auth'   : self.auth,
 		}
-		data = urllib.urlencode(values)
-
-		try: # attempt to get the album art
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			dom = xml.dom.minidom.parseString(response.read())
-		except: # The data pulled from Ampache was invalid
-			print "Error Pulling Data! -- Check Ampache"
+		
+		root = self.__call_api(values)
+		if not root:
 			return None
-		try: # try to get the album art
-			root      = dom.getElementsByTagName('root')[0]
-			album     = root.getElementsByTagName('album')[0]
-			album_art = album.getElementsByTagName('art')[0].childNodes[0].data
-		except: # something failed, try to reauth and do it again
-			if self.authenticate():
-				return self.get_album_art(album_id)
-			else: # couldn't authenticate
-				return None
+		album     = root.getElementsByTagName('album')[0]
+		album_art = album.getElementsByTagName('art')[0].childNodes[0].data
 		return album_art
 		
 		
@@ -277,35 +241,187 @@ class AmpacheSession:
 				  'auth'   : self.auth,
 				  'offset' : offset,
 			}
-		list = []
-		data = urllib.urlencode(values)
-		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			x = self.__sanatize(response.read()) 
-			dom = xml.dom.minidom.parseString(x)
-		except Exception as e: # The data pulled from Ampache was invalid
-			print "Error Pulling Data! -- Check Ampache"
-			print e
+
+		root = self.__call_api(values)
+		if not root: 
 			return None
-		try: # try to get the list of artists
-			root  = dom.getElementsByTagName('root')[0]
-			nodes = root.getElementsByTagName('artist')
-			if not nodes: # list is empty, reauth
-				raise Exception('Reauthenticate')
-		except: # something failed, try to reauth and do it again
-			if self.authenticate():
-				return self.get_artists(offset)
-			else: # couldn't authenticate
-				return None
+		nodes = root.getElementsByTagName('artist')
+
+		list = []
 		try: # get the artists
 			for child in nodes:
 				artist_name = child.getElementsByTagName('name')[0].childNodes[0].data
 				artist_id   = int(child.getAttribute('id'))
 				dict = { 'artist_id'   : artist_id,
-				         'artist_name' : artist_name,
+					 'artist_name' : artist_name,
 				       }
 				list.append( dict )
 		except: # something failed
+			traceback.print_exc()
+			return None
+		return list
+
+	def get_albums(self, offset=None):
+		"""
+		Gets all albums and return as a list of dictionaries.
+		Example: [
+				{	 'artist_id'      : artist_id,
+					 'artist_name'    : artist_name,
+					 'album_id'       : album_id,
+					 'album_name'     : album_name,
+					 'album_year'     : album_year,
+					 'album_tracks'   : album_tracks,
+					 'album_disk'     : album_disk,
+					 'album_rating'   : album_rating,
+					 'precise_rating' : precise_rating,
+				},
+				{ ... },
+			 ]
+		"""
+		if offset == None:
+			if self.albums_num > 5000: # offset needed
+				list = []
+				for i in range(0, self.albums_num, 5000):
+					list += self.get_artists(i)
+				return list
+			values = {'action' : 'albums',
+				  'auth'   : self.auth,
+			}
+		else:
+			values = {'action' : 'albums',
+				  'auth'   : self.auth,
+				  'offset' : offset,
+			}
+
+		root  = self.__call_api(values)
+		if not root:
+			return None
+		nodes = root.getElementsByTagName('album')
+		if not nodes:
+			return None
+		list = []
+		try:
+			for child in nodes:
+				album_id       = int(child.getAttribute('id'))
+				album_name     = child.getElementsByTagName('name')[0].childNodes[0].data
+				artist_id      = int(child.getElementsByTagName('artist')[0].getAttribute('id'))
+				artist_name    = child.getElementsByTagName('artist')[0].childNodes[0].data
+				album_year     = child.getElementsByTagName('year')[0].childNodes[0].data
+				album_tracks   = int(child.getElementsByTagName('tracks')[0].childNodes[0].data)
+				album_disk     = int(child.getElementsByTagName('disk')[0].childNodes[0].data)
+				try: # new version doesn't put data in the middle... 
+					precise_rating = int(child.getElementsByTagName('preciserating')[0].childNodes[0].data)
+				except:
+					precise_rating = 0
+				try: 
+					album_rating = child.getElementsByTagName('rating')[0].childNodes[0].data
+				except:
+					album_rating = 0
+				if album_year == "N/A":
+					album_year = 0
+				album_year = int(album_year)
+				
+				dict = { 'artist_id'      : artist_id,
+					 'artist_name'    : artist_name,
+					 'album_id'       : album_id,
+					 'album_name'     : album_name,
+					 'album_year'     : album_year,
+					 'album_tracks'   : album_tracks,
+					 'album_disk'     : album_disk,
+					 'album_rating'   : album_rating,
+					 'precise_rating' : precise_rating,
+				       }
+				list.append( dict )
+		except: #something failed
+			traceback.print_exc()
+			return None
+		return list
+
+	def get_songs(self, offset=None):
+		"""
+		Gets all songs and returns as a list of dictionaries.
+		Example: [
+		  		{	'song_id' 	: song_id,
+					'song_title'     : song_title,
+					'artist_id'      : artist_id,
+					'artist_name'    : artist_name,
+					'album_id'       : album_id,
+					'album_name'     : album_name,
+					'song_track'     : song_track,
+					'song_time'      : song_time,
+					'song_size'      : song_size,
+					'precise_rating' : precise_rating,
+					'rating'	 : rating,
+					'art'	    : art,
+					'url'	    : url,
+				},
+				{ ... },
+			 ]
+		"""
+		if offset == None:
+			if self.songs_num > 100: # offset needed
+				print "over 5000"
+				list = []
+				for i in range(0, self.songs_num, 100):
+					list += self.get_songs(i)
+				return list
+			values = {'action' : 'songs',
+				  'auth'   : self.auth,
+			}
+		else:
+			values = {'action' : 'songs',
+				  'auth'   : self.auth,
+				  'offset' : offset,
+			}
+		print values
+		root  = self.__call_api(values)
+		if not root:
+			return None
+		nodes = root.getElementsByTagName('song')
+		if not nodes:
+			return None
+		list = []
+		try:
+			for song in nodes:
+				song_id	= int(song.getAttribute('id'))
+				song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
+				artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
+				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
+				album_id       = int(song.getElementsByTagName('album')[0].getAttribute('id'))
+				album_name     = song.getElementsByTagName('album')[0].childNodes[0].data
+				
+				song_track     = int(song.getElementsByTagName('track')[0].childNodes[0].data)
+				song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
+				song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
+				
+				try: # New version doesn't initialize this...
+					precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
+				except: 
+					precise_rating = 0
+				try:
+					rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
+				except:
+					rating = 0
+
+				art	    = song.getElementsByTagName('art')[0].childNodes[0].data
+				url	    = song.getElementsByTagName('url')[0].childNodes[0].data
+				dict = {   'song_id'	: song_id,
+						'song_title'     : song_title,
+						'artist_id'      : artist_id,
+						'artist_name'    : artist_name,
+						'album_id'       : album_id,
+						'album_name'     : album_name,
+						'song_track'     : song_track,
+						'song_time'      : song_time,
+						'song_size'      : song_size,
+						'precise_rating' : precise_rating,
+						'rating'	 : rating,
+						'art'	    : art,
+						'url'	    : url,
+					}
+				list.append( dict )
+		except:
+			traceback.print_exc()
 			return None
 		return list
 
@@ -330,25 +446,11 @@ class AmpacheSession:
 			  'filter' : artist_id,
 			  'auth'   : self.auth,
 		}
-		list = []
-		data = urllib.urlencode(values)
-		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			x = self.__sanatize(response.read()) 
-			dom = xml.dom.minidom.parseString(x)
-		except: # The data pulled from Ampache was invalid
-			print "Error Pulling Data! -- Check Ampache -- Artist ID = %d" % artist_id
+		root  = self.__call_api(values)
+		nodes = root.getElementsByTagName('album')
+		if not nodes: 
 			return None
-		try: # try to get the list of albums
-			root  = dom.getElementsByTagName('root')[0]
-			nodes = root.getElementsByTagName('album')
-			if not nodes: # list is empty, reauth
-				raise Exception('Reauthenticate')
-		except: # something failed, try to reauth and do it again
-			if self.authenticate():
-				return self.get_albums_by_artist(artist_id)
-			else: # couldn't authenticate
-				return None
+		list = []
 		try:
 			for child in nodes:
 				album_id       = int(child.getAttribute('id'))
@@ -391,7 +493,7 @@ class AmpacheSession:
 		"""
 		Gets all songs on album_id and returns as a list of dictionaries.
 		Example: [
-		  		{	'song_id'        : song_id,
+		  		{	'song_id'	: song_id,
 					'song_title'     : song_title,
 					'artist_id'      : artist_id,
 					'artist_name'    : artist_name,
@@ -401,9 +503,9 @@ class AmpacheSession:
 					'song_time'      : song_time,
 					'song_size'      : song_size,
 					'precise_rating' : precise_rating,
-					'rating'         : rating,
-					'art'            : art,
-					'url'            : url,
+					'rating'	 : rating,
+					'art'	    : art,
+					'url'	    : url,
 				},
 				{ ... },
 			 ]
@@ -412,28 +514,14 @@ class AmpacheSession:
 			  'filter' : album_id,
 			  'auth'   : self.auth,
 		}
-		list = []
-		data = urllib.urlencode(values)
-		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			x = self.__sanatize(response.read()) 
-			dom = xml.dom.minidom.parseString(x)
-		except: # The data pulled from Ampache was invalid
-			print "Error Pulling Data! -- Check Ampache -- Album ID = %d" % album_id
+		root  = self.__call_api(values)
+		nodes = root.getElementsByTagName('song')
+		if not nodes: # list is empty, reauth
 			return None
-		try: # try to get the list of albums
-			root  = dom.getElementsByTagName('root')[0]
-			nodes = root.getElementsByTagName('song')
-			if not nodes: # list is empty, reauth
-				raise Exception('Reauthenticate')
-		except: # something failed, try to reauth and do it again
-			if self.authenticate():
-				return self.get_songs_by_album(album_id)
-			else: # couldn't authenticate
-				return None
+		list = []
 		try:
 			for song in nodes:
-				song_id        = int(song.getAttribute('id'))
+				song_id	= int(song.getAttribute('id'))
 				song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
 				artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
 				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
@@ -453,9 +541,9 @@ class AmpacheSession:
 				except:
 					rating = 0
 
-				art            = song.getElementsByTagName('art')[0].childNodes[0].data
-				url            = song.getElementsByTagName('url')[0].childNodes[0].data
-				dict = {   'song_id'        : song_id,
+				art	    = song.getElementsByTagName('art')[0].childNodes[0].data
+				url	    = song.getElementsByTagName('url')[0].childNodes[0].data
+				dict = {   'song_id'	: song_id,
 						'song_title'     : song_title,
 						'artist_id'      : artist_id,
 						'artist_name'    : artist_name,
@@ -465,9 +553,9 @@ class AmpacheSession:
 						'song_time'      : song_time,
 						'song_size'      : song_size,
 						'precise_rating' : precise_rating,
-						'rating'         : rating,
-						'art'            : art,
-						'url'            : url,
+						'rating'	 : rating,
+						'art'	    : art,
+						'url'	    : url,
 					}
 				list.append( dict )
 		except:
@@ -479,7 +567,7 @@ class AmpacheSession:
 	def get_song_info(self, song_id):
 		"""
 		Gets all info about a song from the song_id and returns it as a dictionary.
-		Example: {      'song_id'        : song_id,
+		Example: {      'song_id'	: song_id,
 				'song_title'     : song_title,
 				'artist_id'      : artist_id,
 				'artist_name'    : artist_name,
@@ -489,9 +577,9 @@ class AmpacheSession:
 				'song_time'      : song_time,
 				'song_size'      : song_size,
 				'precise_rating' : precise_rating,
-				'rating'         : rating,
-				'art'            : art,
-				'url'            : url,
+				'rating'	 : rating,
+				'art'	    : art,
+				'url'	    : url,
 			 }
 		
 		"""
@@ -499,27 +587,14 @@ class AmpacheSession:
 			  'filter' : song_id,
 			  'auth'   : self.auth,
 		}
-		song_dict = {}
-		data = urllib.urlencode(values)
-		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			x = self.__sanatize(response.read()) 
-			dom = xml.dom.minidom.parseString(x)
-		except: # The data pulled from Ampache was invalid
-			print "Error Pulling Data! -- Check Ampache -- Song ID = %d" % song_id
+		root = self.__call_api(values)
+		song = root.getElementsByTagName('song')[0]
+		if not song: 
 			return None
-		try: # try to get the list of albums
-			root = dom.getElementsByTagName('root')[0]
-			song = root.getElementsByTagName('song')[0]
-			if not song: # list is empty, reauth
-				raise Exception('Reauthenticate')
-		except: # something failed, try to reauth and do it again
-			if self.authenticate():
-				return self.get_song_info(song_id)
-			else: # couldn't authenticate
-				return None
+
+		song_dict = {}
 		try:
-			song_id        = int(song.getAttribute('id'))
+			song_id	= int(song.getAttribute('id'))
 			song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
 			artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
 			artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
@@ -538,9 +613,9 @@ class AmpacheSession:
 				rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
 			except:
 				rating = 0
-			art            = song.getElementsByTagName('art')[0].childNodes[0].data
-			url            = song.getElementsByTagName('url')[0].childNodes[0].data
-			song_dict = {   'song_id'        : song_id,
+			art	    = song.getElementsByTagName('art')[0].childNodes[0].data
+			url	    = song.getElementsByTagName('url')[0].childNodes[0].data
+			song_dict = {   'song_id'	: song_id,
 					'song_title'     : song_title,
 					'artist_id'      : artist_id,
 					'artist_name'    : artist_name,
@@ -550,9 +625,9 @@ class AmpacheSession:
 					'song_time'      : song_time,
 					'song_size'      : song_size,
 					'precise_rating' : precise_rating,
-					'rating'         : rating,
-					'art'            : art,
-					'url'            : url,
+					'rating'	 : rating,
+					'art'	    : art,
+					'url'	    : url,
 					}
 		except:
 			print "This song failed", song_id
@@ -576,28 +651,12 @@ class AmpacheSession:
 		values = {'action' : 'playlists',
 			  'auth'   : self.auth,
 		}
-		list = []
-		data = urllib.urlencode(values)
-		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			x = self.__sanatize(response.read()) 
-			dom = xml.dom.minidom.parseString(x)
-		except: # The data pulled from Ampache was invalid
-			print "Error Pulling Data!"
+		root  = self.__call_api(values)
+		nodes = root.getElementsByTagName('playlist')
+		if not nodes: # list is empty, reauth
 			return None
-		try: # try to get the list of albums
-			root  = dom.getElementsByTagName('root')[0]
-			nodes = root.getElementsByTagName('playlist')
-			if not nodes: # list is empty, reauth
-				if re_auth:
-					return None
-				else:
-					raise Exception('Reauthenticate')
-		except: # something failed, try to reauth and do it again
-			if self.authenticate():
-				return self.get_playlists(True)
-			else: # couldn't authenticate
-				return None
+
+		list = []
 		try:
 			for child in nodes:
 				id       = int(child.getAttribute('id'))
@@ -622,7 +681,7 @@ class AmpacheSession:
 		"""
 		Gets all info about a song from the song_id and returns it as a dictionary.
 		Example: [ 
-				{      	'song_id'        : song_id,
+				{      	'song_id'	: song_id,
 					'song_title'     : song_title,
 					'artist_id'      : artist_id,
 					'artist_name'    : artist_name,
@@ -632,9 +691,9 @@ class AmpacheSession:
 					'song_time'      : song_time,
 					'song_size'      : song_size,
 					'precise_rating' : precise_rating,
-					'rating'         : rating,
-					'art'            : art,
-					'url'            : url,
+					'rating'	 : rating,
+					'art'	    : art,
+					'url'	    : url,
 				 },
 				 {...}
 			]
@@ -644,32 +703,14 @@ class AmpacheSession:
 			  'filter' : playlist_id,
 			  'auth'   : self.auth,
 		}
-		song_dict = {}
-		data = urllib.urlencode(values)
-		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			x = self.__sanatize(response.read()) 
-			dom = xml.dom.minidom.parseString(x)
-		except: # The data pulled from Ampache was invalid
-			print "Error Pulling Data! -- Check Ampache -- Playlist ID = %d" % playlist_id
+		root = self.__call_api(values)
+		songs = root.getElementsByTagName('song')
+		if not songs:
 			return None
-		try: # try to get the list of albums
-			root  = dom.getElementsByTagName('root')[0]
-			songs = root.getElementsByTagName('song')
-			if not songs: # list is empty, reauth
-				if re_auth:
-					return None
-				else:
-					raise Exception('Reauthenticate')
-		except: # something failed, try to reauth and do it again
-			if self.authenticate():
-				return self.get_playlist_songs(playlist_id, True)
-			else: # couldn't authenticate
-				return None
+		list = []
 		try:
-			list = []
 			for song in songs:
-				song_id        = int(song.getAttribute('id'))
+				song_id	= int(song.getAttribute('id'))
 				song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
 				artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
 				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
@@ -688,9 +729,9 @@ class AmpacheSession:
 					rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
 				except:
 					rating = 0
-				art            = song.getElementsByTagName('art')[0].childNodes[0].data
-				url            = song.getElementsByTagName('url')[0].childNodes[0].data
-				song_dict = {   'song_id'        : song_id,
+				art	    = song.getElementsByTagName('art')[0].childNodes[0].data
+				url	    = song.getElementsByTagName('url')[0].childNodes[0].data
+				song_dict = {   'song_id'	: song_id,
 						'song_title'     : song_title,
 						'artist_id'      : artist_id,
 						'artist_name'    : artist_name,
@@ -700,9 +741,9 @@ class AmpacheSession:
 						'song_time'      : song_time,
 						'song_size'      : song_size,
 						'precise_rating' : precise_rating,
-						'rating'         : rating,
-						'art'            : art,
-						'url'            : url,
+						'rating'	 : rating,
+						'art'	    : art,
+						'url'	    : url,
 						}
 				list.append(song_dict)
 		except:
@@ -711,9 +752,100 @@ class AmpacheSession:
 			return None
 		return list
 
+	def __get_data(self, kind, offset=None):
+		"""NOT USED YET"""
+		"""
+		Gets all artists/albums/song and return as a list of dictionaries.
+		Example: [
+				{ 'artist_id' : artist_id, 'artist_name' : artist_name},
+				{ 'artist_id' : 1, 'artist_name' : 'The Reign of Kindo'},
+				{ ... },
+			 ]
+		"""
+		if offset == None:
+			if self.artists_num > 5000: # offset needed
+				list = []
+				for i in range(0, self.artists_num, 5000):
+					list += self.get_artists(i)
+				return list
+			values = {'action' : kind,
+				  'auth'   : self.auth,
+			}
+		else:
+			values = {'action' : kind,
+				  'auth'   : self.auth,
+				  'offset' : offset,
+			}
+		list = []
+		data = urllib.urlencode(values)
+		try: # try to query Ampache
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
+			x = self.__sanatize(response.read()) 
+			dom = xml.dom.minidom.parseString(x)
+		except Exception as e: # The data pulled from Ampache was invalid
+			traceback.print_exc()
+			return None
+		try: # try to get the list of artists
+			root  = dom.getElementsByTagName('root')[0]
+			nodes = root.getElementsByTagName(kind[:-1]) # strip off the 's' at the end
+			if not nodes: # list is empty, reauth
+				raise Exception('Reauthenticate')
+			else:
+				return nodes
+		except: # something failed, try to reauth and do it again
+			if self.authenticate():
+				return self.__get_data(kind, offset)
+			else: # couldn't authenticate
+				return None
+		return None
+
+	def __call(self, **kwargs):
+		"""Takes kwargs and talks to the ampach API.. returning the root element of the XML
+		Example: __call(action="artists", filter="kindo") 
+		This function automatically adds the 'auth' variable"""
+		values = kwargs
+		values['auth'] = self.auth
+		return self.__call_api(values)
+
+	def __call_api(self, values):
+		"""Takes a dictionary of values and talks to the ampache API... returning the root elemnent of the XML"""
+		data = urllib.urlencode(values)
+		try: # to query ampache
+			response = urllib2.urlopen(self.xml_rpc + '?' + data)
+			x = self.__sanatize(response.read()) 
+			dom = xml.dom.minidom.parseString(x)
+		except Exception as e: # The data pulled from Ampache was invalid
+			traceback.print_exc()
+			return None
+		try: # to make sure authentication is valid and extract the root element
+			root  = dom.getElementsByTagName('root')[0]
+			if not root: # list is empty, reauth
+				raise Exception('Reauthenticate')
+			else:
+				return root
+		except: # something failed, try to reauth and do it again
+			if self.authenticate():
+				return self.__call_api(values)
+			else: # couldn't authenticate
+				return None
+		return None
+
+
 	def __sanatize(self, string):
 		"""Sanatize the given string to remove bad characters."""
 		# from http://boodebr.org/main/python/all-about-python-and-unicode#UNI_XML 
 		for match in ILLEGAL_XML_RE.finditer(string):
 			string = string[:match.start()] + "?" + string[match.end():]
-		return string.encode("utf-8")
+		string = string.replace('—', '-')
+
+		try: # try to encode the whole string to UTF-8
+			string2 = string.encode("utf-8")
+		except: # if it fails try it character by character, stripping out bad characters
+			string2 = ""
+			for c in string:
+				try:
+					a = c.encode("utf-8")
+					string2 += a
+				except:
+					string2 += '?'	
+		return string2
