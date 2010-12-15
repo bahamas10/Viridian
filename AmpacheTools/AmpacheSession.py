@@ -752,52 +752,6 @@ class AmpacheSession:
 			return None
 		return list
 
-	def __get_data(self, kind, offset=None):
-		"""NOT USED YET"""
-		"""
-		Gets all artists/albums/song and return as a list of dictionaries.
-		Example: [
-				{ 'artist_id' : artist_id, 'artist_name' : artist_name},
-				{ 'artist_id' : 1, 'artist_name' : 'The Reign of Kindo'},
-				{ ... },
-			 ]
-		"""
-		if offset == None:
-			if self.artists_num > 5000: # offset needed
-				list = []
-				for i in range(0, self.artists_num, 5000):
-					list += self.get_artists(i)
-				return list
-			values = {'action' : kind,
-				  'auth'   : self.auth,
-			}
-		else:
-			values = {'action' : kind,
-				  'auth'   : self.auth,
-				  'offset' : offset,
-			}
-		list = []
-		data = urllib.urlencode(values)
-		try: # try to query Ampache
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			x = self.__sanatize(response.read()) 
-			dom = xml.dom.minidom.parseString(x)
-		except Exception as e: # The data pulled from Ampache was invalid
-			traceback.print_exc()
-			return None
-		try: # try to get the list of artists
-			root  = dom.getElementsByTagName('root')[0]
-			nodes = root.getElementsByTagName(kind[:-1]) # strip off the 's' at the end
-			if not nodes: # list is empty, reauth
-				raise Exception('Reauthenticate')
-			else:
-				return nodes
-		except: # something failed, try to reauth and do it again
-			if self.authenticate():
-				return self.__get_data(kind, offset)
-			else: # couldn't authenticate
-				return None
-		return None
 
 	def __call(self, **kwargs):
 		"""Takes kwargs and talks to the ampach API.. returning the root element of the XML
@@ -821,8 +775,15 @@ class AmpacheSession:
 			root  = dom.getElementsByTagName('root')[0]
 			if not root: # list is empty, reauth
 				raise Exception('Reauthenticate')
-			else:
-				return root
+			else: # try to find an error
+				try: 
+					error = root.getElementsByTagName("error")[0].childNodes[0].data
+					print "Error! Trying to reauthenticate :: %s" % error
+					if self.authenticate():
+						return self.__call_api(values)
+					return None
+				except: # no error found.. must be good XML :)
+					return root
 		except: # something failed, try to reauth and do it again
 			if self.authenticate():
 				return self.__call_api(values)
