@@ -118,7 +118,7 @@ class AmpacheSession:
 			socket.setdefaulttimeout(DEFAULT_TIMEOUT) # reset timeout
 			xml_string = response.read()
 			dom = xml.dom.minidom.parseString(xml_string)
-			self.auth	= dom.getElementsByTagName("auth")[0].childNodes[0].data
+			self.auth        = dom.getElementsByTagName("auth")[0].childNodes[0].data
 			self.artists_num = int(dom.getElementsByTagName("artists")[0].childNodes[0].data)
 			self.albums_num  = int(dom.getElementsByTagName("albums")[0].childNodes[0].data)
 			self.songs_num   = int(dom.getElementsByTagName("songs")[0].childNodes[0].data)
@@ -755,14 +755,15 @@ class AmpacheSession:
 
 	def __call(self, **kwargs):
 		"""Takes kwargs and talks to the ampach API.. returning the root element of the XML
-		Example: __call(action="artists", filter="kindo") 
-		This function automatically adds the 'auth' variable"""
+		Example: __call(action="artists", filter="kindo") """
 		values = kwargs
-		values['auth'] = self.auth
 		return self.__call_api(values)
 
 	def __call_api(self, values):
-		"""Takes a dictionary of values and talks to the ampache API... returning the root elemnent of the XML"""
+		"""Takes a dictionary of values and talks to the ampache API... returning the root elemnent of the XML
+		Example: __call_api({action: 'artists', filter: 'kindo'}) 
+		Automatically adds {auth: <auth>}"""
+		values['auth'] = self.auth
 		data = urllib.urlencode(values)
 		try: # to query ampache
 			response = urllib2.urlopen(self.xml_rpc + '?' + data)
