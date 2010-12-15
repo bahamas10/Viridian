@@ -77,6 +77,7 @@ if __name__ == "__main__":
 		if ampache_conn.has_credentials():
 			resp = raw_input("Username '%s' found for Ampache Server '%s'.\nConnect using these credentials? [Y/n]: " % (username, url))
 			if resp != 'n' and resp != 'N': # then use the credentials
+				ampache_conn.authenticate()
 				ready = True
 	
 	while not ready:
