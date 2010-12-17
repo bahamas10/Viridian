@@ -60,6 +60,7 @@ from XMLRPCServerSession import XMLServer
 ### Contstants ###
 ALBUM_ART_SIZE = 90
 SCRIPT_PATH    = os.path.abspath(os.path.dirname(__file__))
+PLUGINS_DIR    = os.path.join(SCRIPT_PATH, 'plugins/')
 IMAGES_DIR     = os.path.join(SCRIPT_PATH, 'images/')
 THREAD_LOCK    = thread.allocate_lock()
 VIRIDIAN_DIR   = os.path.join(os.path.expanduser("~"), '.viridian')
@@ -135,8 +136,9 @@ class AmpacheGUI:
 		self.ampache_conn = ampache_conn
 		self.db_session   = db_session
 		
-		self.plugins = PluginsSystem(os.path.join(SCRIPT_PATH, 'plugins')).subclasses
-		print self.plugins # DEBUG
+		self.plugins_list = self.__find_plugins(PLUGINS_DIR)
+		self.plugins      = self.__import_plugins(self.plugins_list)
+		print "Plugins = ", self.plugins # DEBUG
 		
 		xmlrpc_port       = self.db_session.variable_get('xmlrpc_port', XML_RPC_PORT)
 		self.xml_server   = XMLServer('', xmlrpc_port)
@@ -3164,20 +3166,23 @@ Message from GStreamer:
 			model.append([song_track, song_title, artist_name, album_name, song_time, song_size, song_id])
 		return True
 
-class PluginsSystem:
-	""" Taken From http://www.luckydonkey.com/2008/01/02/python-style-plugins-made-easy/ """
-	def __init__(self, directory):
-		self.directory = directory
-		self.subclasses = []
-		sys.path.append(self.directory)
-		def look_for_subclass(modulename):
-			module = __import__(modulename)
-			self.subclasses.append(module.__init__())
-		
-		for root, dirs, files in os.walk(self.directory):
+	def __find_plugins(self, plugin_dir):
+		""" Taken From http://www.luckydonkey.com/2008/01/02/python-style-plugins-made-easy/ """
+		plugins_list = []
+		for root, dirs, files in os.walk(plugin_dir):
 			for name in files:
 				if name.endswith(".py") and not name.startswith("__"):
-					path = os.path.join(root, name)
-					modulename =  path.rsplit('.', 1)[0].replace('/', '.')
-					look_for_subclass(name.rsplit('.', 1)[0])
-		sys.path.remove(self.directory)
+					plugins_list.append(name.rsplit('.', 1)[0])
+		return plugins_list
+
+	def __import_plugins(self, plugins_list):
+		"""Import all plugins in the self.plugins list"""
+		sys.path.append(PLUGINS_DIR)
+		plugins = []
+		for plugin in plugins_list:
+			module = __import__(plugin)
+			plugins.append(module.__init__())
+		sys.path.remove(PLUGINS_DIR)
+		return plugins
+
+
