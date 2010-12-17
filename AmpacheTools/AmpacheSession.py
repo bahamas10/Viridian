@@ -29,7 +29,7 @@ import sys, traceback
 
 ### Constants ###
 AUTH_MAX_RETRY = 3 # how many times to try and reauth before failure
-DEFAULT_TIMEOUT = 10
+DEFAULT_TIMEOUT = 10 # default 10 second timeout
 __ILLEGAL_XML = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
 		 u'|' + \
 		 u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
@@ -113,7 +113,7 @@ class AmpacheSession:
 
 		# now send the authentication request to Ampache
 		try:
-			socket.setdefaulttimeout(3) # lower timeout
+			socket.setdefaulttimeout(7) # lower timeout
 			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			socket.setdefaulttimeout(DEFAULT_TIMEOUT) # reset timeout
 			xml_string = response.read()
@@ -128,10 +128,15 @@ class AmpacheSession:
 			print "[Error] Authentication Failed -- Retry = %d" % self.auth_current_retry
 			if ( self.auth_current_retry < AUTH_MAX_RETRY ):
 				return self.authenticate()
-			else:
+			else: # authentication failed more than AUTH_MAX_RETRY times
 				self.auth_current_retry = 0
-				print "[Error] Authentication Failed!"
-			return False
+				error = None
+				try: # to find the error
+					error = dom.getElementsByTagName("error")[0].childNodes[0].data
+					print "[Error] Authentication Failed :: %s" % error
+					return error
+				except: # no error found.. must have failed because data was sent to wrong place
+					return False
 		# if it made it this far, the auth was successfull, now check to see if the catalog needs updating
 		try: 
 			# check to see if ampache has been updated or cleaned since the last time this ran
@@ -170,7 +175,7 @@ class AmpacheSession:
 		root = self.__call_api(values)
 		if not root:
 			return None
-		session  = root.getElementsByTagName('session_expire')[0].childNodes[0].data
+		session = root.getElementsByTagName('session_expire')[0].childNodes[0].data
 		return session
 			
 	#######################################
@@ -635,7 +640,7 @@ class AmpacheSession:
 			return None
 		return song_dict
 
-	def get_playlists(self, re_auth=False):
+	def get_playlists(self):
 		"""
 		Gets a list of all of the playlists on the server.
 		Example: [
@@ -677,7 +682,7 @@ class AmpacheSession:
 			return []
 		return list
 		
-	def get_playlist_songs(self, playlist_id, re_auth=False):
+	def get_playlist_songs(self, playlist_id):
 		"""
 		Gets all info about a song from the song_id and returns it as a dictionary.
 		Example: [ 
@@ -769,7 +774,7 @@ class AmpacheSession:
 			response = urllib2.urlopen(self.xml_rpc + '?' + data)
 			x = self.__sanatize(response.read()) 
 			dom = xml.dom.minidom.parseString(x)
-		except Exception as e: # The data pulled from Ampache was invalid
+		except: # The data pulled from Ampache was invalid
 			traceback.print_exc()
 			return None
 		try: # to make sure authentication is valid and extract the root element

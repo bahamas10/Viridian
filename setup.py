@@ -24,5 +24,5 @@ setup(name='Viridian',
 	url='http://viridian.daveeddy.com',
 	scripts=['viridian', 'viridian-cli'],
 	packages=['AmpacheTools'],
-	package_data={'AmpacheTools' : ['images/*', 'doc/*', 'locales/*']}
+	package_data={'AmpacheTools' : ['images/*', 'doc/*', 'locales/*', 'plugins/*']}
 )

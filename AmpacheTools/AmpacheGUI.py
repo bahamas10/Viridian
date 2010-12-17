@@ -26,6 +26,7 @@ import re
 import shutil
 import cPickle
 import getpass
+import traceback
 
 try: # require pygtk
  	import pygtk
@@ -65,6 +66,7 @@ VIRIDIAN_DIR   = os.path.join(os.path.expanduser("~"), '.viridian')
 ALBUM_ART_DIR  = os.path.join(VIRIDIAN_DIR, 'album_art')
 XML_RPC_PORT   = 4596
 VERSION_NUMBER = ""
+
 
 class AmpacheGUI:
 	"""The Ampache GUI Class"""
@@ -132,6 +134,9 @@ class AmpacheGUI:
 		self.audio_engine = audio_engine
 		self.ampache_conn = ampache_conn
 		self.db_session   = db_session
+		
+		self.plugins = PluginsSystem(os.path.join(SCRIPT_PATH, 'plugins')).subclasses
+		print self.plugins # DEBUG
 		
 		xmlrpc_port       = self.db_session.variable_get('xmlrpc_port', XML_RPC_PORT)
 		self.xml_server   = XMLServer('', xmlrpc_port)
@@ -1774,7 +1779,7 @@ class AmpacheGUI:
 			self.refresh_gui()
 		self.go_to_ampache_menu_item.set_sensitive(True)
 		##############################################################################
-		if self.__successfully_authed: # auth successful
+		if self.__successfully_authed == True: # auth successful
 			self.update_statusbar("Authentication Successful.")
 			print "Authentication Successful!"
 			print "Authentication = %s" % self.ampache_conn.auth
@@ -1825,7 +1830,12 @@ class AmpacheGUI:
 			self.update_statusbar(_("Ready."))
 			return True
 		else: # auth failed
+			error = self.__successfully_authed
+			if error == None or error == False:
+				error = _("Unknown error, possibly an incorrect URL specified, or the server is not responding.")
 			self.update_statusbar(_("Authentication Failed."))
+			self.create_dialog_alert("error", _("Error Authenticating\n\n") + error, True)
+
 			return False
 		
 				
@@ -2149,8 +2159,7 @@ class AmpacheGUI:
 	#######################################
 	def button_save_preferences_clicked(self, widget, data=None):
 		"""When the save button is pressed in the preferences"""
-		window = data
-		
+		window   = data
 		url      = self.ampache_text_entry.get_text()
 		username = self.username_text_entry.get_text()
 		password = self.password_text_entry.get_text()
@@ -2159,7 +2168,7 @@ class AmpacheGUI:
 		try:
 			if url == self.ampache_conn.url and username == self.ampache_conn.username and password == self.ampache_conn.password:
 				window.destroy()
-				return True
+				return True # haven't changed
 		except:
 			pass
 		
@@ -2168,7 +2177,8 @@ class AmpacheGUI:
 		self.audio_engine.clear_playlist()
 		self.clear_album_art()
 		dbfunctions.clear_cached_catalog(self.db_session)
-		if self.ampache_conn.set_credentials(username, password, url): # credentials saved
+		self.ampache_conn.set_credentials(username, password, url) # credentials saved
+		if self.ampache_conn.has_credentials: # credentials are NOT blank
 			self.db_session.variable_set('credentials_username', username)
 			self.db_session.variable_set('credentials_password', password)
 			self.db_session.variable_set('credentials_url', url)
@@ -2674,6 +2684,14 @@ class AmpacheGUI:
 				self.rating_stars_list[i].set_from_pixbuf(self.images_pixbuf_gray_star)
 			i += 1
 		self.update_playlist_window()
+
+		### Alert the plugins! ###
+		for plugin in self.plugins:
+			try:
+				plugin.on_song_change(self.current_song_info)
+			except:
+				traceback.print_exc() # DEBUG
+				pass
 			
 	def audioengine_error_callback(self, error_message):
 		"""Display the gstreamer error in the notification label."""
@@ -2710,7 +2728,6 @@ Message from GStreamer:
 	def check_and_populate_albums(self, artist_id=None):
 		if artist_id == None:
 			if self.db_session.table_is_empty('albums'):
-				print "getting albums"
 				albums = self.ampache_conn.get_albums()
 				if albums == None:
 					return False
@@ -3147,3 +3164,20 @@ Message from GStreamer:
 			model.append([song_track, song_title, artist_name, album_name, song_time, song_size, song_id])
 		return True
 
+class PluginsSystem:
+	""" Taken From http://www.luckydonkey.com/2008/01/02/python-style-plugins-made-easy/ """
+	def __init__(self, directory):
+		self.directory = directory
+		self.subclasses = []
+		sys.path.append(self.directory)
+		def look_for_subclass(modulename):
+			module = __import__(modulename)
+			self.subclasses.append(module.__init__())
+		
+		for root, dirs, files in os.walk(self.directory):
+			for name in files:
+				if name.endswith(".py") and not name.startswith("__"):
+					path = os.path.join(root, name)
+					modulename =  path.rsplit('.', 1)[0].replace('/', '.')
+					look_for_subclass(name.rsplit('.', 1)[0])
+		sys.path.remove(self.directory)
