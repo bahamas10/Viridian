@@ -24,6 +24,9 @@ def __init__():
 class PidginPlugin:
 	def __init__(self):
 		"""called before the plugin is asked to do anything"""
+		self.title       = "Pidgin Status"
+		self.author      = "Dave Eddy <dave@daveeddy.com>"
+		self.description = "Sets the current playing song as your pidgin status."
 
 	def on_song_change(self, song_dict):
 		"""Called when the song changes in Viridian.

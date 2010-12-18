@@ -137,7 +137,9 @@ class AmpacheGUI:
 		self.db_session   = db_session
 		
 		self.plugins_list = self.__find_plugins(PLUGINS_DIR)
-		self.plugins      = self.__import_plugins(self.plugins_list)
+		self.plugins = {}
+		for plugin_name in self.plugins_list:
+			self.plugins[plugin_name] = self.__import_plugins(plugin_name)
 		print "Plugins = ", self.plugins # DEBUG
 		
 		xmlrpc_port       = self.db_session.variable_get('xmlrpc_port', XML_RPC_PORT)
@@ -264,6 +266,10 @@ class AmpacheGUI:
 		edit_menu = gtk.Menu()
 		editm = gtk.MenuItem(_("_Edit"))
 		editm.set_submenu(edit_menu)
+
+		newi = gtk.MenuItem(_("Plugins"))
+		newi.connect("activate", self.show_plugins_window)
+		edit_menu.append(newi)
 
 		newi = gtk.ImageMenuItem(gtk.STOCK_PREFERENCES, agr)
 		key, mod = gtk.accelerator_parse("<Control>P")
@@ -1582,6 +1588,59 @@ class AmpacheGUI:
 		self.playlist_select_window.destroy()
 		self.playlist_select_window = None
 
+	def show_plugins_window(self, *args):
+		"""The Plugins Window"""
+		#################################
+		# The Plugins Window
+		#################################
+		if hasattr(self, 'plugins_window'):
+			if self.plugins_window != None:
+				self.plugins_window.present()
+				return True
+				
+		self.plugins_window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.plugins_window.set_transient_for(self.window)
+		self.plugins_window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
+		self.plugins_window.resize(490, 300)
+		self.plugins_window.set_resizable(True)
+		self.plugins_window.set_icon(self.images_pixbuf_viridian_simple)
+		self.plugins_window.connect("delete_event", self.destroy_plugins_window)
+		self.plugins_window.connect("destroy", self.destroy_plugins_window)		
+		self.plugins_window.set_title(_("Viridian Plugins"))
+		
+		vbox = gtk.VBox()
+		vbox.set_border_width(10)
+
+		hbox = gtk.HBox()
+		hbox.pack_start(gtk.Label("Select a plugin."), False, False, 2)
+		vbox.pack_start(hbox, False, False, 2)
+
+		scrolled_window = gtk.ScrolledWindow()
+		scrolled_window.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		
+
+		vbox.pack_start(scrolled_window, True, True, 5)
+		
+		bottom_bar = gtk.HBox()
+		
+		close = gtk.Button(stock=gtk.STOCK_CLOSE)
+		close.connect("clicked", self.destroy_plugins_window)
+		
+		bottom_bar.pack_end(close, False, False, 2)
+
+		vbox.pack_start(bottom_bar, False, False, 1)
+
+		self.plugins_window.add(vbox)
+		
+		self.plugins_window.show_all()
+		
+		
+	def destroy_plugins_window(self, *args):
+		"""Close the playlist window."""
+		self.plugins_window.destroy()
+		self.plugins_window = None
+
 	#######################################
 	# Status Icon 
 	#######################################
@@ -2688,7 +2747,7 @@ class AmpacheGUI:
 		self.update_playlist_window()
 
 		### Alert the plugins! ###
-		for plugin in self.plugins:
+		for plugin in self.plugins.values():
 			try:
 				plugin.on_song_change(self.current_song_info)
 			except:
@@ -3175,14 +3234,12 @@ Message from GStreamer:
 					plugins_list.append(name.rsplit('.', 1)[0])
 		return plugins_list
 
-	def __import_plugins(self, plugins_list):
+	def __import_plugins(self, plugin_name):
 		"""Import all plugins in the self.plugins list"""
 		sys.path.append(PLUGINS_DIR)
-		plugins = []
-		for plugin in plugins_list:
-			module = __import__(plugin)
-			plugins.append(module.__init__())
+		module = __import__(plugin_name)
+		plugin = module.__init__()
 		sys.path.remove(PLUGINS_DIR)
-		return plugins
+		return plugin
 
 
