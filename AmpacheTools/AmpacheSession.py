@@ -464,8 +464,11 @@ class AmpacheSession:
 				artist_name    = child.getElementsByTagName('artist')[0].childNodes[0].data
 				album_year     = child.getElementsByTagName('year')[0].childNodes[0].data
 				album_tracks   = int(child.getElementsByTagName('tracks')[0].childNodes[0].data)
-				album_disk     = int(child.getElementsByTagName('disk')[0].childNodes[0].data)
-				try: # new version doesn't put data in the middle... 
+				try:
+					album_disk = int(child.getElementsByTagName('disk')[0].childNodes[0].data)
+				except:
+					album_disk = 0
+				try: 
 					precise_rating = int(child.getElementsByTagName('preciserating')[0].childNodes[0].data)
 				except:
 					precise_rating = 0
@@ -715,7 +718,7 @@ class AmpacheSession:
 		list = []
 		try:
 			for song in songs:
-				song_id	= int(song.getAttribute('id'))
+				song_id	       = int(song.getAttribute('id'))
 				song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
 				artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
 				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
@@ -736,7 +739,7 @@ class AmpacheSession:
 					rating = 0
 				art	    = song.getElementsByTagName('art')[0].childNodes[0].data
 				url	    = song.getElementsByTagName('url')[0].childNodes[0].data
-				song_dict = {   'song_id'	: song_id,
+				song_dict = {   'song_id'        : song_id,
 						'song_title'     : song_title,
 						'artist_id'      : artist_id,
 						'artist_name'    : artist_name,
