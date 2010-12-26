@@ -139,7 +139,7 @@ class AmpacheGUI:
 		self.plugins_list = self.__find_plugins(PLUGINS_DIR)
 		self.plugins = {}
 		for plugin_name in self.plugins_list:
-			self.plugins[plugin_name] = self.__import_plugins(plugin_name)
+			self.plugins[plugin_name] = self.__import_plugin(plugin_name)
 		print "Plugins = ", self.plugins # DEBUG
 		
 		xmlrpc_port       = self.db_session.variable_get('xmlrpc_port', XML_RPC_PORT)
@@ -1619,6 +1619,28 @@ class AmpacheGUI:
 		scrolled_window.set_shadow_type(gtk.SHADOW_ETCHED_IN)
 		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		
+		self.plugins_list = self.__find_plugins(PLUGINS_DIR)
+		
+		list_store = gtk.ListStore(gobject.TYPE_BOOLEAN, str, str)
+		treeview = gtk.TreeView(list_store)
+
+		bool_cell_renderer = gtk.CellRendererToggle()
+		bool_cell_renderer.set_property('activatable', 1)
+		bool_cell_renderer.connect('toggled', self.toggle_plugin, treeview)
+		bool_col = gtk.TreeViewColumn(_("Enabled"), bool_cell_renderer, active=0)
+		treeview.append_column(bool_col)
+		
+		renderer_text = gtk.CellRendererText()
+		name_column = gtk.TreeViewColumn(_("Name"), renderer_text, text=1)
+		treeview.append_column(name_column)
+
+		renderer_text = gtk.CellRendererText()
+		desc_column = gtk.TreeViewColumn(_("Description"), renderer_text, text=2)
+		treeview.append_column(desc_column)
+
+		list_store.append((True, "Name", "Description"))
+		
+		scrolled_window.add(treeview)
 
 		vbox.pack_start(scrolled_window, True, True, 5)
 		
@@ -1778,6 +1800,12 @@ class AmpacheGUI:
 	def toggle_start_xml_rpc_server(self, widget, data=None):
 		"""Toggle whether to start the XML server when Viridian opes."""
 		self.db_session.variable_set('enable_xmlrpc_server', widget.get_active())
+		
+	def toggle_plugin(self, widget, data, treeview):
+		"""Toggle a plugin being active"""
+		print widget
+		print data
+		print treeview
 		
 	#######################################
 	# Radio Buttons
@@ -2786,8 +2814,8 @@ Message from GStreamer:
 				list.append([artist['artist_id'], artist['artist_name'], custom_artist_name])
 			dbfunctions.populate_artists_table(self.db_session, list)
 		
-	def check_and_populate_albums(self, artist_id=None):
-		if artist_id == None:
+	def check_and_populate_albums(self, artist_id=-1):
+		if artist_id == -1:
 			if self.db_session.table_is_empty('albums'):
 				albums = self.ampache_conn.get_albums()
 				if albums == None:
@@ -3234,8 +3262,8 @@ Message from GStreamer:
 					plugins_list.append(name.rsplit('.', 1)[0])
 		return plugins_list
 
-	def __import_plugins(self, plugin_name):
-		"""Import all plugins in the self.plugins list"""
+	def __import_plugin(self, plugin_name):
+		"""Import the given plugin"""
 		sys.path.append(PLUGINS_DIR)
 		module = __import__(plugin_name)
 		plugin = module.__init__()
