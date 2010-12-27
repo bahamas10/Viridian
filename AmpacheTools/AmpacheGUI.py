@@ -2727,13 +2727,15 @@ class AmpacheGUI:
 		
 	def __audioengine_song_changed(self, song_id):
 		"""The function that gets called when the AudioEngine changes songs."""
+		self.update_playlist_window()
+		self.refresh_gui()
 		if song_id == None: # nothing playing
 			self.current_song_info = None
 			self.play_pause_image.set_from_pixbuf(self.images_pixbuf_play)
 			self.set_tray_tooltip('Viridian')
 			self.window.set_title("Viridian")
 			self.set_tray_icon(None)
-			self.update_playlist_window()
+			#self.update_playlist_window()
 			return False
 		self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
 
@@ -2801,7 +2803,7 @@ class AmpacheGUI:
 			else:
 				self.rating_stars_list[i].set_from_pixbuf(self.images_pixbuf_gray_star)
 			i += 1
-		self.update_playlist_window()
+		
 
 		### Alert the plugins! ###
 		for name, plugin in self.plugins.iteritems():

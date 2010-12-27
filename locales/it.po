@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-12-26 20:29-0500\n"
+"POT-Creation-Date: 2010-12-26 20:45-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -715,15 +715,15 @@ msgid ""
 "(You can also do this at anytime by going to File -> Clear Local Cache)."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2794
+#: AmpacheTools/AmpacheGUI.py:2796
 msgid "Now Playing"
 msgstr "Ora in esecuzione"
 
-#: AmpacheTools/AmpacheGUI.py:2821
+#: AmpacheTools/AmpacheGUI.py:2823
 msgid "An error has occured."
 msgstr "Si è verificato un errore."
 
-#: AmpacheTools/AmpacheGUI.py:2822
+#: AmpacheTools/AmpacheGUI.py:2824
 #, python-format
 msgid ""
 "GStreamer has encountered an error, this is most likely caused by:\n"
@@ -735,47 +735,47 @@ msgid ""
 "%s"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2888
+#: AmpacheTools/AmpacheGUI.py:2890
 msgid "The file/URL specified is invalid."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2985
+#: AmpacheTools/AmpacheGUI.py:2987
 msgid "Loading Playlist..."
 msgstr "Caricamento playlist..."
 
-#: AmpacheTools/AmpacheGUI.py:2989
+#: AmpacheTools/AmpacheGUI.py:2991
 #, python-format
 msgid "Querying for song %d/%d in playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2996
+#: AmpacheTools/AmpacheGUI.py:2998
 msgid "Playlist loaded"
 msgstr "Playlist caricata"
 
-#: AmpacheTools/AmpacheGUI.py:3101 AmpacheTools/AmpacheGUI.py:3114
-#: AmpacheTools/AmpacheGUI.py:3127
+#: AmpacheTools/AmpacheGUI.py:3103 AmpacheTools/AmpacheGUI.py:3116
+#: AmpacheTools/AmpacheGUI.py:3129
 #, python-format
 msgid ""
 "The folder %s does not exist.  You can change the folder in Preferences."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:3146
+#: AmpacheTools/AmpacheGUI.py:3148
 msgid "Download Complete"
 msgstr "Scaricamento completato"
 
-#: AmpacheTools/AmpacheGUI.py:3235
+#: AmpacheTools/AmpacheGUI.py:3237
 msgid "Re-Fetching album art..."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:3247
+#: AmpacheTools/AmpacheGUI.py:3249
 msgid "Re-Fetching album art... Failed!"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:3255
+#: AmpacheTools/AmpacheGUI.py:3257
 msgid "Re-Fetching album art... Success!"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:3267
+#: AmpacheTools/AmpacheGUI.py:3269
 #, python-format
 msgid "Error with album -- Check Ampache -- Album ID = %d"
 msgstr ""
