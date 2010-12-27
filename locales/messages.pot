@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-12-26 13:43-0500\n"
+"POT-Creation-Date: 2010-12-26 20:29-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -39,306 +39,306 @@ msgstr ""
 msgid "There are unfinished downloads, are you sure you want to quit?"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:197
+#: AmpacheTools/AmpacheGUI.py:201
 msgid "_File"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:200
+#: AmpacheTools/AmpacheGUI.py:204
 msgid "Reauthenticate"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:204
+#: AmpacheTools/AmpacheGUI.py:208
 msgid "Open Ampache"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:212
+#: AmpacheTools/AmpacheGUI.py:216
 msgid "Save Playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:220
+#: AmpacheTools/AmpacheGUI.py:224
 msgid "Load Playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:228
+#: AmpacheTools/AmpacheGUI.py:232
 msgid "Export Playlist..."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:239
+#: AmpacheTools/AmpacheGUI.py:243
 msgid "Clear Album Art"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:243
+#: AmpacheTools/AmpacheGUI.py:247
 msgid "Clear Local Cache"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:247 AmpacheTools/AmpacheGUI.py:2503
+#: AmpacheTools/AmpacheGUI.py:251 AmpacheTools/AmpacheGUI.py:2532
 msgid "Pre-Cache"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:267
+#: AmpacheTools/AmpacheGUI.py:271
 msgid "_Edit"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:270
+#: AmpacheTools/AmpacheGUI.py:274
 msgid "Plugins"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:287
+#: AmpacheTools/AmpacheGUI.py:291
 msgid "_View"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:290
+#: AmpacheTools/AmpacheGUI.py:294
 msgid "Show Playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:297
+#: AmpacheTools/AmpacheGUI.py:301
 msgid "Show Downloads"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:306
+#: AmpacheTools/AmpacheGUI.py:310
 msgid "View Statusbar"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:317
+#: AmpacheTools/AmpacheGUI.py:321
 msgid "_Help"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:386
+#: AmpacheTools/AmpacheGUI.py:390
 msgid "Repeat"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:390
+#: AmpacheTools/AmpacheGUI.py:394
 msgid "Shuffle"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:397
+#: AmpacheTools/AmpacheGUI.py:401
 msgid "<span size=\"6000\"><b>Volume</b></span>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:546
+#: AmpacheTools/AmpacheGUI.py:550
 msgid "Current Playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:560
+#: AmpacheTools/AmpacheGUI.py:564
 msgid "Clear Playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:566
+#: AmpacheTools/AmpacheGUI.py:570
 msgid "Replace Mode"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:567
+#: AmpacheTools/AmpacheGUI.py:571
 msgid "Add Mode"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:593
+#: AmpacheTools/AmpacheGUI.py:597
 msgid "File"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:603
+#: AmpacheTools/AmpacheGUI.py:607
 msgid "Progress"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:644
+#: AmpacheTools/AmpacheGUI.py:648
 msgid "Artists"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:680
+#: AmpacheTools/AmpacheGUI.py:684
 msgid "Albums"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:734 AmpacheTools/AmpacheGUI.py:739
+#: AmpacheTools/AmpacheGUI.py:738 AmpacheTools/AmpacheGUI.py:743
 msgid "Track"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:734 AmpacheTools/AmpacheGUI.py:741
+#: AmpacheTools/AmpacheGUI.py:738 AmpacheTools/AmpacheGUI.py:745
 msgid "Title"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:734 AmpacheTools/AmpacheGUI.py:743
+#: AmpacheTools/AmpacheGUI.py:738 AmpacheTools/AmpacheGUI.py:747
 msgid "Artist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:734 AmpacheTools/AmpacheGUI.py:745
+#: AmpacheTools/AmpacheGUI.py:738 AmpacheTools/AmpacheGUI.py:749
 msgid "Album"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:734 AmpacheTools/AmpacheGUI.py:747
+#: AmpacheTools/AmpacheGUI.py:738 AmpacheTools/AmpacheGUI.py:751
 msgid "Time"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:734 AmpacheTools/AmpacheGUI.py:749
+#: AmpacheTools/AmpacheGUI.py:738 AmpacheTools/AmpacheGUI.py:753
 msgid "Size"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:772
+#: AmpacheTools/AmpacheGUI.py:776
 msgid "Ready"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:862
+#: AmpacheTools/AmpacheGUI.py:865
 msgid "Attempting to authenticate..."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:869
+#: AmpacheTools/AmpacheGUI.py:872
 msgid "Set Ampache information by going to Edit -> Preferences"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:871
+#: AmpacheTools/AmpacheGUI.py:874
 msgid ""
 "This looks like the first time you are running Viridian.  To get started, go "
 "to Edit -> Preferences and set your account information."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:912
+#: AmpacheTools/AmpacheGUI.py:915
 msgid "Viridian Settings"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:935
+#: AmpacheTools/AmpacheGUI.py:938
 msgid "<b>Account Settings</b>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:943
+#: AmpacheTools/AmpacheGUI.py:946
 msgid "Ampache URL:"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:958
+#: AmpacheTools/AmpacheGUI.py:961
 msgid "<span size=\"8000\"><b>Example: </b>http://example.com/ampache</span>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:965
+#: AmpacheTools/AmpacheGUI.py:968
 msgid "Username:"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:981
+#: AmpacheTools/AmpacheGUI.py:984
 msgid "Password:"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1014
+#: AmpacheTools/AmpacheGUI.py:1017
 msgid "<b>Notifications</b>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1023
+#: AmpacheTools/AmpacheGUI.py:1026
 msgid "Display OSD Notifications"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1037
+#: AmpacheTools/AmpacheGUI.py:1040
 msgid "<b>Alternate Row Colors</b>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1044
+#: AmpacheTools/AmpacheGUI.py:1047
 msgid "Artists Column"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1052
+#: AmpacheTools/AmpacheGUI.py:1055
 msgid "Albums Column"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1060
+#: AmpacheTools/AmpacheGUI.py:1063
 msgid "Songs Column"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1068
+#: AmpacheTools/AmpacheGUI.py:1071
 msgid "Playlist Column"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1076
+#: AmpacheTools/AmpacheGUI.py:1079
 msgid "Downloads Column"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1093
+#: AmpacheTools/AmpacheGUI.py:1096
 msgid "<b>Catalog Cache</b>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1104
+#: AmpacheTools/AmpacheGUI.py:1107
 msgid "Automatically clear local catalog when Ampache is updated"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1122
+#: AmpacheTools/AmpacheGUI.py:1125
 msgid "Local catalog is up-to-date."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1125
+#: AmpacheTools/AmpacheGUI.py:1128
 msgid ""
 "Local catalog is older than Ampache catalog! To update the local catalog go "
 "to File -> Clear Local Cache."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1143
+#: AmpacheTools/AmpacheGUI.py:1146
 msgid "<b>Local Downloads</b>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1151
+#: AmpacheTools/AmpacheGUI.py:1154
 msgid "    Select where downloaded files should go."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1184
+#: AmpacheTools/AmpacheGUI.py:1187
 msgid "<b>Status Tray Icon</b>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1190
+#: AmpacheTools/AmpacheGUI.py:1193
 msgid "Quit Viridian when window is closed"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1197
+#: AmpacheTools/AmpacheGUI.py:1200
 msgid "Standard Tray Icon"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1208
+#: AmpacheTools/AmpacheGUI.py:1211
 msgid "Unified Sound Icon ( Ubuntu 10.10 or higher )"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1220
+#: AmpacheTools/AmpacheGUI.py:1223
 msgid "Disabled"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1238
+#: AmpacheTools/AmpacheGUI.py:1241
 msgid ""
 "Note: changes to the type of icon will take effect the next time this "
 "program is opened."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1255
+#: AmpacheTools/AmpacheGUI.py:1258
 msgid "<b>Server Settings</b>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1264
+#: AmpacheTools/AmpacheGUI.py:1267
 msgid "XML RPC Server: "
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1271 AmpacheTools/AmpacheGUI.py:2603
+#: AmpacheTools/AmpacheGUI.py:1274 AmpacheTools/AmpacheGUI.py:2632
 #, python-format
 msgid "Running. (port %d)"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1274 AmpacheTools/AmpacheGUI.py:2606
+#: AmpacheTools/AmpacheGUI.py:1277 AmpacheTools/AmpacheGUI.py:2635
 msgid "Not Running."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1286
+#: AmpacheTools/AmpacheGUI.py:1289
 msgid "Start"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1291
+#: AmpacheTools/AmpacheGUI.py:1294
 msgid "Stop"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1296
+#: AmpacheTools/AmpacheGUI.py:1299
 msgid "Restart"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1301
+#: AmpacheTools/AmpacheGUI.py:1304
 msgid "Port: "
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1313
+#: AmpacheTools/AmpacheGUI.py:1316
 msgid "Start XML RPC server when Viridan starts"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1332
+#: AmpacheTools/AmpacheGUI.py:1335
 msgid "<b>System</b>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1342
+#: AmpacheTools/AmpacheGUI.py:1345
 msgid ""
 "To delete all personal information (including your username, password, album-"
 "art, cached information, etc.) press this button. NOTE: This will delete all "
@@ -347,301 +347,312 @@ msgid ""
 "Viridian."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1353
+#: AmpacheTools/AmpacheGUI.py:1356
 msgid "Reset Everything"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1362
+#: AmpacheTools/AmpacheGUI.py:1365
 msgid "Account"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1363
+#: AmpacheTools/AmpacheGUI.py:1366
 msgid "Display"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1364
+#: AmpacheTools/AmpacheGUI.py:1367
 msgid "Catalog"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1365
+#: AmpacheTools/AmpacheGUI.py:1368
 msgid "Downloads"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1366
+#: AmpacheTools/AmpacheGUI.py:1369
 msgid "Tray Icon"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1367
+#: AmpacheTools/AmpacheGUI.py:1370
 msgid "Server"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1368
+#: AmpacheTools/AmpacheGUI.py:1371
 msgid "System"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1403
+#: AmpacheTools/AmpacheGUI.py:1406
 msgid "Viridian Help"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1415
+#: AmpacheTools/AmpacheGUI.py:1418
 msgid "<span size=\"14000\"><b>Viridian Help</b></span>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1419
+#: AmpacheTools/AmpacheGUI.py:1422
 msgid "Home Page:"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1426
+#: AmpacheTools/AmpacheGUI.py:1429
 msgid "Launchpad:"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1433
+#: AmpacheTools/AmpacheGUI.py:1436
 msgid "FAQ:"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1440
+#: AmpacheTools/AmpacheGUI.py:1443
 msgid "Bugs:"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1447
+#: AmpacheTools/AmpacheGUI.py:1450
 msgid "Questions:"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1500 AmpacheTools/AmpacheGUI.py:1501
-#: AmpacheTools/AmpacheGUI.py:1509 AmpacheTools/AmpacheGUI.py:1634
+#: AmpacheTools/AmpacheGUI.py:1503 AmpacheTools/AmpacheGUI.py:1504
+#: AmpacheTools/AmpacheGUI.py:1512 AmpacheTools/AmpacheGUI.py:1635
 msgid "Name"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1500 AmpacheTools/AmpacheGUI.py:1511
+#: AmpacheTools/AmpacheGUI.py:1503 AmpacheTools/AmpacheGUI.py:1514
 msgid "Songs"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1500 AmpacheTools/AmpacheGUI.py:1513
+#: AmpacheTools/AmpacheGUI.py:1503 AmpacheTools/AmpacheGUI.py:1516
 msgid "Owner"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1500 AmpacheTools/AmpacheGUI.py:1515
+#: AmpacheTools/AmpacheGUI.py:1503 AmpacheTools/AmpacheGUI.py:1518
 msgid "Type"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1529
+#: AmpacheTools/AmpacheGUI.py:1532
 msgid "Playlist Name: "
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1546
+#: AmpacheTools/AmpacheGUI.py:1549
 msgid "Export as M3U..."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1609
+#: AmpacheTools/AmpacheGUI.py:1612
 msgid "Viridian Plugins"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1630
+#: AmpacheTools/AmpacheGUI.py:1618
+msgid "Select a plugin."
+msgstr ""
+
+#: AmpacheTools/AmpacheGUI.py:1631
 msgid "Enabled"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1638
+#: AmpacheTools/AmpacheGUI.py:1639
 msgid "Description"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1678
+#: AmpacheTools/AmpacheGUI.py:1660
+#, python-format
+msgid ""
+"Error: plugin '%s' could not be loaded because it is missing a title, "
+"description, and author instance variable"
+msgstr ""
+
+#: AmpacheTools/AmpacheGUI.py:1698
 msgid "Show Window"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1685
+#: AmpacheTools/AmpacheGUI.py:1705
 msgid "- Now Playing -"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1687
+#: AmpacheTools/AmpacheGUI.py:1707
 msgid "- Now Playing (paused) -"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1854
+#: AmpacheTools/AmpacheGUI.py:1883
 msgid "Authenticating..."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1906
+#: AmpacheTools/AmpacheGUI.py:1935
 msgid "Pulling Artists..."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1910
+#: AmpacheTools/AmpacheGUI.py:1939
 #, python-format
 msgid "<b>All Artists (%d)</b>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1916
+#: AmpacheTools/AmpacheGUI.py:1945
 msgid "Pulling Albums..."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1919
+#: AmpacheTools/AmpacheGUI.py:1948
 msgid "Ready."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1924
+#: AmpacheTools/AmpacheGUI.py:1953
 msgid ""
 "Unknown error, possibly an incorrect URL specified, or the server is not "
 "responding."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1925
+#: AmpacheTools/AmpacheGUI.py:1954
 msgid "Authentication Failed."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1926
+#: AmpacheTools/AmpacheGUI.py:1955
 msgid ""
 "Error Authenticating\n"
 "\n"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:1964
+#: AmpacheTools/AmpacheGUI.py:1993
 #, python-format
 msgid "<b>All Albums (%d)</b>"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2011
+#: AmpacheTools/AmpacheGUI.py:2040
 msgid "Fetching Album id: "
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2095 AmpacheTools/AmpacheGUI.py:2111
+#: AmpacheTools/AmpacheGUI.py:2124 AmpacheTools/AmpacheGUI.py:2140
 msgid "Remove From Playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2099 AmpacheTools/AmpacheGUI.py:2180
+#: AmpacheTools/AmpacheGUI.py:2128 AmpacheTools/AmpacheGUI.py:2209
 msgid "Download Songs"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2115 AmpacheTools/AmpacheGUI.py:2196
+#: AmpacheTools/AmpacheGUI.py:2144 AmpacheTools/AmpacheGUI.py:2225
 msgid "Download Song"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2118 AmpacheTools/AmpacheGUI.py:2199
+#: AmpacheTools/AmpacheGUI.py:2147 AmpacheTools/AmpacheGUI.py:2228
 msgid "Copy URL to Clipboard"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2134
+#: AmpacheTools/AmpacheGUI.py:2163
 msgid "Open Song"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2137
+#: AmpacheTools/AmpacheGUI.py:2166
 msgid "Open Containing Folder"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2153
+#: AmpacheTools/AmpacheGUI.py:2182
 msgid "Add Album to Playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2157
+#: AmpacheTools/AmpacheGUI.py:2186
 msgid "Download Album"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2176
+#: AmpacheTools/AmpacheGUI.py:2205
 msgid "Add Songs to Playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2192
+#: AmpacheTools/AmpacheGUI.py:2221
 msgid "Add Song to Playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2274
+#: AmpacheTools/AmpacheGUI.py:2303
 msgid "Saved Credentials"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2275
+#: AmpacheTools/AmpacheGUI.py:2304
 msgid "Credentials Saved"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2279
+#: AmpacheTools/AmpacheGUI.py:2308
 msgid "Couldn't save credentials!"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2280
+#: AmpacheTools/AmpacheGUI.py:2309
 msgid "[Error] Couldn't save credentials!"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2291
+#: AmpacheTools/AmpacheGUI.py:2320
 msgid "Choose Folder..."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2349 AmpacheTools/AmpacheGUI.py:2395
-#: AmpacheTools/AmpacheGUI.py:2396
+#: AmpacheTools/AmpacheGUI.py:2378 AmpacheTools/AmpacheGUI.py:2424
+#: AmpacheTools/AmpacheGUI.py:2425
 msgid "Cannot save empty playlist."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2350
+#: AmpacheTools/AmpacheGUI.py:2379
 msgid "Cannot save empty playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2387
+#: AmpacheTools/AmpacheGUI.py:2416
 #, python-format
 msgid "Problem loading playlist.  Playlist ID = %d"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2399
+#: AmpacheTools/AmpacheGUI.py:2428
 msgid "Invalid Name."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2402
+#: AmpacheTools/AmpacheGUI.py:2431
 msgid "Overwrite Playlist?"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2402
+#: AmpacheTools/AmpacheGUI.py:2431
 #, python-format
 msgid "A playlist by the name '%s' already exists, overwrite?"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2413
+#: AmpacheTools/AmpacheGUI.py:2442
 msgid "Only exporting of local playlists is supported."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2418
+#: AmpacheTools/AmpacheGUI.py:2447
 msgid "Cannot export empty playlist."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2427
+#: AmpacheTools/AmpacheGUI.py:2456
 msgid "File already exists."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2438
+#: AmpacheTools/AmpacheGUI.py:2467
 #, python-format
 msgid "Playlist %s written to %s."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2451
+#: AmpacheTools/AmpacheGUI.py:2480
 msgid "Delete Playlist?"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2451
+#: AmpacheTools/AmpacheGUI.py:2480
 #, python-format
 msgid "Are you sure you want to delete the playlist '%s'?"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2457
+#: AmpacheTools/AmpacheGUI.py:2486
 msgid "Cannot delete playlists that are on the Ampache server from Viridian."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2482
+#: AmpacheTools/AmpacheGUI.py:2511
 msgid "Album Art Cleared"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2486
+#: AmpacheTools/AmpacheGUI.py:2515
 msgid "Reset Viridian"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2486
+#: AmpacheTools/AmpacheGUI.py:2515
 msgid ""
 "Are you sure you want to delete all personal information stored with "
 "Viridian?"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2494
+#: AmpacheTools/AmpacheGUI.py:2523
 msgid "Not Authenticated"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2499
+#: AmpacheTools/AmpacheGUI.py:2528
 msgid "Pre-Cache already in progress."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2503
+#: AmpacheTools/AmpacheGUI.py:2532
 msgid ""
 "This will cache all of the artist, album, and song information (not the "
 "songs themselves) locally to make Viridian respond faster.\n"
@@ -650,51 +661,51 @@ msgid ""
 "Proceed?"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2523
+#: AmpacheTools/AmpacheGUI.py:2552
 #, python-format
 msgid "Pulling all albums from artists: %d/%d"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2525
+#: AmpacheTools/AmpacheGUI.py:2554
 msgid "Finished pulling albums"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2536
+#: AmpacheTools/AmpacheGUI.py:2565
 #, python-format
 msgid "Pulling all songs from albums: %d/%d"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2542
+#: AmpacheTools/AmpacheGUI.py:2571
 msgid "Finished Pre Cache -- Time Taken: "
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2546
+#: AmpacheTools/AmpacheGUI.py:2575
 msgid "Error with pre-cache!"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2548
+#: AmpacheTools/AmpacheGUI.py:2577
 msgid ""
 "Error with pre-cache!\n"
 "\n"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2570
+#: AmpacheTools/AmpacheGUI.py:2599
 msgid "Open Image"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2573
+#: AmpacheTools/AmpacheGUI.py:2602
 msgid "Refresh Album Art"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2659
+#: AmpacheTools/AmpacheGUI.py:2688
 msgid "Viridian is a front-end for an Ampache Server (see http://ampache.org)"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2681
+#: AmpacheTools/AmpacheGUI.py:2710
 msgid "Ampache Catalog Updated"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2681
+#: AmpacheTools/AmpacheGUI.py:2710
 msgid ""
 "The Ampache catalog on the server is newer than the locally cached catalog "
 "on this computer.\n"
@@ -703,15 +714,15 @@ msgid ""
 "(You can also do this at anytime by going to File -> Clear Local Cache)."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2765
+#: AmpacheTools/AmpacheGUI.py:2794
 msgid "Now Playing"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2787
+#: AmpacheTools/AmpacheGUI.py:2821
 msgid "An error has occured."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2788
+#: AmpacheTools/AmpacheGUI.py:2822
 #, python-format
 msgid ""
 "GStreamer has encountered an error, this is most likely caused by:\n"
@@ -723,47 +734,47 @@ msgid ""
 "%s"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2854
+#: AmpacheTools/AmpacheGUI.py:2888
 msgid "The file/URL specified is invalid."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2951
+#: AmpacheTools/AmpacheGUI.py:2985
 msgid "Loading Playlist..."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2955
+#: AmpacheTools/AmpacheGUI.py:2989
 #, python-format
 msgid "Querying for song %d/%d in playlist"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:2962
+#: AmpacheTools/AmpacheGUI.py:2996
 msgid "Playlist loaded"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:3067 AmpacheTools/AmpacheGUI.py:3080
-#: AmpacheTools/AmpacheGUI.py:3093
+#: AmpacheTools/AmpacheGUI.py:3101 AmpacheTools/AmpacheGUI.py:3114
+#: AmpacheTools/AmpacheGUI.py:3127
 #, python-format
 msgid ""
 "The folder %s does not exist.  You can change the folder in Preferences."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:3112
+#: AmpacheTools/AmpacheGUI.py:3146
 msgid "Download Complete"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:3201
+#: AmpacheTools/AmpacheGUI.py:3235
 msgid "Re-Fetching album art..."
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:3213
+#: AmpacheTools/AmpacheGUI.py:3247
 msgid "Re-Fetching album art... Failed!"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:3221
+#: AmpacheTools/AmpacheGUI.py:3255
 msgid "Re-Fetching album art... Success!"
 msgstr ""
 
-#: AmpacheTools/AmpacheGUI.py:3233
+#: AmpacheTools/AmpacheGUI.py:3267
 #, python-format
 msgid "Error with album -- Check Ampache -- Album ID = %d"
 msgstr ""

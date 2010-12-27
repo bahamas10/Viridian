@@ -136,11 +136,15 @@ class AmpacheGUI:
 		self.ampache_conn = ampache_conn
 		self.db_session   = db_session
 		
-		self.plugins_list = self.__find_plugins(PLUGINS_DIR)
+		plugins_list = self.__find_plugins(PLUGINS_DIR)
 		self.plugins = {}
-		for plugin_name in self.plugins_list:
-			self.plugins[plugin_name] = self.__import_plugin(plugin_name)
+		for plugin_name in plugins_list:
+			plugin = self.__import_plugin(plugin_name)
+			if plugin != None:
+				self.plugins[plugin_name] = plugin
 		print "Plugins = ", self.plugins # DEBUG
+		
+		self.enabled_plugins = self.db_session.variable_get('enabled_plugins', [])
 		
 		xmlrpc_port       = self.db_session.variable_get('xmlrpc_port', XML_RPC_PORT)
 		self.xml_server   = XMLServer('', xmlrpc_port)
@@ -812,7 +816,6 @@ class AmpacheGUI:
 				
 	def media_key_pressed(self, *args):
 		"""Support Media Key Presses -- Merged from Andrew Barr"""
-
 		key = args[1]
 		op_function = { "Previous" : self.button_prev_clicked,
 			"Next" : self.button_next_clicked ,
@@ -1612,21 +1615,19 @@ class AmpacheGUI:
 		vbox.set_border_width(10)
 
 		hbox = gtk.HBox()
-		hbox.pack_start(gtk.Label("Select a plugin."), False, False, 2)
+		hbox.pack_start(gtk.Label(_("Select a plugin.")), False, False, 2)
 		vbox.pack_start(hbox, False, False, 2)
 
 		scrolled_window = gtk.ScrolledWindow()
 		scrolled_window.set_shadow_type(gtk.SHADOW_ETCHED_IN)
 		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		
-		self.plugins_list = self.__find_plugins(PLUGINS_DIR)
-		
-		list_store = gtk.ListStore(gobject.TYPE_BOOLEAN, str, str)
+		list_store = gtk.ListStore(gobject.TYPE_BOOLEAN, str, str, str)
 		treeview = gtk.TreeView(list_store)
 
 		bool_cell_renderer = gtk.CellRendererToggle()
-		bool_cell_renderer.set_property('activatable', 1)
-		bool_cell_renderer.connect('toggled', self.toggle_plugin, treeview)
+		bool_cell_renderer.set_property('activatable', True)
+		bool_cell_renderer.connect('toggled', self.toggle_plugin, list_store)
 		bool_col = gtk.TreeViewColumn(_("Enabled"), bool_cell_renderer, active=0)
 		treeview.append_column(bool_col)
 		
@@ -1637,8 +1638,27 @@ class AmpacheGUI:
 		renderer_text = gtk.CellRendererText()
 		desc_column = gtk.TreeViewColumn(_("Description"), renderer_text, text=2)
 		treeview.append_column(desc_column)
-
-		list_store.append((True, "Name", "Description"))
+		
+		# Check for new plugins since launch
+		self.plugins = {}
+		new_plugins_list = self.__find_plugins(PLUGINS_DIR)
+		for plugin in new_plugins_list:
+			imported_plugin = self.__import_plugin(plugin)
+			if imported_plugin != None:
+				self.plugins[plugin] = imported_plugin
+				
+		for name, plugin in self.plugins.iteritems():
+			enabled = False
+			if name in self.enabled_plugins:
+				enabled = True
+			try:
+				title       = plugin.title
+				description = plugin.description
+				author      = plugin.author
+				list_store.append((enabled, title, description, name))
+			except:
+				print _("Error: plugin '%s' could not be loaded because it is missing a title, description, and author instance variable") % (name)
+		
 		
 		scrolled_window.add(treeview)
 
@@ -1801,11 +1821,20 @@ class AmpacheGUI:
 		"""Toggle whether to start the XML server when Viridian opes."""
 		self.db_session.variable_set('enable_xmlrpc_server', widget.get_active())
 		
-	def toggle_plugin(self, widget, data, treeview):
+	def toggle_plugin(self, widget, path, model):
 		"""Toggle a plugin being active"""
-		print widget
-		print data
-		print treeview
+		plugin_name = model[path][3]
+		
+		going_to = not model[path][0]
+		if going_to == True:
+			self.enabled_plugins.append(plugin_name)
+		else:
+			self.enabled_plugins.remove(plugin_name)
+		# save the new list
+		self.db_session.variable_set('enabled_plugins', self.enabled_plugins)
+		
+		# this line will tick or untick the checkmark
+		model[path][0] = not model[path][0]
 		
 	#######################################
 	# Radio Buttons
@@ -2775,12 +2804,17 @@ class AmpacheGUI:
 		self.update_playlist_window()
 
 		### Alert the plugins! ###
-		for plugin in self.plugins.values():
-			try:
-				plugin.on_song_change(self.current_song_info)
-			except:
-				traceback.print_exc() # DEBUG
-				pass
+		for name, plugin in self.plugins.iteritems():
+			if name in self.enabled_plugins: # only fire off enabled plugins
+				try:
+					print "Alerting plugin '%s' of song change" % (name) 
+					plugin.on_song_change(self.current_song_info)
+					print "Plugin exited successfully"
+				except:
+					print "Error with plugin '%s':\n+++++++ BEGIN STACK TRACE ++++++++" % (name)
+					traceback.print_exc() # DEBUG
+					print "++++++++ END STACK TRACE +++++++++"
+					pass
 			
 	def audioengine_error_callback(self, error_message):
 		"""Display the gstreamer error in the notification label."""
@@ -3265,8 +3299,11 @@ Message from GStreamer:
 	def __import_plugin(self, plugin_name):
 		"""Import the given plugin"""
 		sys.path.append(PLUGINS_DIR)
-		module = __import__(plugin_name)
-		plugin = module.__init__()
+		try:
+			module = __import__(plugin_name)
+			plugin = module.__init__()
+		except:
+			plugin = None
 		sys.path.remove(PLUGINS_DIR)
 		return plugin
 
