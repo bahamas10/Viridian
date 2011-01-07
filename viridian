@@ -19,7 +19,7 @@ __program__    = "Viridian"
 __author__     = "David Eddy"
 __credits__    = ["Michael Zeller", "Skye Sawyer"]
 __license__    = "GPLv3"
-__version__    = "1.1.1"
+__version__    = "1.2"
 __maintainer__ = "David Eddy"
 __email__      = "dave@daveeddy.com"
 __status__     = "Release"
@@ -47,7 +47,7 @@ class AmpacheService(dbus.service.Object):
 		self.app.window.present()
 
 if __name__ == "__main__":
-	#initialize gettext
+	# initialize gettext
 	gettext.install("viridian", LOCALES_DIR)
 	
 	try: # try to see if an instance is already running, and if so don't make a second instance

@@ -28,6 +28,12 @@ import cPickle
 import getpass
 import traceback
 
+try: 
+	import glib
+	GLIB_AVAILABLE = True
+except ImportError:
+	GLIB_AVAILABLE = False
+
 try: # require pygtk
  	import pygtk
   	pygtk.require("2.0")
@@ -835,10 +841,18 @@ class AmpacheGUI:
 		### Status tray variables ###
 		self.quit_when_window_closed = self.db_session.variable_get('quit_when_window_closed', False)
 		### Downloads Directory ###
-		# first check if ~/Downloads exist, then fallback to ~ (only if the user hasn't set one)
+		# first check if xdg_downloads exists, if not then check if 
+		# ~/Downloads exist, then fallback to ~ (only if the user hasn't set one)
 		download_dir = os.path.expanduser("~")
-		if os.path.exists(os.path.join(download_dir, 'Downloads')):
-			download_dir = os.path.join(download_dir, 'Downloads')
+		if GLIB_AVAILABLE: # first try to set the Downloads dir to the users locale Download dir
+			xdg_download_dir = glib.get_user_special_dir(glib.USER_DIRECTORY_DOWNLOAD)
+			if not xdg_download_dir is None: # xdg was set
+				download_dir = xdg_download_dir
+			elif os.path.exists(os.path.join(download_dir, 'Downloads')):
+				download_dir = os.path.join(download_dir, 'Downloads')
+		else: # no glib.. try to set it to ~/Downloads
+			if os.path.exists(os.path.join(download_dir, 'Downloads')):
+				download_dir = os.path.join(download_dir, 'Downloads')
 		self.downloads_directory = self.db_session.variable_get('downloads_directory', download_dir)
 			
 		### Alternate Row Colors ###
@@ -2804,8 +2818,13 @@ class AmpacheGUI:
 				self.rating_stars_list[i].set_from_pixbuf(self.images_pixbuf_gray_star)
 			i += 1
 		
-
 		### Alert the plugins! ###
+		thread.start_new_thread(self._alert_plugins_of_song_change, (None,))
+
+		
+	
+	def _alert_plugins_of_song_change(self, *args):
+		"""Fire off enabled plugins because the song has changed"""
 		for name, plugin in self.plugins.iteritems():
 			if name in self.enabled_plugins: # only fire off enabled plugins
 				try:
