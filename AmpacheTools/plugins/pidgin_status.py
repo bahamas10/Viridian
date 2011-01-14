@@ -25,6 +25,7 @@ def __init__():
 class PidginPlugin:
 	def __init__(self):
 		"""called before the plugin is asked to do anything"""
+		import dbus
 		self.title       = "Pidgin Status"
 		self.author      = "Dave Eddy <dave@daveeddy.com>"
 		self.description = "Sets the current playing song as your pidgin status."
@@ -33,7 +34,6 @@ class PidginPlugin:
 		"""Called when the song changes in Viridian.
 		A dictionary with all of the songs information is passed in as 'song_dict'"""
 		try: 
-			import dbus
 			bus = dbus.SessionBus()
 			obj = bus.get_object("im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
 			self.purple = dbus.Interface(obj, "im.pidgin.purple.PurpleInterface")
