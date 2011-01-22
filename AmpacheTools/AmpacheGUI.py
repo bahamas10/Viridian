@@ -27,6 +27,10 @@ import shutil
 import cPickle
 import getpass
 import traceback
+import dbus
+
+from dbus.mainloop.glib import threads_init
+threads_init()
 
 try: 
 	import glib
@@ -42,11 +46,6 @@ except:
   	print "pygtk required!"
 	sys.exit(1);
 
-try: # check for dbus
-	import dbus
-	DBUS_AVAILABLE = True
-except ImportError:
-	DBUS_AVAILABLE = False
 
 try: # check for pynotify
 	import pynotify
@@ -80,7 +79,6 @@ class AmpacheGUI:
 	def main(self):
 		"""Method to call gtk.main() and display the GUI."""
 		gobject.threads_init()
-		
 		gobject.idle_add(self.main_gui_callback)
 		
 		### Status tray icon ####
@@ -95,9 +93,6 @@ class AmpacheGUI:
 		
 		### Seek Bar Thread (1/4 second) ###
 		gobject.timeout_add(250, self.query_position)
-		### Keep session active when song is paused (ping every minute) ###
-		#gobject.timeout_add(1000 * 60, self.keep_session_active)
-		
 		
 		gtk.main()
 
@@ -811,14 +806,14 @@ class AmpacheGUI:
 		self.playlist_mode = self.db_session.variable_get('playlist_mode', 0)
 		combobox.set_active(self.playlist_mode)	
 		
-		if DBUS_AVAILABLE:
-			try:
-				session_bus = dbus.SessionBus()
-				gnome_settings_daemon = session_bus.get_object("org.gnome.SettingsDaemon", "/org/gnome/SettingsDaemon/MediaKeys")
-				media_keys = dbus.Interface(gnome_settings_daemon, "org.gnome.SettingsDaemon.MediaKeys")
-				media_keys.connect_to_signal("MediaPlayerKeyPressed", self.media_key_pressed)
-			except:
-				pass
+		# media keys
+		try:
+			session_bus = dbus.SessionBus()
+			gnome_settings_daemon = session_bus.get_object("org.gnome.SettingsDaemon", "/org/gnome/SettingsDaemon/MediaKeys")
+			media_keys = dbus.Interface(gnome_settings_daemon, "org.gnome.SettingsDaemon.MediaKeys")
+			media_keys.connect_to_signal("MediaPlayerKeyPressed", self.media_key_pressed)
+		except:
+			pass
 				
 	def media_key_pressed(self, *args):
 		"""Support Media Key Presses -- Merged from Andrew Barr"""

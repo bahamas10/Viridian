@@ -18,6 +18,8 @@
 # to the currently playing song.
 #
 
+import dbus
+
 def __init__():
 	"""Return an instance of the class used by the plugin when __init__() is called"""
 	return PidginPlugin()
@@ -25,7 +27,6 @@ def __init__():
 class PidginPlugin:
 	def __init__(self):
 		"""called before the plugin is asked to do anything"""
-		import dbus
 		self.title       = "Pidgin Status"
 		self.author      = "Dave Eddy <dave@daveeddy.com>"
 		self.description = "Sets the current playing song as your pidgin status."
@@ -38,8 +39,11 @@ class PidginPlugin:
 			obj = bus.get_object("im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
 			self.purple = dbus.Interface(obj, "im.pidgin.purple.PurpleInterface")
 			self.set_message('Now Playing :: ' + song_dict['song_title'] + ' by ' + song_dict['artist_name'])
+			print "Status Set"
 		except:
+			print "Error setting status"
 			pass
+
 
 	def set_message(self, message):
 		# Get current status type (Available/Away/etc.)
