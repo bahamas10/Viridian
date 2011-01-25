@@ -91,8 +91,8 @@ class AmpacheGUI:
 			self.tray_icon.connect('popup-menu', self.status_icon_popup_menu)
 			self.tray_icon.set_tooltip('Viridian')
 		
-		### Seek Bar Thread (1/4 second) ###
-		gobject.timeout_add(250, self.query_position)
+		### Seek Bar Thread (1/5 second) ###
+		gobject.timeout_add(200, self.query_position)
 		
 		gtk.main()
 
@@ -2732,7 +2732,7 @@ class AmpacheGUI:
 				self.current_song_info = dbfunctions.get_single_song_dict(self.db_session, song_id)
 			else:
 				self.current_song_info = self.ampache_conn.get_song_info(song_id)
-		gobject.idle_add(self.__audioengine_song_changed, song_id)
+		thread.start_new_thread(self.__audioengine_song_changed, (song_id,))
 		
 	def __audioengine_song_changed(self, song_id):
 		"""The function that gets called when the AudioEngine changes songs."""
@@ -2744,7 +2744,6 @@ class AmpacheGUI:
 			self.set_tray_tooltip('Viridian')
 			self.window.set_title("Viridian")
 			self.set_tray_icon(None)
-			#self.update_playlist_window()
 			return False
 		self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
 
@@ -2776,8 +2775,8 @@ class AmpacheGUI:
 		
 		### Update the statusbar and tray icon ###
 		self.set_tray_tooltip("Viridian :: " + song_title + ' - ' + artist_name + ' - ' + album_name)
-		self.update_statusbar(song_title + ' - ' + artist_name + ' - ' + album_name)
 		self.window.set_title("Viridian :: " + song_title + ' - ' + artist_name + ' - ' + album_name)
+		self.update_statusbar(song_title + ' - ' + artist_name + ' - ' + album_name)
 		
 		### Get the album Art ###
 		album_id   = self.current_song_info['album_id']
@@ -2814,7 +2813,7 @@ class AmpacheGUI:
 			i += 1
 		
 		### Alert the plugins! ###
-		thread.start_new_thread(self._alert_plugins_of_song_change, (None,))
+		self._alert_plugins_of_song_change()
 
 		
 	
