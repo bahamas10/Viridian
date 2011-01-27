@@ -67,11 +67,14 @@ ALBUM_ART_SIZE = 90
 SCRIPT_PATH    = os.path.abspath(os.path.dirname(__file__))
 PLUGINS_DIR    = os.path.join(SCRIPT_PATH, 'plugins/')
 IMAGES_DIR     = os.path.join(SCRIPT_PATH, 'images/')
-THREAD_LOCK    = thread.allocate_lock()
+THREAD_LOCK    = thread.allocate_lock() # used for downloads
+THREAD_LOCK_B  = thread.allocate_lock() # used for song changing
 VIRIDIAN_DIR   = os.path.join(os.path.expanduser("~"), '.viridian')
 ALBUM_ART_DIR  = os.path.join(VIRIDIAN_DIR, 'album_art')
 XML_RPC_PORT   = 4596
 VERSION_NUMBER = ""
+#THREAD_LOCK.release()
+#THREAD_LOCK_B.release()
 
 
 class AmpacheGUI:
@@ -2736,14 +2739,16 @@ class AmpacheGUI:
 		
 	def __audioengine_song_changed(self, song_id):
 		"""The function that gets called when the AudioEngine changes songs."""
+		THREAD_LOCK_B.acquire()
 		self.update_playlist_window()
-		self.refresh_gui()
+		#self.refresh_gui()
 		if song_id == None: # nothing playing
 			self.current_song_info = None
 			self.play_pause_image.set_from_pixbuf(self.images_pixbuf_play)
 			self.set_tray_tooltip('Viridian')
 			self.window.set_title("Viridian")
 			self.set_tray_icon(None)
+			THREAD_LOCK_B.release()
 			return False
 		self.play_pause_image.set_from_pixbuf(self.images_pixbuf_pause)
 
@@ -2814,7 +2819,7 @@ class AmpacheGUI:
 		
 		### Alert the plugins! ###
 		self._alert_plugins_of_song_change()
-
+		THREAD_LOCK_B.release()
 		
 	
 	def _alert_plugins_of_song_change(self, *args):
