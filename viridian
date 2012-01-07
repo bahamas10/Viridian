@@ -31,7 +31,7 @@ import gobject
 import dbus, dbus.service, dbus.glib
 import os
 
-VIRIDIAN_DIR = os.path.expanduser("~") + os.sep + '.viridian'
+VIRIDIAN_DIR = os.path.join(os.path.expanduser("~"), '.viridian')
 LOCALES_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)) , 'locales')
 
 class AmpacheService(dbus.service.Object):
@@ -49,7 +49,7 @@ class AmpacheService(dbus.service.Object):
 if __name__ == "__main__":
 	# initialize gettext
 	gettext.install("viridian", LOCALES_DIR)
-	
+
 	try: # try to see if an instance is already running, and if so don't make a second instance
 		if dbus.SessionBus().request_name("com.daveeddy.Viridian") != dbus.bus.REQUEST_NAME_REPLY_PRIMARY_OWNER:
 			print _("Application already running.. exiting.")
@@ -63,19 +63,19 @@ if __name__ == "__main__":
 			is_first_time = True
 			os.mkdir(VIRIDIAN_DIR)
 			os.chmod(VIRIDIAN_DIR, 0700)
-				
+
 		db_session   = AmpacheTools.DatabaseSession(os.path.join(VIRIDIAN_DIR, 'viridian.sqlite'))
 		ampache_conn = AmpacheTools.AmpacheSession()
 		audio_engine = AmpacheTools.AudioEngine(ampache_conn)
-		
+
 		# create the gui and give it access to all of the components it needs
 		gui = AmpacheTools.AmpacheGUI(ampache_conn, audio_engine, db_session, is_first_time, __version__)
-		
+
 		# this is for dbus and single instance
 		service = AmpacheService(gui)
-		
+
 		# allow the audioengine to callback to the GUI (for messages like End Of Song)
 		audio_engine.set_ampache_gui_hook(gui)
-		
+
 		# display the gui
 		gui.main()

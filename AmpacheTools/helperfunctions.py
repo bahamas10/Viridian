@@ -36,7 +36,7 @@ def convert_filesize_to_human_readable(bytes):
 	elif bytes < 1024:
 		return str(bytes) + ' bytes'
 	return str(bytes)
-	
+
 
 def convert_seconds_to_human_readable(seconds):
 	"""Converts seconds to a human readable string."""
@@ -49,7 +49,7 @@ def convert_seconds_to_human_readable(seconds):
 	if new_time[:3] == "00:": # convert 00:xx to 0:x
 		new_time = new_time[1:]
 	return new_time
-	
+
 def convert_string_to_html(string):
 	"""Change characters to HTML friendly versions."""
 	return string.replace('&', '&amp;')
@@ -57,7 +57,7 @@ def convert_string_to_html(string):
 def convert_html_to_string(html):
 	"""Replace HTML characters to their normal character counterparts."""
 	return urllib.url2pathname(html.replace('&amp;', '&'))
-	
+
 #################
 # Sort Functions
 #################
@@ -121,7 +121,7 @@ def sort_songs_by_title(model, iter1, iter2, data=None):
 	"""Custom function to sort titles alphabetically."""
 	title1 = model[iter1][1]
 	title2 = model[iter2][1]
-	
+
 	if title1 < title2:
 		return -1
 	elif title2 < title1:

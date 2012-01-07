@@ -34,11 +34,11 @@ class XMLServer:
 	def __init__(self, ip, port):
 		self.ip   = ip
 		self.port = port
-		
+
 		self.is_running = False
 
 		self.server = SimpleXMLRPCServer((ip, port), requestHandler=RequestHandler)
-		
+
 		self.server.register_introspection_functions()
 
 	def serve_forever(self, data=None):
@@ -60,8 +60,8 @@ class XMLServer:
 			self.server.server_close()
 		self.server.socket.close()
 		self.is_running = False
-			
-	
+
+
 	def register_function(self, function, name=None):
 		"""Register a function to use with the XML RPC server."""
 		if name == None:
@@ -74,4 +74,3 @@ if __name__ == "__main__":
 	xml_server.serve_forever()
 	import time
 	time.sleep(30) # server will run for 30 seconds
-

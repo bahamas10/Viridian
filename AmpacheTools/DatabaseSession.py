@@ -35,19 +35,19 @@ class DatabaseSession:
 		self.db_conn = sqlite3.connect(database)
 		c = self.cursor()
 		c.execute('''CREATE TABLE IF NOT EXISTS variable
-			(name text NOT NULL DEFAULT '', 
+			(name text NOT NULL DEFAULT '',
 			 value text NOT NULL DEFAULT ''
 			)
 		''')
 		self.commit()
 		c.close()
-	
+
 	def cursor(self):
 		"""
 		Returns a cursor to the database.
 		"""
 		return self.db_conn.cursor()
-	
+
 	def commit(self):
 		"""
 		Commits the database.
@@ -66,7 +66,7 @@ class DatabaseSession:
 		if result == None:
 			return True # empty
 		return False
-	
+
 	def variable_set(self, var_name, var_value):
 		"""
 		Save a variable in the database.
@@ -77,7 +77,7 @@ class DatabaseSession:
 		c.execute("""INSERT INTO variable (name, value) VALUES (?, ?)""", [var_name, str(cPickle.dumps(var_value))])
 		self.commit()
 		c.close()
-	
+
 	def variable_get(self, var_name, default_value=None):
 		"""
 		Retrieve a variable from the database.

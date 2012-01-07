@@ -80,17 +80,13 @@ class AmpacheSession:
 		Retrun the url, username, and password as a tuple.
 		"""
 		return (self.username, self.password, self.url)
-	
+
 	def has_credentials(self):
 		"""
 		Checks to see if the AmpacheSession object has credentials set.
 		"""
-		if self.username == None or self.password == None or self.url == None or self.xml_rpc == None:
-			return False
-		elif self.username == "" or self.password == "" or self.url == "" or self.xml_rpc == "":
-			return False
-		return True
-			
+		return self.username and self.password and self.url and self.xml_rpc
+
 	def authenticate(self):
 		"""
 		Attempt to authenticate to Ampache.  Returns True if successful and False if not.
@@ -138,7 +134,7 @@ class AmpacheSession:
 				except: # no error found.. must have failed because data was sent to wrong place
 					return False
 		# if it made it this far, the auth was successfull, now check to see if the catalog needs updating
-		try: 
+		try:
 			# check to see if ampache has been updated or cleaned since the last time this ran
 			update = dom.getElementsByTagName("update")[0].childNodes[0].data
 			add    = dom.getElementsByTagName("add")[0].childNodes[0].data
@@ -147,7 +143,7 @@ class AmpacheSession:
 			update = int(time.mktime(time.strptime( update[:-6], "%Y-%m-%dT%H:%M:%S" )))
 			add    = int(time.mktime(time.strptime( add[:-6], "%Y-%m-%dT%H:%M:%S" )))
 			clean  = int(time.mktime(time.strptime( clean[:-6], "%Y-%m-%dT%H:%M:%S" )))
-			
+
 			new_time  = max([update, add, clean])
 			self.last_update_time = new_time
 		except Exception, detail:
@@ -155,7 +151,7 @@ class AmpacheSession:
 			self.last_update_time = -1
 		self.auth_current_retry = 0
 		return True
-				
+
 	def is_authenticated(self):
 		"""
 		Returns True if self.auth is set, and False if it is not.
@@ -163,7 +159,7 @@ class AmpacheSession:
 		if self.auth != None:
 			return True
 		return False
-	
+
 	def ping(self):
 		"""
 		Ping extends the current session to Ampache.
@@ -177,7 +173,7 @@ class AmpacheSession:
 			return None
 		session = root.getElementsByTagName('session_expire')[0].childNodes[0].data
 		return session
-			
+
 	#######################################
 	# Public Getter Methods
 	#######################################
@@ -186,7 +182,7 @@ class AmpacheSession:
 		Returns the last time the catalog on the Ampache server was updated.
 		"""
 		return self.last_update_time
-	
+
 	def get_song_url(self, song_id):
 		"""
 		Takes a song_id and returns the url to the song (with the current authentication).
@@ -201,7 +197,7 @@ class AmpacheSession:
 		song     = root.getElementsByTagName('song')[0]
 		song_url = song.getElementsByTagName('url')[0].childNodes[0].data
 		return song_url
-		
+
 	def get_album_art(self, album_id):
 		"""
 		Takes an album_id and returns the url to the artwork (with the current authentication).
@@ -212,15 +208,14 @@ class AmpacheSession:
 			  'filter' : album_id,
 			  'auth'   : self.auth,
 		}
-		
+
 		root = self.__call_api(values)
 		if not root:
 			return None
 		album     = root.getElementsByTagName('album')[0]
 		album_art = album.getElementsByTagName('art')[0].childNodes[0].data
 		return album_art
-		
-		
+
 	def get_artists(self, offset=None):
 		"""
 		Gets all artists and return as a list of dictionaries.
@@ -325,7 +320,7 @@ class AmpacheSession:
 				if album_year == "N/A":
 					album_year = 0
 				album_year = int(album_year)
-				
+
 				dict = { 'artist_id'      : artist_id,
 					 'artist_name'    : artist_name,
 					 'album_id'       : album_id,
@@ -346,7 +341,7 @@ class AmpacheSession:
 		"""
 		Gets all songs and returns as a list of dictionaries.
 		Example: [
-		  		{	'song_id' 	: song_id,
+				{	'song_id'	: song_id,
 					'song_title'     : song_title,
 					'artist_id'      : artist_id,
 					'artist_name'    : artist_name,
@@ -357,8 +352,8 @@ class AmpacheSession:
 					'song_size'      : song_size,
 					'precise_rating' : precise_rating,
 					'rating'	 : rating,
-					'art'	    : art,
-					'url'	    : url,
+					'art'		 : art,
+					'url'		 : url,
 				},
 				{ ... },
 			 ]
@@ -394,14 +389,14 @@ class AmpacheSession:
 				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
 				album_id       = int(song.getElementsByTagName('album')[0].getAttribute('id'))
 				album_name     = song.getElementsByTagName('album')[0].childNodes[0].data
-				
+
 				song_track     = int(song.getElementsByTagName('track')[0].childNodes[0].data)
 				song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
 				song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
-				
+
 				try: # New version doesn't initialize this...
 					precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
-				except: 
+				except:
 					precise_rating = 0
 				try:
 					rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)

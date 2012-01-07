@@ -54,7 +54,7 @@ def create_image_pixbuf(file, width, height=None):
 		height = width
 	image = gtk.gdk.pixbuf_new_from_file(file).scale_simple(width, height, gtk.gdk.INTERP_BILINEAR)
 	return image
-	
+
 def hyperlink(url, text=None):
 	"""Returns a button that acts as a hyperlink."""
 	if text == None:

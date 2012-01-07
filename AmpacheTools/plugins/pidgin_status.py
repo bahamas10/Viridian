@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 ### END LICENSE
-# 
+#
 # Plugin for Viridian to set your pidgin status
 # to the currently playing song.
 #
@@ -34,11 +34,11 @@ class PidginPlugin:
 	def on_song_change(self, song_dict):
 		"""Called when the song changes in Viridian.
 		A dictionary with all of the songs information is passed in as 'song_dict'"""
-		try: 
+		try:
 			bus = dbus.SessionBus()
 			obj = bus.get_object("im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
 			self.purple = dbus.Interface(obj, "im.pidgin.purple.PurpleInterface")
-			self.set_message('Now Playing :: ' + song_dict['song_title'] + ' by ' + song_dict['artist_name'])
+			self.set_message('Now Playing :: %s by %s' % (song_dict['song_title'], song_dict['artist_name']))
 			print "Status Set"
 		except:
 			print "Error setting status"
@@ -52,4 +52,3 @@ class PidginPlugin:
 		status = self.purple.PurpleSavedstatusNew("", current)
 		self.purple.PurpleSavedstatusSetMessage(status, message)
 		self.purple.PurpleSavedstatusActivate(status)
-
