@@ -19,6 +19,7 @@ import pygst
 import gst
 import time
 import random
+
 class AudioEngine:
 	"""The class that controls playing the media from Ampache."""
 	def __init__(self, ampache_conn):
@@ -27,20 +28,20 @@ class AudioEngine:
 		# Variables
 		##################################
 		self.ampache_conn = ampache_conn
-		
+
 		self.ampache_gui  = None
 
 		self.repeat_songs  = False
 		self.shuffle_songs = False
 		self.songs_list = []
 		self.song_num = -1
-		
+
 		# create a playbin (plays media form an uri)
 		self.player = gst.element_factory_make("playbin2", "player")
 	#	source = gst.element_factory_make("souphttpsrc", "source")
 	#	source.set_property('user-agent', 'Viridian 1.0 (http://viridian.daveeddy.com)')
 	#	self.player.add(source)
-		
+
 		bus = self.player.get_bus()
 		bus.add_signal_watch()
 		bus.enable_sync_message_emission()
@@ -50,7 +51,7 @@ class AudioEngine:
 	def set_ampache_gui_hook(self, ampache_gui):
 		"""Attach the GUI to this object, so the audio_engine can alert the GUI of song changes"""
 		self.ampache_gui = ampache_gui
-	
+
 	def play_from_list_of_songs(self, songs_list, song_num=0):
 		"""Takes a list of song_ids and position in the list and plays it.
 		This function will use the AmpacheSession to turn song_ids into song_urls."""
@@ -91,11 +92,11 @@ class AudioEngine:
 	def on_about_to_finish(self, player):
 		#self.next_track_gapless()
 		return
-			
+
 	def query_position(self):
 		"""Returns position in nanoseconds"""
 		try:
-			position, format = self.player.query_position(gst.FORMAT_TIME)
+			position, _ = self.player.query_position(gst.FORMAT_TIME)
 		except:
 			position = -1
 		#try:
@@ -120,45 +121,45 @@ class AudioEngine:
 			except:
 				pass
 		return None
-	
-	def set_playlist(self, list):
+
+	def set_playlist(self, l):
 		"""Sets the current playlist to list."""
-		self.songs_list = list
-		
+		self.songs_list = l
+
 	def get_playlist(self, *args):
 		"""Returns the current playlist in a list of song_ids."""
 		return self.songs_list
-	
+
 	def set_current_song(self, song_num, *args):
 		"""Sets the current song num (doesn't affect what is currently playing)."""
 		self.song_num = song_num
-		
+
 	def get_current_song(self, *args):
 		"""Returns the current playing songs position in the list."""
 		return self.song_num
-	
+
 	def get_current_song_id(self, *args):
 		"""Returns the current playing song_id or None."""
 		if self.song_num == -1:
 			return None
 		return self.songs_list[self.song_num]
-		
+
 	def set_repeat_songs(self, value, *args): # must be True or False
 		"""Set songs to repeat.  Takes True or False."""
 		self.repeat_songs = value
-		
+
 	def get_repeat_songs(self, *args):
 		"""True if songs are set to repeat."""
 		return self.repeat_songs
-		
+
 	def set_shuffle_songs(self, value, *args):
 		"""Set songs to shuffle.  Takes True or False."""
 		self.shuffle_songs = value
-		
+
 	def get_shuffle_songs(self, value, *args):
 		"""True if songs are set to shuffle."""
 		return self.shuffle_songs
-	
+
 	def set_volume(self, percent, *args):
 		"""Sets the volume, must be 0-100."""
 		if percent <= 0:
@@ -169,11 +170,11 @@ class AudioEngine:
 			volume = percent / 100.0
 		self.player.set_property('volume', float(volume))
 		return True
-		
+
 	def get_volume(self, *args):
 		"""Gets the volume."""
 		return self.player.get_property('volume')*100
-	
+
 	def clear_playlist(self, *args):
 		"""Clear the current playlist and stop the song."""
 		self.stop()
@@ -181,12 +182,12 @@ class AudioEngine:
 		self.song_num = -1
 		if self.ampache_gui != None:
 			self.ampache_gui.audioengine_song_changed(None)
-	
+
 	def seek(self, seek_time_secs):
 		"""Seek function, doesn't work on some distros."""
 		return self.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_KEY_UNIT, int(seek_time_secs) * gst.SECOND)
-		
-	def stop(self, *args): 
+
+	def stop(self, *args):
 		"""Tells the player to stop."""
 		try:
 			self.player.set_state(gst.STATE_NULL)
@@ -201,7 +202,7 @@ class AudioEngine:
 		except:
 			return False
 		return True
-		
+
 	def play(self, *args):
 		"""Tells the player to play."""
 		try:
@@ -209,19 +210,19 @@ class AudioEngine:
 		except:
 			return False
 		return True
-	
+
 	def restart(self, *args):
 		"""Tells tho player to restart the song if it is playing."""
 		if self.get_state() == "playing":
 			self.play_from_list_of_songs(self.songs_list, self.song_num)
 			return True
 		return False
-	
+
 	def change_song(self, song_num, *args):
 		"""Change song to the given song number."""
 		self.play_from_list_of_songs(self.songs_list, song_num)
 		return True
-	
+
 	def remove_from_playlist(self, song_id, *args):
 		"""Remove the song_id from the playlist."""
 		try:
@@ -232,14 +233,14 @@ class AudioEngine:
 		except:
 			return False
 		return True
-	
+
 	def insert_into_playlist(self, song_id, song_num=None):
 		"""insert the song_id into the playlist, song_num is optional."""
 		if song_num == None:
 			self.songs_list.append(song_id)
 		else:
 			self.songs_list.insert(song_num, song_id)
-	
+
 	def prev_track(self, *args):
 		"""Tells the player to go back a song in the playlist.
 		This function takes care of repeating songs if enabled."""
@@ -254,8 +255,6 @@ class AudioEngine:
 		self.play_from_list_of_songs(self.songs_list, self.song_num)
 		return True
 
-	
-	
 	def next_track(self, auto=False):
 		"""Tells the player to go forward a song in the playlist.
 		This function takes care of repeating songs if enabled."""
@@ -286,26 +285,27 @@ class AudioEngine:
 		self.play_from_list_of_songs(self.songs_list, self.song_num)
 		return True
 
-	
-	#def next_track_gapless(self):
-		#"""Tell the player to play the next song right away."""
-		#try:
-			#if self.song_num == None: # the user clicked prev too many times
-				#self.song_num = 0
-			#else:
-				#self.song_num += 1
-			#if self.repeat_songs: # if the user wants the album to repeat
-				#self.song_num = self.song_num % len(self.songs_list)
-			#else: # don't repeat
-				#if self.song_num >= len(self.songs_list):
+'''
+	def next_track_gapless(self):
+		"""Tell the player to play the next song right away."""
+		try:
+			if self.song_num == None: # the user clicked prev too many times
+				self.song_num = 0
+			else:
+				self.song_num += 1
+			if self.repeat_songs: # if the user wants the album to repeat
+				self.song_num = self.song_num % len(self.songs_list)
+			else: # don't repeat
+				if self.song_num >= len(self.songs_list):
 					## dont' let the current position go over the playlist length
-					#self.song_num = -1
-					#self.stop()
-					#return
+					self.song_num = -1
+					self.stop()
+					return
 
-			#print "New song_num", self.song_num
-			#self.player.set_property('uri', self.ampache_conn.get_song_url(self.songs_list[self.song_num]))
-			#self.ampache_gui.audioengine_song_changed(songs_list[song_num])
-		#except:
-			#return False
-		#return True
+			print "New song_num", self.song_num
+			self.player.set_property('uri', self.ampache_conn.get_song_url(self.songs_list[self.song_num]))
+			self.ampache_gui.audioengine_song_changed(songs_list[song_num])
+		except:
+			return False
+		return True
+'''

@@ -63,15 +63,15 @@ class AmpacheSession:
 		Save the ampache url, username, and password.
 		"""
 		# remove trailing slash off URL
-		if url != None:
-			while ( url[-1:] == '/' ):
+		if url:
+			while url[-1:] == '/':
 				url = url[:-1]
 		# save variables to object
 		self.url = url
 		self.username = username
 		self.password = password
 		try:
-			self.xml_rpc = self.url + "/server/xml.server.php"
+			self.xml_rpc = '%s/server/xml.server.php' % (self.url)
 		except:
 			pass
 
@@ -99,11 +99,12 @@ class AmpacheSession:
 		timestamp = int(time.time())
 		password = hashlib.sha256(self.password).hexdigest()
 		authkey = hashlib.sha256(str(timestamp) + password).hexdigest()
-		values = {'action'    : 'handshake',
-			  'auth'      : authkey,
-			  'timestamp' : timestamp,
-			  'user'      : self.username,
-			  'version'   : '350001',
+		values = {
+			'action'    : 'handshake',
+			'auth'      : authkey,
+			'timestamp' : timestamp,
+			'user'      : self.username,
+			'version'   : '350001',
 		}
 		data = urllib.urlencode(values)
 
@@ -122,7 +123,7 @@ class AmpacheSession:
 			self.auth = None
 			self.auth_current_retry += 1
 			print "[Error] Authentication Failed -- Retry = %d" % self.auth_current_retry
-			if ( self.auth_current_retry < AUTH_MAX_RETRY ):
+			if self.auth_current_retry < AUTH_MAX_RETRY:
 				return self.authenticate()
 			else: # authentication failed more than AUTH_MAX_RETRY times
 				self.auth_current_retry = 0
@@ -156,7 +157,7 @@ class AmpacheSession:
 		"""
 		Returns True if self.auth is set, and False if it is not.
 		"""
-		if self.auth != None:
+		if self.auth:
 			return True
 		return False
 
@@ -165,8 +166,9 @@ class AmpacheSession:
 		Ping extends the current session to Ampache.
 		Returns None if it fails, or the time the session expires if it is succesful
 		"""
-		values = {'action' : 'ping',
-			  'auth'   : self.auth,
+		values = {
+			'action' : 'ping',
+			'auth'   : self.auth,
 		}
 		root = self.__call_api(values)
 		if not root:
@@ -187,9 +189,10 @@ class AmpacheSession:
 		"""
 		Takes a song_id and returns the url to the song (with the current authentication).
 		"""
-		values = {'action' : 'song',
-			  'filter' : song_id,
-			  'auth'   : self.auth,
+		values = {
+			'action' : 'song',
+			'filter' : song_id,
+			'auth'   : self.auth,
 		}
 		root = self.__call_api(values)
 		if not root:
@@ -202,11 +205,12 @@ class AmpacheSession:
 		"""
 		Takes an album_id and returns the url to the artwork (with the current authentication).
 		"""
-		if album_id == None:
+		if not album_id:
 			return None
-		values = {'action' : 'album',
-			  'filter' : album_id,
-			  'auth'   : self.auth,
+		values = {
+			'action' : 'album',
+			'filter' : album_id,
+			'auth'   : self.auth,
 		}
 
 		root = self.__call_api(values)
@@ -225,41 +229,44 @@ class AmpacheSession:
 				{ ... },
 			 ]
 		"""
-		if offset == None:
+		if not offset:
 			if self.artists_num > 5000: # offset needed
 				print "More than 5000 artists"
-				list = []
+				l = []
 				for i in range(0, self.artists_num, 5000):
-					print "Offset = ", i
-					list += self.get_artists(i)
-				return list
-			values = {'action' : 'artists',
-				  'auth'   : self.auth,
+					print 'Offset = %d' % (i)
+					l += self.get_artists(i)
+				return l
+			values = {
+				'action' : 'artists',
+				'auth'   : self.auth,
 			}
 		else:
-			values = {'action' : 'artists',
-				  'auth'   : self.auth,
-				  'offset' : offset,
+			values = {
+				'action' : 'artists',
+				'auth'   : self.auth,
+				'offset' : offset,
 			}
 
 		root = self.__call_api(values)
-		if not root: 
+		if not root:
 			return None
 		nodes = root.getElementsByTagName('artist')
 
-		list = []
+		l = []
 		try: # get the artists
 			for child in nodes:
 				artist_name = child.getElementsByTagName('name')[0].childNodes[0].data
 				artist_id   = int(child.getAttribute('id'))
-				dict = { 'artist_id'   : artist_id,
-					 'artist_name' : artist_name,
-				       }
-				list.append( dict )
+				d = {
+					'artist_id'   : artist_id,
+					'artist_name' : artist_name,
+				}
+				l.append(d)
 		except: # something failed
 			traceback.print_exc()
 			return None
-		return list
+		return l
 
 	def get_albums(self, offset=None):
 		"""
@@ -278,19 +285,21 @@ class AmpacheSession:
 				{ ... },
 			 ]
 		"""
-		if offset == None:
+		if not offset:
 			if self.albums_num > 5000: # offset needed
-				list = []
+				l = []
 				for i in range(0, self.albums_num, 5000):
-					list += self.get_artists(i)
-				return list
-			values = {'action' : 'albums',
-				  'auth'   : self.auth,
+					l += self.get_albums(i)
+				return l
+			values = {
+				'action' : 'albums',
+				'auth'   : self.auth,
 			}
 		else:
-			values = {'action' : 'albums',
-				  'auth'   : self.auth,
-				  'offset' : offset,
+			values = {
+				'action' : 'albums',
+				'auth'   : self.auth,
+				'offset' : offset,
 			}
 
 		root  = self.__call_api(values)
@@ -299,7 +308,7 @@ class AmpacheSession:
 		nodes = root.getElementsByTagName('album')
 		if not nodes:
 			return None
-		list = []
+		l = []
 		try:
 			for child in nodes:
 				album_id       = int(child.getAttribute('id'))
@@ -309,11 +318,11 @@ class AmpacheSession:
 				album_year     = child.getElementsByTagName('year')[0].childNodes[0].data
 				album_tracks   = int(child.getElementsByTagName('tracks')[0].childNodes[0].data)
 				album_disk     = int(child.getElementsByTagName('disk')[0].childNodes[0].data)
-				try: # new version doesn't put data in the middle... 
+				try: # new version doesn't put data in the middle...
 					precise_rating = int(child.getElementsByTagName('preciserating')[0].childNodes[0].data)
 				except:
 					precise_rating = 0
-				try: 
+				try:
 					album_rating = child.getElementsByTagName('rating')[0].childNodes[0].data
 				except:
 					album_rating = 0
@@ -321,21 +330,22 @@ class AmpacheSession:
 					album_year = 0
 				album_year = int(album_year)
 
-				dict = { 'artist_id'      : artist_id,
-					 'artist_name'    : artist_name,
-					 'album_id'       : album_id,
-					 'album_name'     : album_name,
-					 'album_year'     : album_year,
-					 'album_tracks'   : album_tracks,
-					 'album_disk'     : album_disk,
-					 'album_rating'   : album_rating,
-					 'precise_rating' : precise_rating,
-				       }
-				list.append( dict )
+				d = {
+					'artist_id'      : artist_id,
+					'artist_name'    : artist_name,
+					'album_id'       : album_id,
+					'album_name'     : album_name,
+					'album_year'     : album_year,
+					'album_tracks'   : album_tracks,
+					'album_disk'     : album_disk,
+					'album_rating'   : album_rating,
+					'precise_rating' : precise_rating,
+				}
+				l.append(d)
 		except: #something failed
 			traceback.print_exc()
 			return None
-		return list
+		return l
 
 	def get_songs(self, offset=None):
 		"""
@@ -358,20 +368,22 @@ class AmpacheSession:
 				{ ... },
 			 ]
 		"""
-		if offset == None:
-			if self.songs_num > 100: # offset needed
+		if not offset:
+			if self.songs_num > 5000: # offset needed
 				print "over 5000"
-				list = []
-				for i in range(0, self.songs_num, 100):
-					list += self.get_songs(i)
-				return list
-			values = {'action' : 'songs',
-				  'auth'   : self.auth,
+				l = []
+				for i in range(0, self.songs_num, 5000):
+					l += self.get_songs(i)
+				return l
+			values = {
+				'action' : 'songs',
+				'auth'   : self.auth,
 			}
 		else:
-			values = {'action' : 'songs',
-				  'auth'   : self.auth,
-				  'offset' : offset,
+			values = {
+				'action' : 'songs',
+				'auth'   : self.auth,
+				'offset' : offset,
 			}
 		print values
 		root  = self.__call_api(values)
@@ -380,10 +392,10 @@ class AmpacheSession:
 		nodes = root.getElementsByTagName('song')
 		if not nodes:
 			return None
-		list = []
+		l = []
 		try:
 			for song in nodes:
-				song_id	= int(song.getAttribute('id'))
+				song_id	       = int(song.getAttribute('id'))
 				song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
 				artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
 				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
@@ -403,27 +415,28 @@ class AmpacheSession:
 				except:
 					rating = 0
 
-				art	    = song.getElementsByTagName('art')[0].childNodes[0].data
-				url	    = song.getElementsByTagName('url')[0].childNodes[0].data
-				dict = {   'song_id'	: song_id,
-						'song_title'     : song_title,
-						'artist_id'      : artist_id,
-						'artist_name'    : artist_name,
-						'album_id'       : album_id,
-						'album_name'     : album_name,
-						'song_track'     : song_track,
-						'song_time'      : song_time,
-						'song_size'      : song_size,
-						'precise_rating' : precise_rating,
-						'rating'	 : rating,
-						'art'	    : art,
-						'url'	    : url,
-					}
-				list.append( dict )
+				art = song.getElementsByTagName('art')[0].childNodes[0].data
+				url = song.getElementsByTagName('url')[0].childNodes[0].data
+				d = {
+					'song_id'        : song_id,
+					'song_title'     : song_title,
+					'artist_id'      : artist_id,
+					'artist_name'    : artist_name,
+					'album_id'       : album_id,
+					'album_name'     : album_name,
+					'song_track'     : song_track,
+					'song_time'      : song_time,
+					'song_size'      : song_size,
+					'precise_rating' : precise_rating,
+					'rating'         : rating,
+					'art'            : art,
+					'url'            : url,
+				}
+				l.append(d)
 		except:
 			traceback.print_exc()
 			return None
-		return list
+		return l
 
 	def get_albums_by_artist(self, artist_id):
 		"""
@@ -442,15 +455,16 @@ class AmpacheSession:
 				{ ... },
 			 ]
 		"""
-		values = {'action' : 'artist_albums',
-			  'filter' : artist_id,
-			  'auth'   : self.auth,
+		values = {
+			'action' : 'artist_albums',
+			'filter' : artist_id,
+			'auth'   : self.auth,
 		}
 		root  = self.__call_api(values)
 		nodes = root.getElementsByTagName('album')
-		if not nodes: 
+		if not nodes:
 			return None
-		list = []
+		l = []
 		try:
 			for child in nodes:
 				album_id       = int(child.getAttribute('id'))
@@ -463,40 +477,41 @@ class AmpacheSession:
 					album_disk = int(child.getElementsByTagName('disk')[0].childNodes[0].data)
 				except:
 					album_disk = 0
-				try: 
+				try:
 					precise_rating = int(child.getElementsByTagName('preciserating')[0].childNodes[0].data)
 				except:
 					precise_rating = 0
-				try: 
+				try:
 					album_rating = child.getElementsByTagName('rating')[0].childNodes[0].data
 				except:
 					album_rating = 0
 				if album_year == "N/A":
 					album_year = 0
 				album_year = int(album_year)
-				
-				dict = { 'artist_id'      : artist_id,
-					 'artist_name'    : artist_name,
-					 'album_id'       : album_id,
-					 'album_name'     : album_name,
-					 'album_year'     : album_year,
-					 'album_tracks'   : album_tracks,
-					 'album_disk'     : album_disk,
-					 'album_rating'   : album_rating,
-					 'precise_rating' : precise_rating,
-				       }
-				list.append( dict )
+
+				d = {
+					'artist_id'      : artist_id,
+					'artist_name'    : artist_name,
+					'album_id'       : album_id,
+					'album_name'     : album_name,
+					'album_year'     : album_year,
+					'album_tracks'   : album_tracks,
+					'album_disk'     : album_disk,
+					'album_rating'   : album_rating,
+					'precise_rating' : precise_rating,
+				}
+				l.append(d)
 		except: #something failed
 			print "This artist failed", artist_id
 			traceback.print_exc()
 			return None
-		return list
+		return l
 
 	def get_songs_by_album(self, album_id):
 		"""
 		Gets all songs on album_id and returns as a list of dictionaries.
 		Example: [
-		  		{	'song_id'	: song_id,
+				{	'song_id'	: song_id,
 					'song_title'     : song_title,
 					'artist_id'      : artist_id,
 					'artist_name'    : artist_name,
@@ -513,15 +528,16 @@ class AmpacheSession:
 				{ ... },
 			 ]
 		"""
-		values = {'action' : 'album_songs',
-			  'filter' : album_id,
-			  'auth'   : self.auth,
+		values = {
+			'action' : 'album_songs',
+			'filter' : album_id,
+			'auth'   : self.auth,
 		}
 		root  = self.__call_api(values)
 		nodes = root.getElementsByTagName('song')
 		if not nodes: # list is empty, reauth
 			return None
-		list = []
+		l = []
 		try:
 			for song in nodes:
 				song_id	= int(song.getAttribute('id'))
@@ -530,43 +546,44 @@ class AmpacheSession:
 				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
 				album_id       = int(song.getElementsByTagName('album')[0].getAttribute('id'))
 				album_name     = song.getElementsByTagName('album')[0].childNodes[0].data
-				
+
 				song_track     = int(song.getElementsByTagName('track')[0].childNodes[0].data)
 				song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
 				song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
-				
+
 				try: # New version doesn't initialize this...
 					precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
-				except: 
+				except:
 					precise_rating = 0
 				try:
 					rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
 				except:
 					rating = 0
 
-				art	    = song.getElementsByTagName('art')[0].childNodes[0].data
-				url	    = song.getElementsByTagName('url')[0].childNodes[0].data
-				dict = {   'song_id'	: song_id,
-						'song_title'     : song_title,
-						'artist_id'      : artist_id,
-						'artist_name'    : artist_name,
-						'album_id'       : album_id,
-						'album_name'     : album_name,
-						'song_track'     : song_track,
-						'song_time'      : song_time,
-						'song_size'      : song_size,
-						'precise_rating' : precise_rating,
-						'rating'	 : rating,
-						'art'	    : art,
-						'url'	    : url,
-					}
-				list.append( dict )
+				art = song.getElementsByTagName('art')[0].childNodes[0].data
+				url = song.getElementsByTagName('url')[0].childNodes[0].data
+				d = {
+					'song_id'        : song_id,
+					'song_title'     : song_title,
+					'artist_id'      : artist_id,
+					'artist_name'    : artist_name,
+					'album_id'       : album_id,
+					'album_name'     : album_name,
+					'song_track'     : song_track,
+					'song_time'      : song_time,
+					'song_size'      : song_size,
+					'precise_rating' : precise_rating,
+					'rating'	 : rating,
+					'art'            : art,
+					'url'            : url,
+				}
+				l.append(d)
 		except:
 			print "This album failed", album_id
 			traceback.print_exc()
 			return None
-		return list
-		
+		return l
+
 	def get_song_info(self, song_id):
 		"""
 		Gets all info about a song from the song_id and returns it as a dictionary.
@@ -584,15 +601,15 @@ class AmpacheSession:
 				'art'	    : art,
 				'url'	    : url,
 			 }
-		
 		"""
+
 		values = {'action' : 'song',
 			  'filter' : song_id,
 			  'auth'   : self.auth,
 		}
 		root = self.__call_api(values)
 		song = root.getElementsByTagName('song')[0]
-		if not song: 
+		if not song:
 			return None
 
 		song_dict = {}
@@ -603,11 +620,11 @@ class AmpacheSession:
 			artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
 			album_id       = int(song.getElementsByTagName('album')[0].getAttribute('id'))
 			album_name     = song.getElementsByTagName('album')[0].childNodes[0].data
-			
+
 			song_track     = int(song.getElementsByTagName('track')[0].childNodes[0].data)
 			song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
 			song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
-			
+
 			try: # New version doesn't set this...
 				precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
 			except:
@@ -616,22 +633,24 @@ class AmpacheSession:
 				rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
 			except:
 				rating = 0
-			art	    = song.getElementsByTagName('art')[0].childNodes[0].data
-			url	    = song.getElementsByTagName('url')[0].childNodes[0].data
-			song_dict = {   'song_id'	: song_id,
-					'song_title'     : song_title,
-					'artist_id'      : artist_id,
-					'artist_name'    : artist_name,
-					'album_id'       : album_id,
-					'album_name'     : album_name,
-					'song_track'     : song_track,
-					'song_time'      : song_time,
-					'song_size'      : song_size,
-					'precise_rating' : precise_rating,
-					'rating'	 : rating,
-					'art'	    : art,
-					'url'	    : url,
-					}
+			art = song.getElementsByTagName('art')[0].childNodes[0].data
+			url = song.getElementsByTagName('url')[0].childNodes[0].data
+
+			song_dict = {
+				'song_id'        : song_id,
+				'song_title'     : song_title,
+				'artist_id'      : artist_id,
+				'artist_name'    : artist_name,
+				'album_id'       : album_id,
+				'album_name'     : album_name,
+				'song_track'     : song_track,
+				'song_time'      : song_time,
+				'song_size'      : song_size,
+				'precise_rating' : precise_rating,
+				'rating'	 : rating,
+				'art'            : art,
+				'url'            : url,
+			}
 		except:
 			print "This song failed", song_id
 			traceback.print_exc()
@@ -651,15 +670,16 @@ class AmpacheSession:
 				{ ... },
 			 ]
 		"""
-		values = {'action' : 'playlists',
-			  'auth'   : self.auth,
+		values = {
+			'action' : 'playlists',
+			'auth'   : self.auth,
 		}
 		root  = self.__call_api(values)
 		nodes = root.getElementsByTagName('playlist')
 		if not nodes: # list is empty, reauth
 			return None
 
-		list = []
+		l = []
 		try:
 			for child in nodes:
 				id       = int(child.getAttribute('id'))
@@ -667,24 +687,25 @@ class AmpacheSession:
 				owner    = child.getElementsByTagName('owner')[0].childNodes[0].data
 				items    = int(child.getElementsByTagName('items')[0].childNodes[0].data)
 				type     = child.getElementsByTagName('type')[0].childNodes[0].data
-					
-				dict = { 'id'      : id,
-					 'name'    : name,
-					 'items'   : items,
-					 'owner'   : owner,
-					 'type'    : type,
+
+				d = {
+					'id'      : id,
+					'name'    : name,
+					'items'   : items,
+					'owner'   : owner,
+					'type'    : type,
 				}
-				list.append( dict )
+				l.append(d)
 		except: #something failed
 			traceback.print_exc()
 			return []
-		return list
-		
+		return l
+
 	def get_playlist_songs(self, playlist_id):
 		"""
 		Gets all info about a song from the song_id and returns it as a dictionary.
-		Example: [ 
-				{      	'song_id'	: song_id,
+		Example: [
+				{	'song_id'	: song_id,
 					'song_title'     : song_title,
 					'artist_id'      : artist_id,
 					'artist_name'    : artist_name,
@@ -700,7 +721,6 @@ class AmpacheSession:
 				 },
 				 {...}
 			]
-		
 		"""
 		values = {'action' : 'playlist_songs',
 			  'filter' : playlist_id,
@@ -710,7 +730,7 @@ class AmpacheSession:
 		songs = root.getElementsByTagName('song')
 		if not songs:
 			return None
-		list = []
+		l= []
 		try:
 			for song in songs:
 				song_id	       = int(song.getAttribute('id'))
@@ -719,11 +739,11 @@ class AmpacheSession:
 				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
 				album_id       = int(song.getElementsByTagName('album')[0].getAttribute('id'))
 				album_name     = song.getElementsByTagName('album')[0].childNodes[0].data
-				
+
 				song_track     = int(song.getElementsByTagName('track')[0].childNodes[0].data)
 				song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
 				song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
-				
+
 				try: # New Ampache puts nothing here...
 					precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
 				except:
@@ -732,28 +752,29 @@ class AmpacheSession:
 					rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
 				except:
 					rating = 0
-				art	    = song.getElementsByTagName('art')[0].childNodes[0].data
-				url	    = song.getElementsByTagName('url')[0].childNodes[0].data
-				song_dict = {   'song_id'        : song_id,
-						'song_title'     : song_title,
-						'artist_id'      : artist_id,
-						'artist_name'    : artist_name,
-						'album_id'       : album_id,
-						'album_name'     : album_name,
-						'song_track'     : song_track,
-						'song_time'      : song_time,
-						'song_size'      : song_size,
-						'precise_rating' : precise_rating,
-						'rating'	 : rating,
-						'art'	    : art,
-						'url'	    : url,
-						}
-				list.append(song_dict)
+				art = song.getElementsByTagName('art')[0].childNodes[0].data
+				url = song.getElementsByTagName('url')[0].childNodes[0].data
+				song_dict = {
+					'song_id'        : song_id,
+					'song_title'     : song_title,
+					'artist_id'      : artist_id,
+					'artist_name'    : artist_name,
+					'album_id'       : album_id,
+					'album_name'     : album_name,
+					'song_track'     : song_track,
+					'song_time'      : song_time,
+					'song_size'      : song_size,
+					'precise_rating' : precise_rating,
+					'rating'	 : rating,
+					'art'            : art,
+					'url'            : url,
+				}
+				l.append(song_dict)
 		except:
 			print "This playlist failed", playlist_id
 			traceback.print_exc()
 			return None
-		return list
+		return l
 
 
 	def __call(self, **kwargs):
@@ -764,13 +785,13 @@ class AmpacheSession:
 
 	def __call_api(self, values):
 		"""Takes a dictionary of values and talks to the ampache API... returning the root elemnent of the XML
-		Example: __call_api({action: 'artists', filter: 'kindo'}) 
+		Example: __call_api({action: 'artists', filter: 'kindo'})
 		Automatically adds {auth: <auth>}"""
 		values['auth'] = self.auth
 		data = urllib.urlencode(values)
 		try: # to query ampache
 			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			x = self.__sanatize(response.read()) 
+			x = self.__sanatize(response.read())
 			dom = xml.dom.minidom.parseString(x)
 		except: # The data pulled from Ampache was invalid
 			traceback.print_exc()
@@ -780,7 +801,7 @@ class AmpacheSession:
 			if not root: # list is empty, reauth
 				raise Exception('Reauthenticate')
 			else: # try to find an error
-				try: 
+				try:
 					error = root.getElementsByTagName("error")[0].childNodes[0].data
 					print "Error! Trying to reauthenticate :: %s" % error
 					if self.authenticate():
@@ -798,7 +819,7 @@ class AmpacheSession:
 
 	def __sanatize(self, string):
 		"""Sanatize the given string to remove bad characters."""
-		# from http://boodebr.org/main/python/all-about-python-and-unicode#UNI_XML 
+		# from http://boodebr.org/main/python/all-about-python-and-unicode#UNI_XML
 		for match in ILLEGAL_XML_RE.finditer(string):
 			string = string[:match.start()] + "?" + string[match.end():]
 		string = string.replace('—', '-')
@@ -812,5 +833,5 @@ class AmpacheSession:
 					a = c.encode("utf-8")
 					string2 += a
 				except:
-					string2 += '?'	
+					string2 += '?'
 		return string2

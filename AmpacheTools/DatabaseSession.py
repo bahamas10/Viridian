@@ -61,10 +61,9 @@ class DatabaseSession:
 		c = self.cursor()
 		c.execute("""SELECT 1 FROM %s LIMIT 1""" % table_name)
 		result = c.fetchone()
-		#self.commit()
 		c.close()
-		if result == None:
-			return True # empty
+		if not result:
+			return True
 		return False
 
 	def variable_set(self, var_name, var_value):
@@ -85,9 +84,7 @@ class DatabaseSession:
 		try:
 			c = self.cursor()
 			c.execute("""SELECT value FROM variable WHERE name = ?""", [var_name])
-			#result = self.__convert_strings_to_specials(c.fetchone()[0])
 			result = c.fetchone()[0]
-			#self.commit()
 			c.close()
 		except:
 			c.close()

@@ -34,4 +34,3 @@ class TemplatePlugin:
 		A dictionary with all of the songs information is passed in as 'song_dict'"""
 		for k,v in song_dict.iteritems():
 			print "song_dict['%s'] = '%s'" % (k,v)
-
