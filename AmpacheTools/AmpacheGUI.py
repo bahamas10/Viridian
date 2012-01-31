@@ -1,19 +1,30 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-### BEGIN LICENSE
-# Copyright (C) 2010 Dave Eddy <dave@daveeddy.com>
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
 #
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranties of
-# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
-# PURPOSE.  See the GNU General Public License for more details.
+# Copyright (c) 2012, Dave Eddy <dave@daveeddy.com>
+# All rights reserved.
 #
-# You should have received a copy of the GNU General Public License along
-# with this program.  If not, see <http://www.gnu.org/licenses/>.
-### END LICENSE
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the project nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 import sys
 import os
@@ -69,12 +80,10 @@ PLUGINS_DIR    = os.path.join(SCRIPT_PATH, 'plugins/')
 IMAGES_DIR     = os.path.join(SCRIPT_PATH, 'images/')
 THREAD_LOCK    = thread.allocate_lock() # used for downloads
 THREAD_LOCK_B  = thread.allocate_lock() # used for song changing
-VIRIDIAN_DIR   = os.path.join(os.path.expanduser("~"), '.viridian')
+VIRIDIAN_DIR   = os.path.join(os.environ['HOME'], '.viridian')
 ALBUM_ART_DIR  = os.path.join(VIRIDIAN_DIR, 'album_art')
 XML_RPC_PORT   = 4596
-VERSION_NUMBER = ""
-#THREAD_LOCK.release()
-#THREAD_LOCK_B.release()
+VERSION_NUMBER = ''
 
 
 class AmpacheGUI:
@@ -144,7 +153,7 @@ class AmpacheGUI:
 		self.plugins = {}
 		for plugin_name in plugins_list:
 			plugin = self.__import_plugin(plugin_name)
-			if plugin != None:
+			if plugin:
 				self.plugins[plugin_name] = plugin
 		print "Plugins = ", self.plugins # DEBUG
 
@@ -2705,15 +2714,13 @@ class AmpacheGUI:
 			about.set_logo(self.images_pixbuf_viridian_app)
 		except:
 			pass
-		gpl = ""
-		try: # try to read the GPL, if not, just paste the link
-			h = open(os.path.join(SCRIPT_PATH, os.path.join('doc', 'gpl.txt')))
-			s = h.readlines()
-			for line in s:
-				gpl += line
+		license = ""
+		try: # try to read the license, and just paste the link if it fails
+			for line in open(os.path.join(SCRIPT_PATH, os.path.join('doc', 'bsd.txt'))):
+				license += line
 		except:
-			gpl = "GPL v3 <http://www.gnu.org/licenses/gpl.html>"
-		about.set_license(gpl)
+			license = "BSD 3-Clause <http://www.opensource.org/licenses/BSD-3-Clause>"
+		about.set_license(license)
 		about.run()
 		about.destroy()
 
@@ -2904,10 +2911,10 @@ Message from GStreamer:
 	################
 	def gnome_open(self, uri):
 		"""Open with gnome-open."""
-		if uri == None or uri == "":
-			self.create_dialog_alert("warn", _("The file/URL specified is invalid."), True)
-		else:
+		if uri:
 			os.popen("gnome-open '%s' &" % (uri))
+		else:
+			self.create_dialog_alert("warn", _("The file/URL specified is invalid."), True)
 
 	def update_statusbar(self, text):
 		"""Update the status bar and run pending main_iteration() events."""
@@ -2921,10 +2928,10 @@ Message from GStreamer:
 	def notification(self, title, message=None, image=None):
 		"""Display OSD notifications if the user wants them and it's installed."""
 		if PYNOTIFY_INSTALLED and self.display_notifications:
-			if message == None:
+			if not message:
 				message = title
 				title = 'Viridian'
-			if image == None:
+			if not image:
 				image = IMAGES_DIR + 'ViridianApp.png'
 			pynotify_object.update(title, message, image)
 			pynotify_object.show()

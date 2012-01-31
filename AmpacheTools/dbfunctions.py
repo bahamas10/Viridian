@@ -1,21 +1,32 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-### BEGIN LICENSE
-# Copyright (C) 2010 Dave Eddy <dave@daveeddy.com>
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
 #
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranties of
-# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
-# PURPOSE.  See the GNU General Public License for more details.
+# Copyright (c) 2012, Dave Eddy <dave@daveeddy.com>
+# All rights reserved.
 #
-# You should have received a copy of the GNU General Public License along
-# with this program.  If not, see <http://www.gnu.org/licenses/>.
-### END LICENSE
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the project nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-""" 
+
+"""
  Extra functions to query the database, to be used by AmpacheTools.AmpacheGUI
 """
 
@@ -33,7 +44,7 @@ def clear_cached_catalog(db_session):
 	except:
 		return False
 	return True
-	
+
 def table_is_empty(db_session, table_name, query_id):
 	"""Check to see if a portion of the table is empty."""
 	try:
@@ -50,7 +61,7 @@ def table_is_empty(db_session, table_name, query_id):
 	except:
 		return True
 	return True
-	
+
 def song_has_info(db_session, song_id):
 	"""Check to see if a portion of the table is empty."""
 	try:
@@ -64,7 +75,7 @@ def song_has_info(db_session, song_id):
 	except:
 		return False
 	return True
-	
+
 ##########################################
 # Functions to store artists/albums/songs
 ##########################################
@@ -94,7 +105,6 @@ def populate_full_albums_table(db_session, list):
 	c.close()
 	return True
 
-	
 def populate_albums_table(db_session, artist_id, list):
 	"""Save the list of albums in the albums table."""
 	if not list: # list is empty
@@ -109,7 +119,6 @@ def populate_albums_table(db_session, artist_id, list):
 	c.close()
 	return True
 
-
 def populate_full_songs_table(db_session, list):
 	"""Save the list of songs in the songs table."""
 	if not list: # list is empty
@@ -123,7 +132,7 @@ def populate_full_songs_table(db_session, list):
 	db_session.commit()
 	c.close()
 	return True
-	
+
 def populate_songs_table(db_session, album_id, list):
 	"""Save the list of songs in the songs table."""
 	if not list: # list is empty
@@ -137,7 +146,7 @@ def populate_songs_table(db_session, album_id, list):
 	db_session.commit()
 	c.close()
 	return True
-	
+
 ##########################################
 # Public Getter Functions
 ##########################################
@@ -149,7 +158,7 @@ def get_album_id(db_session, song_id):
 	#db_session.commit()
 	c.close()
 	return result
-	
+
 def get_album_name(db_session, album_id):
 	"""Takes an album_id and returns the album_name"""
 	c = db_session.cursor()
@@ -176,7 +185,7 @@ def get_artist_id(db_session, album_id):
 	#db_session.commit()
 	c.close
 	return result
-	
+
 def get_artist_name(db_session, artist_id):
 	"""Takes an album_id and returns the album_name"""
 	c = db_session.cursor()
@@ -196,7 +205,7 @@ def get_artist_ids(db_session):
 	#db_session.commit()
 	c.close()
 	return list
-	
+
 def get_album_ids(db_session):
 	"""Returns a list of all album ID's."""
 	c = db_session.cursor()
@@ -207,7 +216,7 @@ def get_album_ids(db_session):
 	#db_session.commit()
 	c.close()
 	return list
-	
+
 #######################################
 # Public Dictionary Getter Methods
 #######################################
@@ -230,7 +239,7 @@ def get_artist_dict(db_session):
 	#db_session.commit()
 	c.close()
 	return artist_dict
-	
+
 def get_album_dict(db_session, artist_id=None):
 	"""Returns a dictionary of all the albums from an artist from the database
 	This will check to see if the info exists locally before querying Ampache."""
@@ -271,7 +280,7 @@ def get_album_dict(db_session, artist_id=None):
 		#db_session.commit()
 		c.close()
 	return album_dict
-	
+
 def get_song_dict(db_session, album_id):
 	"""Returns a dictionary of all the songs from an album from the database
 	This will check to see if the info exists locally before querying Ampache."""
@@ -300,7 +309,7 @@ def get_song_dict(db_session, album_id):
 	#db_session.commit()
 	c.close()
 	return song_dict
-	
+
 def get_single_song_dict(db_session, song_id):
 	"""Returns a dictionary of one song based on its song_id"""
 	song_dict = {}
@@ -355,7 +364,7 @@ def get_playlist_song_dict(db_session, song_id):
 	#db_session.commit()
 	c.close()
 	return song_dict
-	
+
 def set_playlist(db_session, name, songs):
 	"""Saves a playilst with the given name in the database, automatically pickles list."""
 	c = db_session.cursor()
@@ -363,14 +372,14 @@ def set_playlist(db_session, name, songs):
 	c.execute("""INSERT INTO playlists (name, songs) VALUES (?, ?)""", [name, str(cPickle.dumps(songs))])
 	db_session.commit()
 	c.close()
-	
+
 def remove_playlist(db_session, name):
 	"""Removes a playlist from the database"""
 	c = db_session.cursor()
 	c.execute("""DELETE FROM playlists WHERE name = ?""", [name])
 	db_session.commit()
 	c.close()
-	
+
 def get_playlist(db_session, name, default_value=[]):
 	"""Retrieve a playlist from the database."""
 	try:
@@ -382,8 +391,7 @@ def get_playlist(db_session, name, default_value=[]):
 		c.close()
 		return default_value
 	return cPickle.loads(str(result))
-	
-	
+
 def get_playlists(db_session):
 	"""Retrieve all playlists stored locally as a list"""
 	c = db_session.cursor()
@@ -397,12 +405,12 @@ def get_playlists(db_session):
 		)
 	c.close()
 	return list
-	
+
 def create_initial_tables(db_session):
 	"""Create the tables in the database when the program starts"""
 	c = db_session.cursor()
 	c.execute('''CREATE TABLE IF NOT EXISTS artists
-		(artist_id INTEGER NOT NULL DEFAULT '', 
+		(artist_id INTEGER NOT NULL DEFAULT '',
 		name text NOT NULL DEFAULT '',
 		custom_name text NOT NULL DEFAULT '',
 		PRIMARY KEY (artist_id)
@@ -416,9 +424,9 @@ def create_initial_tables(db_session):
 		precise_rating int DEFAULT 0,
 		PRIMARY KEY (artist_id, album_id)
 		)
-	''') 
+	''')
 	c.execute('''CREATE TABLE IF NOT EXISTS songs
-		(album_id int NOT NULL DEFAULT '', 
+		(album_id int NOT NULL DEFAULT '',
 		song_id int NOT NULL DEFAULT '',
 		title text NOT NULL DEFAULT '',
 		track int NOT NULL DEFAULT 0,
@@ -437,6 +445,3 @@ def create_initial_tables(db_session):
 	''')
 	db_session.commit()
 	c.close()
-
-
-	
