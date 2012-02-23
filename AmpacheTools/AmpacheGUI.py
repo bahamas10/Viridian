@@ -49,16 +49,16 @@ try:
 except ImportError:
 	GLIB_AVAILABLE = False
 
-try: # require pygtk
+try:
+	import gtk
 	import pygtk
 	pygtk.require("2.0")
-	import gtk
 except:
 	print "pygtk required!"
 	sys.exit(1);
 
 
-try: # check for pynotify
+try:
 	import pynotify
 	pynotify.init('Viridian')
 	pynotify_object = pynotify.Notification(" ", " ")
@@ -71,6 +71,7 @@ except:
 import dbfunctions
 import helperfunctions
 import guifunctions
+
 from XMLRPCServerSession import XMLServer
 
 ### Contstants ###

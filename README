@@ -1,7 +1,11 @@
 === Viridan ===
 
 Viridian is a front-end for an Ampache server (see http://ampache.org).
-Viridian is powered by python/pygtk.
+
+== History ==
+Up until version 1.2 Viridian was released under the GPL 3, that
+has changed going forward to the BSD 3 Clause license.
+
 
 === Installing ===
 
