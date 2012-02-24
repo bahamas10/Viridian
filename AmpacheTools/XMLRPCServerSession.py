@@ -27,15 +27,12 @@
 """
 XML RPC Server
 """
-
-
-from SimpleXMLRPCServer import SimpleXMLRPCServer
-from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 import xmlrpclib
 import thread
 import socket
 
-
+from SimpleXMLRPCServer import SimpleXMLRPCServer
+from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
 class RequestHandler(SimpleXMLRPCRequestHandler):
 	# Restrict to a particular path.
