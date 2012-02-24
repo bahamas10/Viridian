@@ -49,8 +49,8 @@ def get_valid_digit(prompt = "Enter data: "):
 			valid = True
 		else:
 			print "Error! Invalid Album ID"
-
 	return _id
+
 def print_now_playing():
 	song_id   = audio_engine.get_current_song_id()
 	song_dict = ampache_conn.get_song_info(song_id)
@@ -62,10 +62,10 @@ def print_now_playing():
 def next_track():
 	audio_engine.next_track()
 	print_now_playing()
+
 def prev_track():
 	audio_engine.prev_track()
 	print_now_playing()
-
 
 if __name__ == "__main__":
 	is_first_time = True
@@ -117,9 +117,9 @@ if __name__ == "__main__":
 	song_list = sorted(song_list, key=lambda k: k['song_track'])
 	for song in song_list:
 		print "%d: %s" % (song['song_track'], song['song_title'])
-	list = []
+	l = []
 	for song in song_list:
-		list.append(song['song_id'])
+		l.append(song['song_id'])
 
 
 	song_track = get_valid_digit("Track Number: ")
