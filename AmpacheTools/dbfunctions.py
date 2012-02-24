@@ -56,10 +56,10 @@ def table_is_empty(db_session, table_name, query_id):
 		result = c.fetchone()
 		#db_session.commit()
 		c.close()
-		if result != None:
+		if result is not None:
 			return False # not empty
 	except:
-		return True
+		pass
 	return True
 
 def song_has_info(db_session, song_id):
@@ -70,7 +70,7 @@ def song_has_info(db_session, song_id):
 		result = c.fetchone()
 		#db_session.commit()
 		c.close()
-		if result == None:
+		if result is None:
 			return False # not empty
 	except:
 		return False
@@ -79,35 +79,35 @@ def song_has_info(db_session, song_id):
 ##########################################
 # Functions to store artists/albums/songs
 ##########################################
-def populate_artists_table(db_session, list):
+def populate_artists_table(db_session, l):
 	"""Save the list of artists in the artists table."""
-	if not list: # list is empty
+	if not l: # list is empty
 		return False
 	c = db_session.cursor()
 	c.execute("""DELETE FROM artists""")
-	for artist_list in list:
+	for artist_list in l:
 		c.execute("""INSERT INTO artists (artist_id, name, custom_name)
 			VALUES (?, ?, ?)""", artist_list)
 	db_session.commit()
 	c.close()
 	return True
 
-def populate_full_albums_table(db_session, list):
+def populate_full_albums_table(db_session, l):
 	"""Save all albums to the albums table"""
-	if not list: 
+	if not l:
 		return False
 	c = db_session.cursor()
 	c.execute("""DELETE FROM albums""")
-	for album_list in list:
+	for album_list in l:
 		c.execute("""INSERT INTO albums (artist_id, album_id, name, year, precise_rating)
 			VALUES (?,?,?,?,?)""", album_list)
 	db_session.commit()
 	c.close()
 	return True
 
-def populate_albums_table(db_session, artist_id, list):
+def populate_albums_table(db_session, artist_id, l):
 	"""Save the list of albums in the albums table."""
-	if not list: # list is empty
+	if not l: # list is empty
 		return False
 	#print list
 	c = db_session.cursor()
@@ -119,9 +119,9 @@ def populate_albums_table(db_session, artist_id, list):
 	c.close()
 	return True
 
-def populate_full_songs_table(db_session, list):
+def populate_full_songs_table(db_session, l):
 	"""Save the list of songs in the songs table."""
-	if not list: # list is empty
+	if not l: # list is empty
 		return False
 	c = db_session.cursor()
 	c.execute("""DELETE FROM songs""")
@@ -133,9 +133,9 @@ def populate_full_songs_table(db_session, list):
 	c.close()
 	return True
 
-def populate_songs_table(db_session, album_id, list):
+def populate_songs_table(db_session, album_id, l):
 	"""Save the list of songs in the songs table."""
-	if not list: # list is empty
+	if not l: # list is empty
 		return False
 	c = db_session.cursor()
 	c.execute("""DELETE FROM songs WHERE album_id = ?""", [album_id])
@@ -199,23 +199,23 @@ def get_artist_ids(db_session):
 	"""Returns a list of all artist ID's."""
 	c = db_session.cursor()
 	c.execute("""SELECT artist_id FROM artists""")
-	list = []
+	l = []
 	for row in c:
-		list.append(row[0])
+		l.append(row[0])
 	#db_session.commit()
 	c.close()
-	return list
+	return l
 
 def get_album_ids(db_session):
 	"""Returns a list of all album ID's."""
 	c = db_session.cursor()
 	c.execute("""SELECT album_id FROM albums""")
-	list = []
+	l = []
 	for row in c:
-		list.append(row[0])
+		l.append(row[0])
 	#db_session.commit()
 	c.close()
-	return list
+	return l
 
 #######################################
 # Public Dictionary Getter Methods
@@ -244,7 +244,7 @@ def get_album_dict(db_session, artist_id=None):
 	"""Returns a dictionary of all the albums from an artist from the database
 	This will check to see if the info exists locally before querying Ampache."""
 	album_dict = {}
-	if artist_id == None:
+	if artist_id is None:
 		try:
 			c = db_session.cursor()
 			c.execute("""SELECT album_id, name, year, precise_rating FROM albums""")
@@ -396,15 +396,15 @@ def get_playlists(db_session):
 	"""Retrieve all playlists stored locally as a list"""
 	c = db_session.cursor()
 	c.execute("""SELECT name,songs FROM playlists""")
-	list = []
+	l = []
 	for row in c:
-		list.append(
+		l.append(
 			{'name' : row[0],
 			 'songs': cPickle.loads(str(row[1])),
 			}
 		)
 	c.close()
-	return list
+	return l
 
 def create_initial_tables(db_session):
 	"""Create the tables in the database when the program starts"""
