@@ -39,7 +39,7 @@ Home Page: [http://viridian.daveeddy.com][home]
 
 Launchpad: [https://launchpad.net/viridianplayer][launchpad]
 
-FAQ: [https://answers.launchpad.net/viridianplayer/+faqs][faxq]
+FAQ: [https://answers.launchpad.net/viridianplayer/+faqs][faq]
 
 Bugs: [https://bugs.launchpad.net/viridianplayer][bugs]
 
