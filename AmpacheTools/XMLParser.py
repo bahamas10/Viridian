@@ -61,14 +61,17 @@ def _elementtodict(parent):
 	@return	{dict}	The resultant object
 	"""
 	child = parent.firstChild
+	while child and child.nodeType == xml.dom.minidom.Node.TEXT_NODE and not child.data.strip():
+		child = child.nextSibling
 	# Return None for the stopping condition
 	if not child:
 		return None
-	while child.nodeType == xml.dom.minidom.Node.TEXT_NODE and not child.data.strip():
-		child = child.nextSibling
 	# If we hit a text node just return it
-	if child.nodeType == xml.dom.minidom.Node.TEXT_NODE:
-		return child.nodeValue
+	if child.nodeType == xml.dom.minidom.Node.TEXT_NODE or child.nodeType == xml.dom.minidom.Node.CDATA_SECTION_NODE:
+		value = child.nodeValue
+		if value.isdigit():
+			value = int(value)
+		return value
 	# Create a dictionary of lists
 	d = defaultdict(list)
 	while child:
@@ -79,10 +82,9 @@ def _elementtodict(parent):
 			if child.hasAttributes():
 				attrs = child.attributes
 				# Loop the attributes
-				for i in xrange(0, attrs.length - 1):
+				for i in xrange(0, attrs.length):
 					_attr = attrs.item(i)
 					attr_dict[_attr.name] = _attr.value
-				#d[child.tagName]['attr'] = attr_dict
 			d[child.tagName].append({'attr' : attr_dict, 'child' : _elementtodict(child)})
 		child = child.nextSibling
 	# Convert the default dict to regular dict

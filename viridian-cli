@@ -85,7 +85,8 @@ if __name__ == "__main__":
 		url      = db_session.variable_get('credentials_url')
 		ampache_conn.set_credentials(username, password, url)
 		if ampache_conn.has_credentials():
-			resp = raw_input("Username '%s' found for Ampache Server '%s'.\nConnect using these credentials? [Y/n]: " % (username, url))
+			#resp = raw_input("Username '%s' found for Ampache Server '%s'.\nConnect using these credentials? [Y/n]: " % (username, url))
+			resp = 'y'
 			if resp != 'n' and resp != 'N': # then use the credentials
 				ampache_conn.authenticate()
 				ready = True

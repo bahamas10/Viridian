@@ -26,21 +26,26 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import os
 import hashlib
-import time
-import xml.dom.minidom
-import urllib2
-import urllib
-import datetime
+import os
 import re
-import socket
-import sys, traceback
+import sys
+import time
+import traceback
+import urllib
+import urllib2
 
+from XMLParser import xmltodict
 
-### Constants ###
-AUTH_MAX_RETRY = 3 # how many times to try and reauth before failure
-DEFAULT_TIMEOUT = 10 # default 10 second timeout
+# The api version this class communicates with
+API_VERSION = 350001
+
+# The max number of data to ask for in a single request
+MAX_OFFSET = 5000
+
+# how many times to try and reauth before failure
+AUTH_MAX_RETRY = 3
+
 __ILLEGAL_XML = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
 		 u'|' + \
 		 u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
@@ -48,11 +53,10 @@ __ILLEGAL_XML = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
 		  unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
 		  unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff))
 ILLEGAL_XML_RE = re.compile(__ILLEGAL_XML)
-socket.setdefaulttimeout(DEFAULT_TIMEOUT)
 
 class AmpacheSession:
 	"""
-	The AmpacheSession Class.  This is used to communicate to Ampache via the API.
+	Communicate with Ampache via the API.
 	"""
 	def __init__(self):
 		"""
@@ -62,12 +66,7 @@ class AmpacheSession:
 		self.username = None
 		self.password = None
 		self.xml_rpc = None
-		self.auth = None
-		self.last_update_time = -1
-		self.artists_num = -1
-		self.albums_num = -1
-		self.songs_num = -1
-		self.auth_current_retry = 0
+		self.auth_data = {}
 
 	def set_credentials(self, username, password, url):
 		"""
@@ -115,23 +114,19 @@ class AmpacheSession:
 			'auth'      : authkey,
 			'timestamp' : timestamp,
 			'user'      : self.username,
-			'version'   : '350001',
+			'version'   : API_VERSION,
 		}
-		data = urllib.urlencode(values)
 
 		# now send the authentication request to Ampache
 		try:
-			socket.setdefaulttimeout(7) # lower timeout
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			socket.setdefaulttimeout(DEFAULT_TIMEOUT) # reset timeout
-			xml_string = response.read()
-			dom = xml.dom.minidom.parseString(xml_string)
-			self.auth        = dom.getElementsByTagName("auth")[0].childNodes[0].data
-			self.artists_num = int(dom.getElementsByTagName("artists")[0].childNodes[0].data)
-			self.albums_num  = int(dom.getElementsByTagName("albums")[0].childNodes[0].data)
-			self.songs_num   = int(dom.getElementsByTagName("songs")[0].childNodes[0].data)
-		except: # couldn't auth, try up to AUTH_MAX_RETRY times
-			self.auth = None
+			res = self.__call_api(values)
+			for k,v in res.iteritems():
+				res[k] = v[0]['child']
+			# Save the data returned from the initial authentication
+			self.auth_data = res
+			print self.auth_data
+		except Exception, e: # couldn't auth, try up to AUTH_MAX_RETRY times
+			print e
 			self.auth_current_retry += 1
 			print "[Error] Authentication Failed -- Retry = %d" % self.auth_current_retry
 			if self.auth_current_retry < AUTH_MAX_RETRY:
@@ -168,9 +163,7 @@ class AmpacheSession:
 		"""
 		Returns True if self.auth is set, and False if it is not.
 		"""
-		if self.auth:
-			return True
-		return False
+		return self.ping() is not None
 
 	def ping(self):
 		"""
@@ -179,7 +172,6 @@ class AmpacheSession:
 		"""
 		values = {
 			'action' : 'ping',
-			'auth'   : self.auth,
 		}
 		root = self.__call_api(values)
 		if not root:
@@ -203,7 +195,6 @@ class AmpacheSession:
 		values = {
 			'action' : 'song',
 			'filter' : song_id,
-			'auth'   : self.auth,
 		}
 		root = self.__call_api(values)
 		if not root:
@@ -221,7 +212,6 @@ class AmpacheSession:
 		values = {
 			'action' : 'album',
 			'filter' : album_id,
-			'auth'   : self.auth,
 		}
 
 		root = self.__call_api(values)
@@ -234,439 +224,38 @@ class AmpacheSession:
 	def get_artists(self, offset=None):
 		"""
 		Gets all artists and return as a list of dictionaries.
-		Example: [
-				{ 'artist_id' : artist_id, 'artist_name' : artist_name},
-				{ 'artist_id' : 1, 'artist_name' : 'The Reign of Kindo'},
-				{ ... },
-			 ]
 		"""
-		if not offset:
-			if self.artists_num > 5000: # offset needed
-				print "More than 5000 artists"
-				l = []
-				for i in range(0, self.artists_num, 5000):
-					print 'Offset = %d' % (i)
-					l += self.get_artists(i)
-				return l
-			values = {
-				'action' : 'artists',
-				'auth'   : self.auth,
-			}
-		else:
-			values = {
-				'action' : 'artists',
-				'auth'   : self.auth,
-				'offset' : offset,
-			}
-
-		root = self.__call_api(values)
-		if not root:
-			return None
-		nodes = root.getElementsByTagName('artist')
-
-		l = []
-		try: # get the artists
-			for child in nodes:
-				artist_name = child.getElementsByTagName('name')[0].childNodes[0].data
-				artist_id   = int(child.getAttribute('id'))
-				d = {
-					'artist_id'   : artist_id,
-					'artist_name' : artist_name,
-				}
-				l.append(d)
-		except: # something failed
-			traceback.print_exc()
-			return None
-		return l
+		return self.__get('artists')
 
 	def get_albums(self, offset=None):
 		"""
 		Gets all albums and return as a list of dictionaries.
-		Example: [
-				{	 'artist_id'      : artist_id,
-					 'artist_name'    : artist_name,
-					 'album_id'       : album_id,
-					 'album_name'     : album_name,
-					 'album_year'     : album_year,
-					 'album_tracks'   : album_tracks,
-					 'album_disk'     : album_disk,
-					 'album_rating'   : album_rating,
-					 'precise_rating' : precise_rating,
-				},
-				{ ... },
-			 ]
 		"""
-		if not offset:
-			if self.albums_num > 5000: # offset needed
-				l = []
-				for i in range(0, self.albums_num, 5000):
-					l += self.get_albums(i)
-				return l
-			values = {
-				'action' : 'albums',
-				'auth'   : self.auth,
-			}
-		else:
-			values = {
-				'action' : 'albums',
-				'auth'   : self.auth,
-				'offset' : offset,
-			}
-
-		root  = self.__call_api(values)
-		if not root:
-			return None
-		nodes = root.getElementsByTagName('album')
-		if not nodes:
-			return None
-		l = []
-		try:
-			for child in nodes:
-				album_id       = int(child.getAttribute('id'))
-				album_name     = child.getElementsByTagName('name')[0].childNodes[0].data
-				artist_id      = int(child.getElementsByTagName('artist')[0].getAttribute('id'))
-				artist_name    = child.getElementsByTagName('artist')[0].childNodes[0].data
-				album_year     = child.getElementsByTagName('year')[0].childNodes[0].data
-				album_tracks   = int(child.getElementsByTagName('tracks')[0].childNodes[0].data)
-				album_disk     = int(child.getElementsByTagName('disk')[0].childNodes[0].data)
-				try: # new version doesn't put data in the middle...
-					precise_rating = int(child.getElementsByTagName('preciserating')[0].childNodes[0].data)
-				except:
-					precise_rating = 0
-				try:
-					album_rating = child.getElementsByTagName('rating')[0].childNodes[0].data
-				except:
-					album_rating = 0
-				if album_year == "N/A":
-					album_year = 0
-				album_year = int(album_year)
-
-				d = {
-					'artist_id'      : artist_id,
-					'artist_name'    : artist_name,
-					'album_id'       : album_id,
-					'album_name'     : album_name,
-					'album_year'     : album_year,
-					'album_tracks'   : album_tracks,
-					'album_disk'     : album_disk,
-					'album_rating'   : album_rating,
-					'precise_rating' : precise_rating,
-				}
-				l.append(d)
-		except: #something failed
-			traceback.print_exc()
-			return None
-		return l
+		return self.__get('albums')
 
 	def get_songs(self, offset=None):
 		"""
 		Gets all songs and returns as a list of dictionaries.
-		Example: [
-				{	'song_id'	: song_id,
-					'song_title'     : song_title,
-					'artist_id'      : artist_id,
-					'artist_name'    : artist_name,
-					'album_id'       : album_id,
-					'album_name'     : album_name,
-					'song_track'     : song_track,
-					'song_time'      : song_time,
-					'song_size'      : song_size,
-					'precise_rating' : precise_rating,
-					'rating'	 : rating,
-					'art'		 : art,
-					'url'		 : url,
-				},
-				{ ... },
-			 ]
 		"""
-		if not offset:
-			if self.songs_num > 5000: # offset needed
-				print "over 5000"
-				l = []
-				for i in range(0, self.songs_num, 5000):
-					l += self.get_songs(i)
-				return l
-			values = {
-				'action' : 'songs',
-				'auth'   : self.auth,
-			}
-		else:
-			values = {
-				'action' : 'songs',
-				'auth'   : self.auth,
-				'offset' : offset,
-			}
-		print values
-		root  = self.__call_api(values)
-		if not root:
-			return None
-		nodes = root.getElementsByTagName('song')
-		if not nodes:
-			return None
-		l = []
-		try:
-			for song in nodes:
-				song_id	       = int(song.getAttribute('id'))
-				song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
-				artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
-				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
-				album_id       = int(song.getElementsByTagName('album')[0].getAttribute('id'))
-				album_name     = song.getElementsByTagName('album')[0].childNodes[0].data
-
-				song_track     = int(song.getElementsByTagName('track')[0].childNodes[0].data)
-				song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
-				song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
-
-				try: # New version doesn't initialize this...
-					precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
-				except:
-					precise_rating = 0
-				try:
-					rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
-				except:
-					rating = 0
-
-				art = song.getElementsByTagName('art')[0].childNodes[0].data
-				url = song.getElementsByTagName('url')[0].childNodes[0].data
-				d = {
-					'song_id'        : song_id,
-					'song_title'     : song_title,
-					'artist_id'      : artist_id,
-					'artist_name'    : artist_name,
-					'album_id'       : album_id,
-					'album_name'     : album_name,
-					'song_track'     : song_track,
-					'song_time'      : song_time,
-					'song_size'      : song_size,
-					'precise_rating' : precise_rating,
-					'rating'         : rating,
-					'art'            : art,
-					'url'            : url,
-				}
-				l.append(d)
-		except:
-			traceback.print_exc()
-			return None
-		return l
+		return self.__get('songs')
 
 	def get_albums_by_artist(self, artist_id):
 		"""
 		Gets all albums by the artist_id and returns as a list of dictionaries.
-		Example: [
-				{	 'artist_id'      : artist_id,
-					 'artist_name'    : artist_name,
-					 'album_id'       : album_id,
-					 'album_name'     : album_name,
-					 'album_year'     : album_year,
-					 'album_tracks'   : album_tracks,
-					 'album_disk'     : album_disk,
-					 'album_rating'   : album_rating,
-					 'precise_rating' : precise_rating,
-				},
-				{ ... },
-			 ]
 		"""
-		values = {
-			'action' : 'artist_albums',
-			'filter' : artist_id,
-			'auth'   : self.auth,
-		}
-		root  = self.__call_api(values)
-		nodes = root.getElementsByTagName('album')
-		if not nodes:
-			return None
-		l = []
-		try:
-			for child in nodes:
-				album_id       = int(child.getAttribute('id'))
-				album_name     = child.getElementsByTagName('name')[0].childNodes[0].data
-				artist_id      = int(child.getElementsByTagName('artist')[0].getAttribute('id'))
-				artist_name    = child.getElementsByTagName('artist')[0].childNodes[0].data
-				album_year     = child.getElementsByTagName('year')[0].childNodes[0].data
-				album_tracks   = int(child.getElementsByTagName('tracks')[0].childNodes[0].data)
-				try:
-					album_disk = int(child.getElementsByTagName('disk')[0].childNodes[0].data)
-				except:
-					album_disk = 0
-				try:
-					precise_rating = int(child.getElementsByTagName('preciserating')[0].childNodes[0].data)
-				except:
-					precise_rating = 0
-				try:
-					album_rating = child.getElementsByTagName('rating')[0].childNodes[0].data
-				except:
-					album_rating = 0
-				if album_year == "N/A":
-					album_year = 0
-				album_year = int(album_year)
-
-				d = {
-					'artist_id'      : artist_id,
-					'artist_name'    : artist_name,
-					'album_id'       : album_id,
-					'album_name'     : album_name,
-					'album_year'     : album_year,
-					'album_tracks'   : album_tracks,
-					'album_disk'     : album_disk,
-					'album_rating'   : album_rating,
-					'precise_rating' : precise_rating,
-				}
-				l.append(d)
-		except: #something failed
-			print "This artist failed", artist_id
-			traceback.print_exc()
-			return None
-		return l
+		return self.__get('album', artist_id)
 
 	def get_songs_by_album(self, album_id):
 		"""
 		Gets all songs on album_id and returns as a list of dictionaries.
-		Example: [
-				{	'song_id'	: song_id,
-					'song_title'     : song_title,
-					'artist_id'      : artist_id,
-					'artist_name'    : artist_name,
-					'album_id'       : album_id,
-					'album_name'     : album_name,
-					'song_track'     : song_track,
-					'song_time'      : song_time,
-					'song_size'      : song_size,
-					'precise_rating' : precise_rating,
-					'rating'	 : rating,
-					'art'	    : art,
-					'url'	    : url,
-				},
-				{ ... },
-			 ]
 		"""
-		values = {
-			'action' : 'album_songs',
-			'filter' : album_id,
-			'auth'   : self.auth,
-		}
-		root  = self.__call_api(values)
-		nodes = root.getElementsByTagName('song')
-		if not nodes: # list is empty, reauth
-			return None
-		l = []
-		try:
-			for song in nodes:
-				song_id	= int(song.getAttribute('id'))
-				song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
-				artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
-				artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
-				album_id       = int(song.getElementsByTagName('album')[0].getAttribute('id'))
-				album_name     = song.getElementsByTagName('album')[0].childNodes[0].data
-
-				song_track     = int(song.getElementsByTagName('track')[0].childNodes[0].data)
-				song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
-				song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
-
-				try: # New version doesn't initialize this...
-					precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
-				except:
-					precise_rating = 0
-				try:
-					rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
-				except:
-					rating = 0
-
-				art = song.getElementsByTagName('art')[0].childNodes[0].data
-				url = song.getElementsByTagName('url')[0].childNodes[0].data
-				d = {
-					'song_id'        : song_id,
-					'song_title'     : song_title,
-					'artist_id'      : artist_id,
-					'artist_name'    : artist_name,
-					'album_id'       : album_id,
-					'album_name'     : album_name,
-					'song_track'     : song_track,
-					'song_time'      : song_time,
-					'song_size'      : song_size,
-					'precise_rating' : precise_rating,
-					'rating'	 : rating,
-					'art'            : art,
-					'url'            : url,
-				}
-				l.append(d)
-		except:
-			print "This album failed", album_id
-			traceback.print_exc()
-			return None
-		return l
+		return self.__get('song', album_id)
 
 	def get_song_info(self, song_id):
 		"""
 		Gets all info about a song from the song_id and returns it as a dictionary.
-		Example: {      'song_id'	: song_id,
-				'song_title'     : song_title,
-				'artist_id'      : artist_id,
-				'artist_name'    : artist_name,
-				'album_id'       : album_id,
-				'album_name'     : album_name,
-				'song_track'     : song_track,
-				'song_time'      : song_time,
-				'song_size'      : song_size,
-				'precise_rating' : precise_rating,
-				'rating'	 : rating,
-				'art'	    : art,
-				'url'	    : url,
-			 }
 		"""
-
-		values = {'action' : 'song',
-			  'filter' : song_id,
-			  'auth'   : self.auth,
-		}
-		root = self.__call_api(values)
-		song = root.getElementsByTagName('song')[0]
-		if not song:
-			return None
-
-		song_dict = {}
-		try:
-			song_id	= int(song.getAttribute('id'))
-			song_title     = song.getElementsByTagName('title')[0].childNodes[0].data
-			artist_id      = int(song.getElementsByTagName('artist')[0].getAttribute('id'))
-			artist_name    = song.getElementsByTagName('artist')[0].childNodes[0].data
-			album_id       = int(song.getElementsByTagName('album')[0].getAttribute('id'))
-			album_name     = song.getElementsByTagName('album')[0].childNodes[0].data
-
-			song_track     = int(song.getElementsByTagName('track')[0].childNodes[0].data)
-			song_time      = int(song.getElementsByTagName('time')[0].childNodes[0].data)
-			song_size      = int(song.getElementsByTagName('size')[0].childNodes[0].data)
-
-			try: # New version doesn't set this...
-				precise_rating = int(song.getElementsByTagName('preciserating')[0].childNodes[0].data)
-			except:
-				precise_rating = 0
-			try:
-				rating = float(song.getElementsByTagName('rating')[0].childNodes[0].data)
-			except:
-				rating = 0
-			art = song.getElementsByTagName('art')[0].childNodes[0].data
-			url = song.getElementsByTagName('url')[0].childNodes[0].data
-
-			song_dict = {
-				'song_id'        : song_id,
-				'song_title'     : song_title,
-				'artist_id'      : artist_id,
-				'artist_name'    : artist_name,
-				'album_id'       : album_id,
-				'album_name'     : album_name,
-				'song_track'     : song_track,
-				'song_time'      : song_time,
-				'song_size'      : song_size,
-				'precise_rating' : precise_rating,
-				'rating'	 : rating,
-				'art'            : art,
-				'url'            : url,
-			}
-		except:
-			print "This song failed", song_id
-			traceback.print_exc()
-			return None
-		return song_dict
+		return self.__get('song', song_id)
 
 	def get_playlists(self):
 		"""
@@ -683,7 +272,6 @@ class AmpacheSession:
 		"""
 		values = {
 			'action' : 'playlists',
-			'auth'   : self.auth,
 		}
 		root  = self.__call_api(values)
 		nodes = root.getElementsByTagName('playlist')
@@ -735,7 +323,6 @@ class AmpacheSession:
 		"""
 		values = {'action' : 'playlist_songs',
 			  'filter' : playlist_id,
-			  'auth'   : self.auth,
 		}
 		root = self.__call_api(values)
 		songs = root.getElementsByTagName('song')
@@ -791,22 +378,38 @@ class AmpacheSession:
 	def __call(self, **kwargs):
 		"""Takes kwargs and talks to the ampach API.. returning the root element of the XML
 		Example: __call(action="artists", filter="kindo") """
-		values = kwargs
-		return self.__call_api(values)
+		return self.__call_api(kwargs)
 
 	def __call_api(self, values):
-		"""Takes a dictionary of values and talks to the ampache API... returning the root elemnent of the XML
+		"""
+		Takes a dictionary of values and talks to the ampache API... returning the root elemnent of the XML
 		Example: __call_api({action: 'artists', filter: 'kindo'})
-		Automatically adds {auth: <auth>}"""
-		values['auth'] = self.auth
+		Automatically adds {auth: <auth>}
+		"""
+		# Add auth key to the request dictionary if not supplie
+		if 'auth' not in values:
+			values['auth'] = self.auth_data['auth']
+
+		# Encode the data for a GET request
 		data = urllib.urlencode(values)
-		try: # to query ampache
-			response = urllib2.urlopen(self.xml_rpc + '?' + data)
-			x = self.__sanatize(response.read())
-			dom = xml.dom.minidom.parseString(x)
-		except: # The data pulled from Ampache was invalid
-			traceback.print_exc()
+
+		print values
+
+		# Try to make the request
+		xml_string = urllib2.urlopen(self.xml_rpc + '?' + data).read()
+
+		# Parse the XML
+		response_data = xmltodict(xml_string)
+
+		# Ensure that there was XML to parse
+		if not response_data:
 			return None
+
+		# Grab the root element
+		response_data = response_data['root'][0]['child']
+		print response_data
+		return response_data
+		'''
 		try: # to make sure authentication is valid and extract the root element
 			root  = dom.getElementsByTagName('root')[0]
 			if not root: # list is empty, reauth
@@ -826,7 +429,53 @@ class AmpacheSession:
 			else: # couldn't authenticate
 				return None
 		return None
+		'''
 
+	def __get(self, action, _filter=None, offset=None):
+		auth_key = action
+		if auth_key[-1] == 's':
+			# unpluralize
+			auth_key = auth_key[:-1]
+
+		values = {
+			'action' : action
+		}
+
+		# Check if a filter is given
+		if _filter:
+			values['filter'] = _filter
+
+		# Check if an offset is given
+		if offset is not None:
+			values['offset'] = offset
+		else:
+			# No offset given, check to see if one is needed
+			if self.auth_data[action] > MAX_OFFSET:
+				l = []
+				for i in range(0, self.auth_data[action], MAX_OFFSET):
+					print 'Offset = %d' % (i)
+					l += self.__get(action, offset=i, _filter=_filter)
+				return l
+
+		# Make the call
+		data = self.__call_api(values)
+
+		# Check to see if the selut was empty
+		if not data:
+			return []
+
+		# Parse the output
+		ret = []
+		for item in data[auth_key]:
+			d = {}
+			if item['attr']:
+				d.update(item['attr'])
+			for k, v in item['child'].iteritems():
+				d[k] = v[0]['child']
+			ret.append(d)
+
+		# Return the value
+		return ret
 
 	def __sanatize(self, string):
 		"""Sanatize the given string to remove bad characters."""
