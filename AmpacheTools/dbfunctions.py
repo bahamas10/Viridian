@@ -112,7 +112,7 @@ def populate_albums_table(db_session, artist_id, l):
 	#print list
 	c = db_session.cursor()
 	c.execute("""DELETE FROM albums WHERE artist_id = ?""", [artist_id])
-	for album_list in list:
+	for album_list in l:
 		c.execute("""INSERT INTO albums (artist_id, album_id, name, year, precise_rating)
 			VALUES (?,?,?,?,?)""", album_list)
 	db_session.commit()
@@ -125,7 +125,7 @@ def populate_full_songs_table(db_session, l):
 		return False
 	c = db_session.cursor()
 	c.execute("""DELETE FROM songs""")
-	for song_list in list:
+	for song_list in l:
 		c.execute("""INSERT INTO songs (album_id, song_id, title,
 				track, time, size, artist_name, album_name)
 				VALUES (?,?,?,?,?,?,?,?)""", song_list)
@@ -139,7 +139,7 @@ def populate_songs_table(db_session, album_id, l):
 		return False
 	c = db_session.cursor()
 	c.execute("""DELETE FROM songs WHERE album_id = ?""", [album_id])
-	for song_list in list:
+	for song_list in l:
 		c.execute("""INSERT INTO songs (album_id, song_id, title,
 				track, time, size, artist_name, album_name)
 				VALUES (?,?,?,?,?,?,?,?)""", song_list)
