@@ -1,5 +1,8 @@
 {
   "name" : "English (Default)",
+  "contributors" : [
+    "Dave Eddy <dave@daveeddy.com>"
+  ],
   "strings" : {
     "1" : "Viridian is still running in the status bar. If you do not want Viridian to continue running when the window is closed you can disable it in Preferences.",
     "2" : "Downloads in progress...",
