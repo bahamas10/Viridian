@@ -91,8 +91,8 @@ def _elementtodict(parent):
 	return dict(d)
 
 if __name__ == '__main__':
+	import json
 	import sys
-	from pprint import pprint
 
 	try:
 		xml_file = sys.argv[1]
@@ -103,4 +103,4 @@ if __name__ == '__main__':
 	s = open(xml_file, 'r').read()
 	d = xmltodict(s)
 
-	pprint(d)
+	print json.dumps(d, indent=4)
