@@ -71,10 +71,10 @@ if __name__ == "__main__":
     is_first_time = True
     if os.path.exists(VIRIDIAN_DIR):
         is_first_time = False
-        db_session = DatabaseSession(VIRIDIAN_DIR + os.sep + 'viridian.sqlite')
+        db_session = DatabaseSession.DatabaseSession(VIRIDIAN_DIR + os.sep + 'viridian.sqlite')
 
-    ampache_conn = AmpacheSession()
-    audio_engine = AudioEngine(ampache_conn)
+    ampache_conn = AmpacheSession.AmpacheSession()
+    audio_engine = AudioEngine.AudioEngine(ampache_conn)
 
     audio_engine.set_repeat_songs(True)
 

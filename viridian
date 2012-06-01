@@ -74,12 +74,12 @@ if __name__ == '__main__':
             os.mkdir(VIRIDIAN_DIR)
             os.chmod(VIRIDIAN_DIR, 0700)
 
-        db_session   = AmpacheTools.DatabaseSession(os.path.join(VIRIDIAN_DIR, 'viridian.sqlite'))
-        ampache_conn = AmpacheTools.AmpacheSession()
-        audio_engine = AmpacheTools.AudioEngine(ampache_conn)
+        db_session   = AmpacheTools.DatabaseSession.DatabaseSession(os.path.join(VIRIDIAN_DIR, 'viridian.sqlite'))
+        ampache_conn = AmpacheTools.AmpacheSession.AmpacheSession()
+        audio_engine = AmpacheTools.AudioEngine.AudioEngine(ampache_conn)
 
         # create the gui and give it access to all of the components it needs
-        gui = AmpacheTools.AmpacheGUI(ampache_conn, audio_engine, db_session, is_first_time, __version__)
+        gui = AmpacheTools.AmpacheGui.AmpacheGUI(ampache_conn, audio_engine, db_session, is_first_time, __version__)
 
         # this is for dbus and single instance
         service = AmpacheService(gui)
