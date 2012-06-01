@@ -42,110 +42,110 @@ from getpass import getpass
 VIRIDIAN_DIR = os.path.join(os.path.expanduser("~"), '.viridian')
 
 def get_valid_digit(prompt = "Enter data: "):
-	valid = False
-	while not valid:
-		_id = raw_input("\n\n%s" % (prompt))
-		if _id.isdigit():
-			valid = True
-		else:
-			print "Error! Invalid Album ID"
-	return _id
+    valid = False
+    while not valid:
+        _id = raw_input("\n\n%s" % (prompt))
+        if _id.isdigit():
+            valid = True
+        else:
+            print "Error! Invalid Album ID"
+    return _id
 
 def print_now_playing():
-	song_id   = audio_engine.get_current_song_id()
-	song_dict = ampache_conn.get_song_info(song_id)
-	print " - Now Playing - "
-	print song_dict['song_title']
-	print "By: %s" % song_dict['artist_name']
-	print "On: %s" % song_dict['album_name']
+    song_id   = audio_engine.get_current_song_id()
+    song_dict = ampache_conn.get_song_info(song_id)
+    print " - Now Playing - "
+    print song_dict['song_title']
+    print "By: %s" % song_dict['artist_name']
+    print "On: %s" % song_dict['album_name']
 
 def next_track():
-	audio_engine.next_track()
-	print_now_playing()
+    audio_engine.next_track()
+    print_now_playing()
 
 def prev_track():
-	audio_engine.prev_track()
-	print_now_playing()
+    audio_engine.prev_track()
+    print_now_playing()
 
 if __name__ == "__main__":
-	is_first_time = True
-	if os.path.exists(VIRIDIAN_DIR):
-		is_first_time = False
-		db_session = DatabaseSession(VIRIDIAN_DIR + os.sep + 'viridian.sqlite')
+    is_first_time = True
+    if os.path.exists(VIRIDIAN_DIR):
+        is_first_time = False
+        db_session = DatabaseSession(VIRIDIAN_DIR + os.sep + 'viridian.sqlite')
 
-	ampache_conn = AmpacheSession()
-	audio_engine = AudioEngine(ampache_conn)
+    ampache_conn = AmpacheSession()
+    audio_engine = AudioEngine(ampache_conn)
 
-	audio_engine.set_repeat_songs(True)
+    audio_engine.set_repeat_songs(True)
 
-	ready = False
-	if not is_first_time:
-		username = db_session.variable_get('credentials_username')
-		password = db_session.variable_get('credentials_password')
-		url      = db_session.variable_get('credentials_url')
-		ampache_conn.set_credentials(username, password, url)
-		if ampache_conn.has_credentials():
-			#resp = raw_input("Username '%s' found for Ampache Server '%s'.\nConnect using these credentials? [Y/n]: " % (username, url))
-			resp = 'y'
-			if resp != 'n' and resp != 'N': # then use the credentials
-				ampache_conn.authenticate()
-				ready = True
+    ready = False
+    if not is_first_time:
+        username = db_session.variable_get('credentials_username')
+        password = db_session.variable_get('credentials_password')
+        url      = db_session.variable_get('credentials_url')
+        ampache_conn.set_credentials(username, password, url)
+        if ampache_conn.has_credentials():
+            #resp = raw_input("Username '%s' found for Ampache Server '%s'.\nConnect using these credentials? [Y/n]: " % (username, url))
+            resp = 'y'
+            if resp != 'n' and resp != 'N': # then use the credentials
+                ampache_conn.authenticate()
+                ready = True
 
-	while not ready:
-		url  = raw_input("Ampache Server URL (ie 'http://example.org/ampache'): ")
-		username = raw_input("Username: ")
-		password = getpass("Password: ")
-		ampache_conn.set_credentials(username, password, url)
-		if ampache_conn.has_credentials():
-			if ampache_conn.authenticate():
-				ready = True
-		else:
-			print "Error! Try Again"
+    while not ready:
+        url  = raw_input("Ampache Server URL (ie 'http://example.org/ampache'): ")
+        username = raw_input("Username: ")
+        password = getpass("Password: ")
+        ampache_conn.set_credentials(username, password, url)
+        if ampache_conn.has_credentials():
+            if ampache_conn.authenticate():
+                ready = True
+        else:
+            print "Error! Try Again"
 
-	for artist in ampache_conn.get_artists():
-		print "%d: %s" % (artist['artist_id'], artist['artist_name'])
+    for artist in ampache_conn.get_artists():
+        print "%d: %s" % (artist['artist_id'], artist['artist_name'])
 
-	artist_id = get_valid_digit("Artist ID: ")
+    artist_id = get_valid_digit("Artist ID: ")
 
-	print '\n'
-	for album in ampache_conn.get_albums_by_artist(artist_id):
-		print "%d: %s (Year = %s, Disk = %d, Tracks = %d)" % (album['album_id'], album['album_name'], album['album_year'], album['album_disk'], album['album_tracks'])
+    print '\n'
+    for album in ampache_conn.get_albums_by_artist(artist_id):
+        print "%d: %s (Year = %s, Disk = %d, Tracks = %d)" % (album['album_id'], album['album_name'], album['album_year'], album['album_disk'], album['album_tracks'])
 
-	album_id = get_valid_digit("Album ID: ")
+    album_id = get_valid_digit("Album ID: ")
 
-	print '\n'
-	song_list = ampache_conn.get_songs_by_album(album_id)
-	song_list = sorted(song_list, key=lambda k: k['song_track'])
-	for song in song_list:
-		print "%d: %s" % (song['song_track'], song['song_title'])
-	l = []
-	for song in song_list:
-		l.append(song['song_id'])
+    print '\n'
+    song_list = ampache_conn.get_songs_by_album(album_id)
+    song_list = sorted(song_list, key=lambda k: k['song_track'])
+    for song in song_list:
+        print "%d: %s" % (song['song_track'], song['song_title'])
+    l = []
+    for song in song_list:
+        l.append(song['song_id'])
 
 
-	song_track = get_valid_digit("Track Number: ")
-	audio_engine.play_from_list_of_songs(list, int(song_track)-1)
+    song_track = get_valid_digit("Track Number: ")
+    audio_engine.play_from_list_of_songs(list, int(song_track)-1)
 
-	print_now_playing()
+    print_now_playing()
 
-	quit = False
-	while not quit:
-		print "Choices are 'n' for next, 'p' for previous, 'i' for info, 's' for play/pause, and 'q' for quit"
-		resp = raw_input("Choice: ")
-		print "\n\n"
-		if resp == 'n':
-			next_track()
-		elif resp == 'p':
-			prev_track()
-		elif resp == 'i':
-			print_now_playing()
-		elif resp == 's':
-			if audio_engine.get_state() == 'playing':
-				audio_engine.pause()
-				print audio_engine.get_state()
-			else:
-				audio_engine.play()
-				print audio_engine.get_state()
-		elif resp == 'q':
-			quit = True
-		print "\n\n"
+    quit = False
+    while not quit:
+        print "Choices are 'n' for next, 'p' for previous, 'i' for info, 's' for play/pause, and 'q' for quit"
+        resp = raw_input("Choice: ")
+        print "\n\n"
+        if resp == 'n':
+            next_track()
+        elif resp == 'p':
+            prev_track()
+        elif resp == 'i':
+            print_now_playing()
+        elif resp == 's':
+            if audio_engine.get_state() == 'playing':
+                audio_engine.pause()
+                print audio_engine.get_state()
+            else:
+                audio_engine.play()
+                print audio_engine.get_state()
+        elif resp == 'q':
+            quit = True
+        print "\n\n"

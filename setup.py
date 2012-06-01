@@ -29,12 +29,12 @@
 from distutils.core import setup
 
 setup(name='Viridian',
-	version='1.3',
-	description='Viridian Media Player',
-	author='Dave Eddy',
-	author_email='dave@daveeddy.com',
-	url='http://viridian.daveeddy.com',
-	scripts=['viridian', 'viridian-cli'],
-	packages=['AmpacheTools'],
-	package_data={'AmpacheTools' : ['images/*', 'doc/*', 'locales/*', 'plugins/*']}
+    version='1.3',
+    description='Viridian Media Player',
+    author='Dave Eddy',
+    author_email='dave@daveeddy.com',
+    url='http://viridian.daveeddy.com',
+    scripts=['viridian', 'viridian-cli'],
+    packages=['AmpacheTools'],
+    package_data={'AmpacheTools' : ['images/*', 'doc/*', 'locales/*', 'plugins/*']}
 )

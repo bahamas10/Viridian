@@ -21,34 +21,34 @@
 import dbus
 
 def __init__():
-	"""Return an instance of the class used by the plugin when __init__() is called"""
-	return PidginPlugin()
+    """Return an instance of the class used by the plugin when __init__() is called"""
+    return PidginPlugin()
 
 class PidginPlugin:
-	def __init__(self):
-		"""called before the plugin is asked to do anything"""
-		self.title       = "Pidgin Status"
-		self.author      = "Dave Eddy <dave@daveeddy.com>"
-		self.description = "Sets the current playing song as your pidgin status."
+    def __init__(self):
+        """called before the plugin is asked to do anything"""
+        self.title       = "Pidgin Status"
+        self.author      = "Dave Eddy <dave@daveeddy.com>"
+        self.description = "Sets the current playing song as your pidgin status."
 
-	def on_song_change(self, song_dict):
-		"""Called when the song changes in Viridian.
-		A dictionary with all of the songs information is passed in as 'song_dict'"""
-		try:
-			bus = dbus.SessionBus()
-			obj = bus.get_object("im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
-			self.purple = dbus.Interface(obj, "im.pidgin.purple.PurpleInterface")
-			self.set_message('Now Playing :: %s by %s' % (song_dict['song_title'], song_dict['artist_name']))
-			print "Status Set"
-		except:
-			print "Error setting status"
-			pass
+    def on_song_change(self, song_dict):
+        """Called when the song changes in Viridian.
+        A dictionary with all of the songs information is passed in as 'song_dict'"""
+        try:
+            bus = dbus.SessionBus()
+            obj = bus.get_object("im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
+            self.purple = dbus.Interface(obj, "im.pidgin.purple.PurpleInterface")
+            self.set_message('Now Playing :: %s by %s' % (song_dict['song_title'], song_dict['artist_name']))
+            print "Status Set"
+        except:
+            print "Error setting status"
+            pass
 
 
-	def set_message(self, message):
-		# Get current status type (Available/Away/etc.)
-		current = self.purple.PurpleSavedstatusGetType(self.purple.PurpleSavedstatusGetCurrent())
-		# Create new transient status and activate it
-		status = self.purple.PurpleSavedstatusNew("", current)
-		self.purple.PurpleSavedstatusSetMessage(status, message)
-		self.purple.PurpleSavedstatusActivate(status)
+    def set_message(self, message):
+        # Get current status type (Available/Away/etc.)
+        current = self.purple.PurpleSavedstatusGetType(self.purple.PurpleSavedstatusGetCurrent())
+        # Create new transient status and activate it
+        status = self.purple.PurpleSavedstatusNew("", current)
+        self.purple.PurpleSavedstatusSetMessage(status, message)
+        self.purple.PurpleSavedstatusActivate(status)

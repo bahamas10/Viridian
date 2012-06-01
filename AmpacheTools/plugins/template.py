@@ -18,19 +18,19 @@
 # Dave Eddy <dave@daveeddy.com>
 
 def __init__():
-	"""Return an instance of the class used by the plugin when __init__() is called"""
-	return TemplatePlugin()
+    """Return an instance of the class used by the plugin when __init__() is called"""
+    return TemplatePlugin()
 
 class TemplatePlugin:
-	def __init__(self):
-		"""Called before the plugin is asked to do anything.
-		title, author, and description must be set for Viridian to read the plugin."""
-		self.title       = "Template Plugin"
-		self.author      = "Dave Eddy <dave@daveeddy.com>"
-		self.description = "Prints some information when the song changes"
+    def __init__(self):
+        """Called before the plugin is asked to do anything.
+        title, author, and description must be set for Viridian to read the plugin."""
+        self.title       = "Template Plugin"
+        self.author      = "Dave Eddy <dave@daveeddy.com>"
+        self.description = "Prints some information when the song changes"
 
-	def on_song_change(self, song_dict):
-		"""Called when the song changes in Viridian.
-		A dictionary with all of the songs information is passed in as 'song_dict'"""
-		for k,v in song_dict.iteritems():
-			print "song_dict['%s'] = '%s'" % (k,v)
+    def on_song_change(self, song_dict):
+        """Called when the song changes in Viridian.
+        A dictionary with all of the songs information is passed in as 'song_dict'"""
+        for k,v in song_dict.iteritems():
+            print "song_dict['%s'] = '%s'" % (k,v)
