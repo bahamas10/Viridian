@@ -29,11 +29,12 @@ XMLParser.py
 
 Functions to convert XML into a python data structure
 
-
 Original code from:
     http://nonplatonic.com/ben.php?title=python_xml_to_dict_bow_to_my_recursive_g&more=1&c=1&tb=1&pb=1
 Modified by:
     Dave Eddy <dave@daveeddy.com>
+        - Cleaned up whitespace errors
+        - Added support for attributes
 """
 
 import xml.dom.minidom
@@ -43,9 +44,9 @@ def xmltodict(xmlstring):
     """
     Convert an XML string into a dictionary
 
-    @param  xmlstring   {string}    The XML string
+    @param	xmlstring	{string}	The XML string
 
-    @return {dict}  The resultant object
+    @return	{dict}	The resultant object
     """
     doc = xml.dom.minidom.parseString(xmlstring)
     return _elementtodict(doc)
@@ -56,9 +57,9 @@ def _elementtodict(parent):
 
     Recursively search an XML element and construct a dictionary
 
-    @param  element {Node.ELEMENT_NODE} The node to search
+    @param	element	{Node.ELEMENT_NODE}	The node to search
 
-    @return {dict}  The resultant object
+    @return	{dict}	The resultant object
     """
     child = parent.firstChild
     while child and child.nodeType == xml.dom.minidom.Node.TEXT_NODE and not child.data.strip():
@@ -96,11 +97,10 @@ if __name__ == '__main__':
 
     try:
         xml_file = sys.argv[1]
+        s = open(xml_file, 'r').read()
     except IndexError:
-        print 'File must be given as an argument.'
-        sys.exit(1)
+        s = sys.stdin.read()
 
-    s = open(xml_file, 'r').read()
     d = xmltodict(s)
 
     print json.dumps(d, indent=4)
