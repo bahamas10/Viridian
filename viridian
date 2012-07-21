@@ -34,7 +34,10 @@ __maintainer__ = 'David Eddy'
 __email__      = 'dave@daveeddy.com'
 __status__     = 'Development'
 
-import AmpacheTools
+import AmpacheTools.DatabaseSession
+import AmpacheTools.AmpacheSession
+import AmpacheTools.AmpacheGUI
+import AmpacheTools.AudioEngine
 
 import gettext
 import gobject
@@ -79,7 +82,7 @@ if __name__ == '__main__':
         audio_engine = AmpacheTools.AudioEngine.AudioEngine(ampache_conn)
 
         # create the gui and give it access to all of the components it needs
-        gui = AmpacheTools.AmpacheGui.AmpacheGUI(ampache_conn, audio_engine, db_session, is_first_time, __version__)
+        gui = AmpacheTools.AmpacheGUI.AmpacheGUI(ampache_conn, audio_engine, db_session, is_first_time, __version__)
 
         # this is for dbus and single instance
         service = AmpacheService(gui)

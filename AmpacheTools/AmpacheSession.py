@@ -67,6 +67,7 @@ class AmpacheSession:
         self.password = None
         self.xml_rpc = None
         self.auth_data = {}
+        self.auth_current_retry = 0
 
     def set_credentials(self, username, password, url):
         """
@@ -124,7 +125,6 @@ class AmpacheSession:
                 res[k] = v[0]['child']
             # Save the data returned from the initial authentication
             self.auth_data = res
-            print self.auth_data
         except Exception, e: # couldn't auth, try up to AUTH_MAX_RETRY times
             print e
             self.auth_current_retry += 1
@@ -142,14 +142,10 @@ class AmpacheSession:
                     return False
         # if it made it this far, the auth was successfull, now check to see if the catalog needs updating
         try:
-            # check to see if ampache has been updated or cleaned since the last time this ran
-            update = dom.getElementsByTagName("update")[0].childNodes[0].data
-            add    = dom.getElementsByTagName("add")[0].childNodes[0].data
-            clean  = dom.getElementsByTagName("clean")[0].childNodes[0].data
             # convert ISO 8601 to epoch
-            update = int(time.mktime(time.strptime( update[:-6], "%Y-%m-%dT%H:%M:%S" )))
-            add    = int(time.mktime(time.strptime( add[:-6], "%Y-%m-%dT%H:%M:%S" )))
-            clean  = int(time.mktime(time.strptime( clean[:-6], "%Y-%m-%dT%H:%M:%S" )))
+            update = int(time.mktime(time.strptime( self.auth_data['update'][:-6], "%Y-%m-%dT%H:%M:%S" )))
+            add    = int(time.mktime(time.strptime( self.auth_data['add'][:-6], "%Y-%m-%dT%H:%M:%S" )))
+            clean  = int(time.mktime(time.strptime( self.auth_data['clean'][:-6], "%Y-%m-%dT%H:%M:%S" )))
 
             new_time  = max([update, add, clean])
             self.last_update_time = new_time
@@ -393,13 +389,13 @@ class AmpacheSession:
         # Encode the data for a GET request
         data = urllib.urlencode(values)
 
-        print values
+        #print values
 
         # Try to make the request
         xml_string = urllib2.urlopen(self.xml_rpc + '?' + data).read()
 
         # Parse the XML
-        response_data = xmltodict(xml_string)
+        response_data = xmltodict(self.__sanitize(xml_string))
 
         # Ensure that there was XML to parse
         if not response_data:
@@ -407,29 +403,8 @@ class AmpacheSession:
 
         # Grab the root element
         response_data = response_data['root'][0]['child']
-        print response_data
+
         return response_data
-        '''
-        try: # to make sure authentication is valid and extract the root element
-            root  = dom.getElementsByTagName('root')[0]
-            if not root: # list is empty, reauth
-                raise Exception('Reauthenticate')
-            else: # try to find an error
-                try:
-                    error = root.getElementsByTagName("error")[0].childNodes[0].data
-                    print "Error! Trying to reauthenticate :: %s" % error
-                    if self.authenticate():
-                        return self.__call_api(values)
-                    return None
-                except: # no error found.. must be good XML :)
-                    return root
-        except: # something failed, try to reauth and do it again
-            if self.authenticate():
-                return self.__call_api(values)
-            else: # couldn't authenticate
-                return None
-        return None
-        '''
 
     def __get(self, action, _filter=None, offset=None):
         auth_key = action
@@ -477,8 +452,8 @@ class AmpacheSession:
         # Return the value
         return ret
 
-    def __sanatize(self, string):
-        """Sanatize the given string to remove bad characters."""
+    def __sanitize(self, string):
+        """Sanitize the given string to remove bad characters."""
         # from http://boodebr.org/main/python/all-about-python-and-unicode#UNI_XML
         for match in ILLEGAL_XML_RE.finditer(string):
             string = string[:match.start()] + "?" + string[match.end():]
