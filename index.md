@@ -5,7 +5,7 @@ layout: default
 Viridan
 =======
 
-<img src="/static/img/ViridianApp.png" style="float: right;" />
+<img src="static/img/ViridianApp.png" style="float: right;" />
 
 > Viridian is an Ampache Client that displays all of your media from your Ampache
 > server in a simple and convenient way that makes choosing and streaming music
@@ -35,39 +35,39 @@ Screenshots
 
 ### Load and Save playlists with Viridian
 
-![viridian](/static/img/Viridian-Playlist.png)
+![viridian](static/img/Viridian-Playlist.png)
 
 ### Viridian
 
-![viridian](/static/img/viridian_alone.png)
+![viridian](static/img/viridian_alone.png)
 
 ### Set Viridian to get the newest changes from Ampache
 
-![viridian](/static/img/viridian_catalog_settings.png)
+![viridian](static/img/viridian_catalog_settings.png)
 
 ### Download songs from Viridian
 
-![viridian](/static/img/viridian_download_songs.png)
+![viridian](static/img/viridian_download_songs.png)
 
 ### Viridian tray icon
 
-![viridian](/static/img/viridian_icon.png)
+![viridian](static/img/viridian_icon.png)
 
 ### Control Viridian from the status icon
 
-![viridian](/static/img/viridian_icon_settings.png)
+![viridian](static/img/viridian_icon_settings.png)
 
 ### Open downloads from Viridian
 
-![viridian](/static/img/viridian_open_downloads.png)
+![viridian](static/img/viridian_open_downloads.png)
 
 ### Open album art with Viridian
 
-![viridian](/static/img/viridian_open_image.png)
+![viridian](static/img/viridian_open_image.png)
 
 ### OSD Notify with Viridian
 
-![viridian](/static/img/viridian_osd.png)
+![viridian](static/img/viridian_osd.png)
 
 Download
 --------
