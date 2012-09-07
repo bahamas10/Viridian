@@ -2,8 +2,8 @@
 layout: default
 ---
 
-Viridan
-=======
+Viridian
+========
 
 <img src="static/img/ViridianApp.png" style="float: right;" />
 
