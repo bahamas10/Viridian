@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Viridian</title>
+		<link rel="stylesheet" href="/static/third-party/bootstrap/css/bootstrap.min.css"></link>
+		<link rel="stylesheet" href="/static/css/style.css"></link>
+	</head>
+	<body>
+		<div class="container">
+			<h1 id='viridan'>Viridan</h1>
+<img style='float: right;' src='/static/img/ViridianApp.png' />
+<blockquote>
+<p>Viridian is an Ampache Client that displays all of your media from your Ampache server in a simple and convenient way that makes choosing and streaming music an easy task.</p>
+</blockquote>
+
+<p>Some of the highlighted features of Viridian:</p>
+
+<ul>
+<li>Create and save custom playlists in Viridian</li>
+
+<li>Export playlists created in Viridian to be imported into Ampache</li>
+
+<li>Download songs/albums from Ampache directly from Viridian</li>
+
+<li>Viridian caches and displays album art from Ampache in Viridian</li>
+
+<li>Notify osd messages when a song changes or a song finishes downloading</li>
+
+<li>Silent re-authentications to Ampache (if your session expires for whatever reason)</li>
+
+<li>Close Viridian and have it continue running as a status icon</li>
+
+<li>Seek/scrub songs being streamed</li>
+
+<li>XMLRPC server for communicating with Viridian</li>
+
+<li>Open source. Feel confident in the code you execute.</li>
+</ul>
+<hr />
+<ul>
+<li><a href='#screenshots'>Screenshots</a></li>
+
+<li><a href='#download'>Download</a></li>
+
+<li><a href='#license'>License</a></li>
+</ul>
+
+<h2 id='screenshots'>Screenshots</h2>
+
+<h3 id='load_and_save_playlists_with_viridian'>Load and Save playlists with Viridian</h3>
+
+<p><img alt='viridian' src='/static/img/Viridian-Playlist.png' /></p>
+
+<h3 id='viridian'>Viridian</h3>
+
+<p><img alt='viridian' src='/static/img/viridian_alone.png' /></p>
+
+<h3 id='set_viridian_to_get_the_newest_changes_from_ampache'>Set Viridian to get the newest changes from Ampache</h3>
+
+<p><img alt='viridian' src='/static/img/viridian_catalog_settings.png' /></p>
+
+<h3 id='download_songs_from_viridian'>Download songs from Viridian</h3>
+
+<p><img alt='viridian' src='/static/img/viridian_download_songs.png' /></p>
+
+<h3 id='viridian_tray_icon'>Viridian tray icon</h3>
+
+<p><img alt='viridian' src='/static/img/viridian_icon.png' /></p>
+
+<h3 id='control_viridian_from_the_status_icon'>Control Viridian from the status icon</h3>
+
+<p><img alt='viridian' src='/static/img/viridian_icon_settings.png' /></p>
+
+<h3 id='open_downloads_from_viridian'>Open downloads from Viridian</h3>
+
+<p><img alt='viridian' src='/static/img/viridian_open_downloads.png' /></p>
+
+<h3 id='open_album_art_with_viridian'>Open album art with Viridian</h3>
+
+<p><img alt='viridian' src='/static/img/viridian_open_image.png' /></p>
+
+<h3 id='osd_notify_with_viridian'>OSD Notify with Viridian</h3>
+
+<p><img alt='viridian' src='/static/img/viridian_osd.png' /></p>
+
+<h2 id='download'>Download</h2>
+
+<h4 id='ubuntu_1104_or_higher'>Ubuntu 11.04 (or higher)</h4>
+
+<pre><code>sudo aptitude install viridian</code></pre>
+
+<h4 id='other'>Other</h4>
+
+<p>Check below for links to the latest releases</p>
+
+<h3 id='latest_release'>Latest Release</h3>
+
+<p>Version 1.2-Release (1/7/2010):</p>
+
+<p><a href='https://launchpad.net/viridianplayer/trunk/1.2-release'>https://launchpad.net/viridianplayer/trunk/1.2-release</a></p>
+
+<p>Note: Viridian is for Linux/Unix only. It might be possible to run it on Windows/Mac if you can get python/pygtk running on them.</p>
+
+<p>Older versions can be downloaded from the launchpad project site on Launchpad.</p>
+
+<h3 id='dependencies'>Dependencies</h3>
+
+<p>Viridian depends on gstreamer to stream the music from the server. This means that it relies on gstreamer to have the proper codecs to understand how to play each file Ampache might have. If you are on a fresh install of Ubuntu, you will need to download gstreamer plugins for Viridian to work as expected. Viridian was written and tested on Python 2.6.</p>
+
+<h4 id='ubuntu_1010'>Ubuntu 10.10</h4>
+
+<p>Install the mp3 extras when you install the OS, or find them in the software center.</p>
+
+<h4 id='ubuntu_1004'>Ubuntu 10.04</h4>
+
+<ol>
+<li>Go to Applications -&gt; Ubuntu Software Center</li>
+
+<li>Search for <code>gstreamer</code></li>
+
+<li>Install <code>gstreamer extra plugins</code></li>
+
+<li>Install <code>GStreamer plugins for aac, xvid, mpeg2, faad</code> (optional: do this if your music file types vary, and may include iTunes m4a or aac files)</li>
+</ol>
+
+<h2 id='license'>License</h2>
+
+<p>BSD 3-clause license</p>
+		</div>
+		<a href="https://github.com/bahamas10/Viridian"><img style="position: absolute; top:
+			0; right: 0; border: 0;"
+			src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"
+			alt="Fork me on GitHub"></a>
+	</body>
+</html>
