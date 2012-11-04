@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # Copyright (c) 2012, Dave Eddy <dave@daveeddy.com>
 # BSD 3 Clause License

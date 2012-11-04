@@ -38,10 +38,14 @@ import shutil
 import cPickle
 import getpass
 import traceback
-import dbus
 
-from dbus.mainloop.glib import threads_init
-threads_init()
+try:
+    import dbus
+    from dbus.mainloop.glib import threads_init
+    threads_init()
+    DBUS_AVAILABLE = True
+except:
+    DBUS_AVAILABLE = False
 
 try:
     import glib
@@ -820,13 +824,14 @@ class AmpacheGUI:
         combobox.set_active(self.playlist_mode)
 
         # media keys
-        try:
-            session_bus = dbus.SessionBus()
-            gnome_settings_daemon = session_bus.get_object("org.gnome.SettingsDaemon", "/org/gnome/SettingsDaemon/MediaKeys")
-            media_keys = dbus.Interface(gnome_settings_daemon, "org.gnome.SettingsDaemon.MediaKeys")
-            media_keys.connect_to_signal("MediaPlayerKeyPressed", self.media_key_pressed)
-        except:
-            pass
+        if DBUS_AVAILABLE:
+            try:
+                session_bus = dbus.SessionBus()
+                gnome_settings_daemon = session_bus.get_object("org.gnome.SettingsDaemon", "/org/gnome/SettingsDaemon/MediaKeys")
+                media_keys = dbus.Interface(gnome_settings_daemon, "org.gnome.SettingsDaemon.MediaKeys")
+                media_keys.connect_to_signal("MediaPlayerKeyPressed", self.media_key_pressed)
+            except:
+                pass
 
     def media_key_pressed(self, *args):
         """Support Media Key Presses -- Merged from Andrew Barr"""

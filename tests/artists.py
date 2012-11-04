@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # Copyright (c) 2012, Dave Eddy <dave@daveeddy.com>
 # BSD 3 Clause License
 #
-# Test authentication
+# Test artists
 
 import json
 import sys
@@ -29,8 +29,4 @@ if not ampache_conn.authenticate():
     print >>sys.stderr, 'Failed to authenticate!'
     sys.exit(2)
 
-i = 0
-for artist in ampache_conn.get_artists():
-    print json.dumps(artist, indent=4)
-    i+=1
-    if i > 10: break
+print json.dumps(ampache_conn.get_artists(), indent=4)
