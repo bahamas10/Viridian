@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-XMLParser.py
+xmlparse.py
 
 Functions to convert XML into a python data structure
 
@@ -83,7 +83,7 @@ def _elementtodict(parent):
             if child.hasAttributes():
                 attrs = child.attributes
                 # Loop the attributes
-                for i in xrange(0, attrs.length):
+                for i in range(0, attrs.length):
                     _attr = attrs.item(i)
                     attr_dict[_attr.name] = _attr.value
             d[child.tagName].append({'attr' : attr_dict, 'child' : _elementtodict(child)})
@@ -103,4 +103,4 @@ if __name__ == '__main__':
 
     d = xmltodict(s)
 
-    print json.dumps(d, indent=4)
+    print(json.dumps(d, indent=4))

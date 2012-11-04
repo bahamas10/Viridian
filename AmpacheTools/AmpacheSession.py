@@ -35,7 +35,7 @@ import traceback
 import urllib
 import urllib2
 
-from XMLParser import xmltodict
+from xmlparse import xmltodict
 
 # The api version this class communicates with
 API_VERSION = 350001
