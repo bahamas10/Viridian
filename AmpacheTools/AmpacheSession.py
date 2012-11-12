@@ -43,9 +43,6 @@ API_VERSION = 350001
 # The max number of data to ask for in a single request
 MAX_OFFSET = 5000
 
-# how many times to try and reauth before failure
-AUTH_MAX_RETRY = 3
-
 __ILLEGAL_XML = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
          u'|' + \
          u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
@@ -67,30 +64,18 @@ class AmpacheSession:
         self.password = None
         self.xml_rpc = None
         self.auth_data = {}
-        self.auth_current_retry = 0
 
     def set_credentials(self, username, password, url):
         """
         Save the ampache url, username, and password.
         """
         # remove trailing slash off URL
-        if url:
-            while url[-1:] == '/':
-                url = url[:-1]
+        url = url.rstrip('/')
         # save variables to object
         self.url = url
         self.username = username
         self.password = password
-        try:
-            self.xml_rpc = '%s/server/xml.server.php' % (self.url)
-        except:
-            pass
-
-    def get_credentials(self):
-        """
-        Retrun the url, username, and password as a tuple.
-        """
-        return (self.username, self.password, self.url)
+        self.xml_rpc = '%s/server/xml.server.php' % (self.url)
 
     def has_credentials(self):
         """
@@ -100,12 +85,10 @@ class AmpacheSession:
 
     def authenticate(self):
         """
-        Attempt to authenticate to Ampache.  Returns True if successful and False if not.
-        This will retry AUTH_MAX_RETRY(=3) times.
+        Attempt to authenticate to Ampache.
+
+        Returns auth data if successful and False if not.
         """
-        # check for the necessary information
-        if not self.has_credentials():
-            return False
         # generate the necessary information for the authentication
         timestamp = int(time.time())
         password = hashlib.sha256(self.password).hexdigest()
@@ -127,19 +110,14 @@ class AmpacheSession:
             self.auth_data = res
         except Exception, e: # couldn't auth, try up to AUTH_MAX_RETRY times
             print e
-            self.auth_current_retry += 1
-            print "[Error] Authentication Failed -- Retry = %d" % self.auth_current_retry
-            if self.auth_current_retry < AUTH_MAX_RETRY:
-                return self.authenticate()
-            else: # authentication failed more than AUTH_MAX_RETRY times
-                self.auth_current_retry = 0
-                error = None
-                try: # to find the error
-                    error = dom.getElementsByTagName("error")[0].childNodes[0].data
-                    print "[Error] Authentication Failed :: %s" % error
-                    return error
-                except: # no error found.. must have failed because data was sent to wrong place
-                    return False
+            print '[Error] Authentication Failed'
+            error = None
+            try: # to find the error
+                error = dom.getElementsByTagName("error")[0].childNodes[0].data
+                print "[Error] Authentication Failed :: %s" % error
+                return error
+            except: # no error found.. must have failed because data was sent to wrong place
+                return False
         # if it made it this far, the auth was successfull, now check to see if the catalog needs updating
         try:
             # convert ISO 8601 to epoch
@@ -152,8 +130,7 @@ class AmpacheSession:
         except Exception, detail:
             print "Couldn't get time catalog was updated -- assuming catalog is dirty -- ", detail
             self.last_update_time = -1
-        self.auth_current_retry = 0
-        return True
+        return self.auth_data
 
     def is_authenticated(self):
         """
@@ -372,7 +349,7 @@ class AmpacheSession:
 
 
     def __call(self, **kwargs):
-        """Takes kwargs and talks to the ampach API.. returning the root element of the XML
+        """Takes kwargs and talks to the ampache API.. returning the root element of the XML
         Example: __call(action="artists", filter="kindo") """
         return self.__call_api(kwargs)
 

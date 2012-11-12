@@ -1915,7 +1915,7 @@ class AmpacheGUI:
         print "--- Attempting to login to Ampache ---"
         print "Ampache  = %s" % ampache
         print "Username = %s" % username
-        print "Password = " + len(password)*"*"
+        print "Password = " + len(password) * '*'
         # set the credentials and try to login
         self.__successfully_authed = None
         ################ Thread to authenticate (so the GUI doesn't lock) ############
@@ -1924,11 +1924,11 @@ class AmpacheGUI:
             self.refresh_gui()
         self.go_to_ampache_menu_item.set_sensitive(True)
         ##############################################################################
-        if self.__successfully_authed == True: # auth successful
+        if self.__successfully_authed: # auth successful
             self.update_statusbar("Authentication Successful.")
             print "Authentication Successful!"
-            print "Authentication = %s" % self.ampache_conn.auth
-            print "Number of artists = %d" % self.ampache_conn.artists_num
+            print "Authentication = %s" % self.ampache_conn.auth_data['auth']
+            print "Number of artists = %d" % self.ampache_conn.auth_data['artists']
 
             db_time      = int(self.db_session.variable_get('catalog_update', -1))
             ampache_time = int(self.ampache_conn.get_last_update_time())
@@ -1976,9 +1976,10 @@ class AmpacheGUI:
             return True
         else: # auth failed
             error = self.__successfully_authed
-            if error == None or error == False:
+            if not error:
                 error = _("Unknown error, possibly an incorrect URL specified, or the server is not responding.")
             self.update_statusbar(_("Authentication Failed."))
+            print error
             self.create_dialog_alert("error", _("Error Authenticating\n\n") + error, True)
 
             return False
